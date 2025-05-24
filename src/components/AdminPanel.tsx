@@ -1,0 +1,327 @@
+
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { PlusCircle, BookOpen, Target, Users } from 'lucide-react';
+import { useCourse } from '@/contexts/CourseContext';
+import { Question } from '@/types/course';
+import { useToast } from '@/hooks/use-toast';
+
+export function AdminPanel() {
+  const { currentCourse, addQuestion, addTopic } = useCourse();
+  const { toast } = useToast();
+
+  // Estados para criar novo tópico
+  const [newTopicTitle, setNewTopicTitle] = useState('');
+  const [newTopicContent, setNewTopicContent] = useState('');
+
+  // Estados para criar nova questão
+  const [selectedTopicId, setSelectedTopicId] = useState('');
+  const [questionText, setQuestionText] = useState('');
+  const [options, setOptions] = useState(['', '', '', '']);
+  const [correctAnswer, setCorrectAnswer] = useState(0);
+  const [explanation, setExplanation] = useState('');
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+
+  const handleAddTopic = () => {
+    if (!currentCourse || !newTopicTitle || !newTopicContent) {
+      toast({
+        title: 'Erro',
+        description: 'Preencha todos os campos obrigatórios.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const newTopic = {
+      title: newTopicTitle,
+      content: newTopicContent,
+      completed: false,
+      order: currentCourse.topics.length + 1,
+    };
+
+    addTopic(currentCourse.id, newTopic);
+    setNewTopicTitle('');
+    setNewTopicContent('');
+    
+    toast({
+      title: 'Sucesso',
+      description: 'Tópico adicionado com sucesso!',
+    });
+  };
+
+  const handleAddQuestion = () => {
+    if (!selectedTopicId || !questionText || options.some(opt => !opt) || !explanation) {
+      toast({
+        title: 'Erro',
+        description: 'Preencha todos os campos obrigatórios.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const newQuestion: Question = {
+      id: Date.now().toString(),
+      question: questionText,
+      options: options,
+      correctAnswer: correctAnswer,
+      explanation: explanation,
+      type: 'multiple-choice',
+      difficulty: difficulty,
+    };
+
+    addQuestion(selectedTopicId, newQuestion);
+    
+    // Reset form
+    setSelectedTopicId('');
+    setQuestionText('');
+    setOptions(['', '', '', '']);
+    setCorrectAnswer(0);
+    setExplanation('');
+    setDifficulty('medium');
+    
+    toast({
+      title: 'Sucesso',
+      description: 'Questão adicionada com sucesso!',
+    });
+  };
+
+  const handleOptionChange = (index: number, value: string) => {
+    const newOptions = [...options];
+    newOptions[index] = value;
+    setOptions(newOptions);
+  };
+
+  if (!currentCourse) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-500">Nenhum curso selecionado</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Administrativo</h1>
+          <p className="text-gray-600">Gerencie conteúdo e questões do curso</p>
+        </div>
+
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="topics">Tópicos</TabsTrigger>
+            <TabsTrigger value="questions">Questões</TabsTrigger>
+            <TabsTrigger value="students">Alunos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total de Tópicos</p>
+                    <p className="text-2xl font-bold text-gray-900">{currentCourse.topics.length}</p>
+                  </div>
+                  <BookOpen className="w-8 h-8 text-blue-600" />
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total de Questões</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {currentCourse.topics.reduce((acc, topic) => acc + (topic.questions?.length || 0), 0)}
+                    </p>
+                  </div>
+                  <Target className="w-8 h-8 text-green-600" />
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Progresso Médio</p>
+                    <p className="text-2xl font-bold text-gray-900">{Math.round(currentCourse.progress)}%</p>
+                  </div>
+                  <Users className="w-8 h-8 text-purple-600" />
+                </div>
+              </Card>
+            </div>
+
+            <Card className="mt-6 p-6">
+              <h3 className="text-lg font-semibold mb-4">Curso Atual: {currentCourse.title}</h3>
+              <p className="text-gray-600 mb-4">{currentCourse.description}</p>
+              
+              <div className="space-y-2">
+                {currentCourse.topics.map((topic, index) => (
+                  <div key={topic.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <span className="font-medium">{index + 1}. {topic.title}</span>
+                      {topic.questions && topic.questions.length > 0 && (
+                        <Badge variant="outline" className="ml-2">
+                          {topic.questions.length} questão(ões)
+                        </Badge>
+                      )}
+                    </div>
+                    <Badge variant={topic.completed ? "default" : "secondary"}>
+                      {topic.completed ? 'Concluído' : 'Pendente'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="topics">
+            <Card className="p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <PlusCircle className="w-5 h-5" />
+                <h3 className="text-lg font-semibold">Adicionar Novo Tópico</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="topic-title">Título do Tópico</Label>
+                  <Input
+                    id="topic-title"
+                    value={newTopicTitle}
+                    onChange={(e) => setNewTopicTitle(e.target.value)}
+                    placeholder="Digite o título do tópico"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="topic-content">Conteúdo (Markdown suportado)</Label>
+                  <Textarea
+                    id="topic-content"
+                    value={newTopicContent}
+                    onChange={(e) => setNewTopicContent(e.target.value)}
+                    placeholder="Digite o conteúdo do tópico usando markdown..."
+                    rows={10}
+                  />
+                </div>
+
+                <Button onClick={handleAddTopic} className="w-full">
+                  Adicionar Tópico
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="questions">
+            <Card className="p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Target className="w-5 h-5" />
+                <h3 className="text-lg font-semibold">Adicionar Nova Questão</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="topic-select">Tópico</Label>
+                  <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um tópico" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currentCourse.topics.map((topic) => (
+                        <SelectItem key={topic.id} value={topic.id}>
+                          {topic.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="question-text">Enunciado da Questão</Label>
+                  <Textarea
+                    id="question-text"
+                    value={questionText}
+                    onChange={(e) => setQuestionText(e.target.value)}
+                    placeholder="Digite o enunciado da questão..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {options.map((option, index) => (
+                    <div key={index}>
+                      <Label htmlFor={`option-${index}`}>
+                        Alternativa {String.fromCharCode(65 + index)}
+                        {index === correctAnswer && <Badge className="ml-2">Correta</Badge>}
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id={`option-${index}`}
+                          value={option}
+                          onChange={(e) => handleOptionChange(index, e.target.value)}
+                          placeholder={`Digite a alternativa ${String.fromCharCode(65 + index)}`}
+                        />
+                        <Button
+                          type="button"
+                          variant={index === correctAnswer ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCorrectAnswer(index)}
+                        >
+                          ✓
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <Label htmlFor="difficulty">Dificuldade</Label>
+                  <Select value={difficulty} onValueChange={(value: 'easy' | 'medium' | 'hard') => setDifficulty(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="easy">Fácil</SelectItem>
+                      <SelectItem value="medium">Médio</SelectItem>
+                      <SelectItem value="hard">Difícil</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="explanation">Explicação</Label>
+                  <Textarea
+                    id="explanation"
+                    value={explanation}
+                    onChange={(e) => setExplanation(e.target.value)}
+                    placeholder="Digite a explicação da questão..."
+                    rows={3}
+                  />
+                </div>
+
+                <Button onClick={handleAddQuestion} className="w-full">
+                  Adicionar Questão
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="students">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Gestão de Alunos</h3>
+              <p className="text-gray-600">
+                Funcionalidade em desenvolvimento. Aqui você poderá gerenciar alunos, 
+                ver relatórios de progresso e estatísticas de uso.
+              </p>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
