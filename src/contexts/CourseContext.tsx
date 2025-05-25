@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Course, Topic, Question, User } from '@/types/course';
 
@@ -285,16 +284,26 @@ export function CourseProvider({ children }: CourseProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const login = (email: string, password: string): boolean => {
-    // Simple mock authentication
-    if (email === 'admin' && password === 'admin') {
-      setUser(mockAdmin);
+    console.log('Tentativa de login:', email, password);
+    // Simple mock authentication - aceita admin/admin ou qualquer email/senha para teste
+    if ((email === 'admin' && password === 'admin') || (email && password)) {
+      const loggedUser = email === 'admin' ? mockAdmin : {
+        id: '2',
+        name: 'Usuário',
+        email: email,
+        isAdmin: false,
+      };
+      setUser(loggedUser);
       setIsAuthenticated(true);
+      console.log('Login bem-sucedido:', loggedUser);
       return true;
     }
+    console.log('Login falhou');
     return false;
   };
 
   const logout = () => {
+    console.log('Fazendo logout');
     setUser(null);
     setIsAuthenticated(false);
   };

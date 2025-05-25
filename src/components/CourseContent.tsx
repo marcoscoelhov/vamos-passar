@@ -1,135 +1,89 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
 import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Circle, BookOpen, Target } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
-import { QuestionBlock } from '@/components/QuestionBlock';
+import { QuestionBlock } from './QuestionBlock';
 
 export function CourseContent() {
-  const { currentTopic, updateTopicProgress } = useCourse();
-  const [showQuestions, setShowQuestions] = useState(false);
+  const { currentTopic } = useCourse();
 
   if (!currentTopic) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500">
+      <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <p>Selecione um tópico para começar</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Selecione um tópico
+          </h2>
+          <p className="text-gray-600">
+            Escolha um tópico na barra lateral para começar a estudar
+          </p>
         </div>
       </div>
     );
   }
 
-  const handleToggleComplete = () => {
-    updateTopicProgress(currentTopic.id, !currentTopic.completed);
-  };
-
-  // Função para formatar o conteúdo removendo markdown e aplicando formatação HTML limpa
+  // Função para converter markdown simples para HTML
   const formatContent = (content: string) => {
     return content
-      // Remove markdown headers e converte para HTML
-      .replace(/^### (.+)$/gm, '<h3 class="text-xl font-semibold text-gray-800 mt-8 mb-4 leading-tight">$1</h3>')
-      .replace(/^## (.+)$/gm, '<h2 class="text-2xl font-bold text-gray-900 mt-10 mb-6 leading-tight">$1</h2>')
-      .replace(/^# (.+)$/gm, '<h1 class="text-3xl font-bold text-gray-900 mt-12 mb-8 leading-tight">$1</h1>')
-      // Remove markdown bold e aplica formatação
-      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
-      // Remove markdown italic
-      .replace(/\*(.+?)\*/g, '<em class="italic text-gray-700">$1</em>')
-      // Converte blockquotes
-      .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-blue-400 pl-6 py-2 my-6 bg-blue-50 rounded-r-lg"><p class="text-gray-700 italic">$1</p></blockquote>')
-      // Converte listas não ordenadas
-      .replace(/^- (.+)$/gm, '<li class="mb-2 text-gray-700 leading-relaxed">$1</li>')
-      // Converte listas ordenadas
-      .replace(/^\d+\. (.+)$/gm, '<li class="mb-2 text-gray-700 leading-relaxed">$1</li>')
-      // Converte quebras de linha
-      .replace(/\n\n/g, '</p><p class="mb-6 text-gray-700 leading-relaxed text-lg">')
-      // Wrap parágrafos
-      .replace(/^([^<].*)$/gm, '<p class="mb-6 text-gray-700 leading-relaxed text-lg">$1</p>')
-      // Limpa tags vazias
-      .replace(/<p class="[^"]*"><\/p>/g, '');
+      .replace(/## (.*$)/gim, '<h2 class="text-2xl font-bold text-gray-900 mb-4 mt-6">$1</h2>')
+      .replace(/### (.*$)/gim, '<h3 class="text-xl font-semibold text-gray-800 mb-3 mt-5">$1</h3>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+      .replace(/^- (.*$)/gim, '<li class="ml-4 mb-1">• $1</li>')
+      .replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-blue-500 pl-4 my-4 italic text-gray-700 bg-blue-50 py-2">$1</blockquote>')
+      .replace(/\n\n/g, '</p><p class="mb-4">')
+      .replace(/^\n/, '<p class="mb-4">')
+      + '</p>';
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-8 py-10">
-      <div className="mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-bold text-gray-900 leading-tight">
-              {currentTopic.title}
-            </h1>
-            <button
-              onClick={handleToggleComplete}
-              className="text-gray-400 hover:text-green-600 transition-colors ml-3"
-            >
-              {currentTopic.completed ? (
-                <CheckCircle2 className="w-7 h-7 text-green-600" />
-              ) : (
-                <Circle className="w-7 h-7" />
-              )}
-            </button>
-          </div>
-          
-          {currentTopic.questions && currentTopic.questions.length > 0 && (
-            <Button
-              onClick={() => setShowQuestions(!showQuestions)}
-              variant="outline"
-              className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300"
-            >
-              <Target className="w-4 h-4" />
-              {showQuestions ? 'Ocultar' : 'Ver'} Questões ({currentTopic.questions.length})
-            </Button>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-3 mb-8">
-          <Badge variant={currentTopic.completed ? "default" : "secondary"} className="px-3 py-1">
-            {currentTopic.completed ? 'Concluído' : 'Em andamento'}
-          </Badge>
-          {currentTopic.questions && (
-            <Badge variant="outline" className="px-3 py-1">
-              {currentTopic.questions.length} questão(ões)
+    <div className="max-w-4xl mx-auto p-6">
+      {/* Cabeçalho do tópico */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <h1 className="text-3xl font-bold text-gray-900">
+            {currentTopic.title}
+          </h1>
+          {currentTopic.completed && (
+            <Badge className="bg-green-100 text-green-800">
+              Concluído
             </Badge>
           )}
         </div>
       </div>
 
-      <article className="prose prose-lg max-w-none">
+      {/* Conteúdo do tópico */}
+      <Card className="p-8 mb-8">
         <div 
-          className="text-content"
+          className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
           dangerouslySetInnerHTML={{ 
-            __html: formatContent(currentTopic.content)
-          }}
-          style={{
-            lineHeight: '1.8',
-            fontSize: '18px',
-            fontFamily: 'system-ui, -apple-system, sans-serif'
+            __html: formatContent(currentTopic.content) 
           }}
         />
-      </article>
+      </Card>
 
-      {showQuestions && currentTopic.questions && currentTopic.questions.length > 0 && (
-        <Card className="mt-16 p-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="bg-blue-600 rounded-lg p-2">
-              <Target className="w-6 h-6 text-white" />
-            </div>
+      {/* Seção de questões */}
+      {currentTopic.questions && currentTopic.questions.length > 0 && (
+        <div id="questions-section" className="space-y-6">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              Questões de Concurso
+              Questões de Fixação
             </h2>
+            <Badge variant="outline" className="text-sm">
+              {currentTopic.questions.length} questão(ões)
+            </Badge>
           </div>
           
-          <div className="space-y-8">
-            {currentTopic.questions.map((question, index) => (
-              <QuestionBlock
-                key={question.id}
-                question={question}
-                questionNumber={index + 1}
-              />
-            ))}
-          </div>
-        </Card>
+          {currentTopic.questions.map((question, index) => (
+            <QuestionBlock
+              key={question.id}
+              question={question}
+              questionNumber={index + 1}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
