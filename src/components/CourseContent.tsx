@@ -26,22 +26,47 @@ export function CourseContent() {
     updateTopicProgress(currentTopic.id, !currentTopic.completed);
   };
 
+  // Função para formatar o conteúdo removendo markdown e aplicando formatação HTML limpa
+  const formatContent = (content: string) => {
+    return content
+      // Remove markdown headers e converte para HTML
+      .replace(/^### (.+)$/gm, '<h3 class="text-xl font-semibold text-gray-800 mt-8 mb-4 leading-tight">$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2 class="text-2xl font-bold text-gray-900 mt-10 mb-6 leading-tight">$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1 class="text-3xl font-bold text-gray-900 mt-12 mb-8 leading-tight">$1</h1>')
+      // Remove markdown bold e aplica formatação
+      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+      // Remove markdown italic
+      .replace(/\*(.+?)\*/g, '<em class="italic text-gray-700">$1</em>')
+      // Converte blockquotes
+      .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-blue-400 pl-6 py-2 my-6 bg-blue-50 rounded-r-lg"><p class="text-gray-700 italic">$1</p></blockquote>')
+      // Converte listas não ordenadas
+      .replace(/^- (.+)$/gm, '<li class="mb-2 text-gray-700 leading-relaxed">$1</li>')
+      // Converte listas ordenadas
+      .replace(/^\d+\. (.+)$/gm, '<li class="mb-2 text-gray-700 leading-relaxed">$1</li>')
+      // Converte quebras de linha
+      .replace(/\n\n/g, '</p><p class="mb-6 text-gray-700 leading-relaxed text-lg">')
+      // Wrap parágrafos
+      .replace(/^([^<].*)$/gm, '<p class="mb-6 text-gray-700 leading-relaxed text-lg">$1</p>')
+      // Limpa tags vazias
+      .replace(/<p class="[^"]*"><\/p>/g, '');
+  };
+
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+    <div className="max-w-4xl mx-auto px-8 py-10">
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900 leading-tight">
+            <h1 className="text-4xl font-bold text-gray-900 leading-tight">
               {currentTopic.title}
             </h1>
             <button
               onClick={handleToggleComplete}
-              className="text-gray-400 hover:text-green-600 transition-colors"
+              className="text-gray-400 hover:text-green-600 transition-colors ml-3"
             >
               {currentTopic.completed ? (
-                <CheckCircle2 className="w-6 h-6 text-green-600" />
+                <CheckCircle2 className="w-7 h-7 text-green-600" />
               ) : (
-                <Circle className="w-6 h-6" />
+                <Circle className="w-7 h-7" />
               )}
             </button>
           </div>
@@ -50,7 +75,7 @@ export function CourseContent() {
             <Button
               onClick={() => setShowQuestions(!showQuestions)}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300"
             >
               <Target className="w-4 h-4" />
               {showQuestions ? 'Ocultar' : 'Ver'} Questões ({currentTopic.questions.length})
@@ -58,12 +83,12 @@ export function CourseContent() {
           )}
         </div>
         
-        <div className="flex items-center gap-2 mb-6">
-          <Badge variant={currentTopic.completed ? "default" : "secondary"}>
+        <div className="flex items-center gap-3 mb-8">
+          <Badge variant={currentTopic.completed ? "default" : "secondary"} className="px-3 py-1">
             {currentTopic.completed ? 'Concluído' : 'Em andamento'}
           </Badge>
           {currentTopic.questions && (
-            <Badge variant="outline">
+            <Badge variant="outline" className="px-3 py-1">
               {currentTopic.questions.length} questão(ões)
             </Badge>
           )}
@@ -72,23 +97,30 @@ export function CourseContent() {
 
       <article className="prose prose-lg max-w-none">
         <div 
-          className="text-gray-800 leading-relaxed"
+          className="text-content"
           dangerouslySetInnerHTML={{ 
-            __html: currentTopic.content.replace(/\n/g, '<br />').replace(/#+\s(.+)/g, '<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">$1</h2>').replace(/###\s(.+)/g, '<h3 class="text-xl font-semibold mt-6 mb-3 text-gray-800">$1</h3>').replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>').replace(/> (.+)/g, '<blockquote class="border-l-4 border-blue-500 pl-4 italic text-gray-700 my-4">$1</blockquote>').replace(/- (.+)/g, '<li class="mb-2">$1</li>').replace(/^\d+\.\s(.+)/gm, '<li class="mb-2">$1</li>')
+            __html: formatContent(currentTopic.content)
+          }}
+          style={{
+            lineHeight: '1.8',
+            fontSize: '18px',
+            fontFamily: 'system-ui, -apple-system, sans-serif'
           }}
         />
       </article>
 
       {showQuestions && currentTopic.questions && currentTopic.questions.length > 0 && (
-        <Card className="mt-12 p-6 bg-blue-50 border-blue-200">
-          <div className="flex items-center gap-2 mb-6">
-            <Target className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">
+        <Card className="mt-16 p-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-lg">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="bg-blue-600 rounded-lg p-2">
+              <Target className="w-6 h-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
               Questões de Concurso
             </h2>
           </div>
           
-          <div className="space-y-6">
+          <div className="space-y-8">
             {currentTopic.questions.map((question, index) => (
               <QuestionBlock
                 key={question.id}

@@ -1,9 +1,14 @@
 
 import React from 'react';
 import { CourseLayout } from '@/components/CourseLayout';
+import { CourseProvider } from '@/contexts/CourseContext';
 
 const Index = () => {
-  return <CourseLayout />;
+  return (
+    <CourseProvider>
+      <CourseLayout />
+    </CourseProvider>
+  );
 };
 
 export default Index;

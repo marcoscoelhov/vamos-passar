@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -8,13 +8,14 @@ import {
 } from '@/components/ui/sidebar';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Circle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
+import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
 export function CourseSidebar() {
   const { currentCourse, currentTopic, setCurrentTopic, updateTopicProgress } = useCourse();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { state, toggleSidebar } = useSidebar();
 
   if (!currentCourse) return null;
 
@@ -47,7 +48,18 @@ export function CourseSidebar() {
           <h2 className="font-semibold text-gray-900 truncate">
             {currentCourse.title}
           </h2>
-          <SidebarTrigger onClick={() => setIsCollapsed(!isCollapsed)} />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleSidebar}
+            className="h-8 w-8 p-0 hover:bg-gray-100"
+          >
+            {state === 'expanded' ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <PanelLeftOpen className="h-4 w-4" />
+            )}
+          </Button>
         </div>
         
         <div className="mt-4">
