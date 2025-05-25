@@ -1,12 +1,18 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Course, Topic } from '@/types/course';
+import { Course, Topic, Question, User } from '@/types/course';
 
 interface CourseContextType {
   currentCourse: Course | null;
   currentTopic: Topic | null;
   setCurrentTopic: (topic: Topic) => void;
   updateTopicProgress: (topicId: string, completed: boolean) => void;
+  addQuestion: (topicId: string, question: Question) => void;
+  addTopic: (courseId: string, topic: Omit<Topic, 'id'>) => void;
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => boolean;
+  logout: () => void;
 }
 
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
@@ -22,6 +28,14 @@ export function useCourse() {
 interface CourseProviderProps {
   children: ReactNode;
 }
+
+// Mock admin user
+const mockAdmin: User = {
+  id: '1',
+  name: 'Administrador',
+  email: 'admin@vamospassar.com',
+  isAdmin: true,
+};
 
 // Dados de exemplo mais ricos
 const mockCourse: Course = {
@@ -265,19 +279,71 @@ O território nacional divide-se em:
 };
 
 export function CourseProvider({ children }: CourseProviderProps) {
-  const [currentCourse] = useState<Course>(mockCourse);
+  const [currentCourse, setCurrentCourse] = useState<Course>(mockCourse);
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(mockCourse.topics[0]);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const login = (email: string, password: string): boolean => {
+    // Simple mock authentication
+    if (email === 'admin' && password === 'admin') {
+      setUser(mockAdmin);
+      setIsAuthenticated(true);
+      return true;
+    }
+    return false;
+  };
+
+  const logout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+  };
 
   const updateTopicProgress = (topicId: string, completed: boolean) => {
     if (currentCourse) {
-      const topic = currentCourse.topics.find(t => t.id === topicId);
-      if (topic) {
-        topic.completed = completed;
-        
-        // Recalcular progresso
-        const completedTopics = currentCourse.topics.filter(t => t.completed).length;
-        currentCourse.progress = (completedTopics / currentCourse.topics.length) * 100;
-      }
+      setCurrentCourse(prevCourse => {
+        const updatedCourse = { ...prevCourse };
+        const topic = updatedCourse.topics.find(t => t.id === topicId);
+        if (topic) {
+          topic.completed = completed;
+          
+          // Recalcular progresso
+          const completedTopics = updatedCourse.topics.filter(t => t.completed).length;
+          updatedCourse.progress = (completedTopics / updatedCourse.topics.length) * 100;
+        }
+        return updatedCourse;
+      });
+    }
+  };
+
+  const addQuestion = (topicId: string, question: Question) => {
+    if (currentCourse) {
+      setCurrentCourse(prevCourse => {
+        const updatedCourse = { ...prevCourse };
+        const topic = updatedCourse.topics.find(t => t.id === topicId);
+        if (topic) {
+          if (!topic.questions) {
+            topic.questions = [];
+          }
+          topic.questions.push(question);
+        }
+        return updatedCourse;
+      });
+    }
+  };
+
+  const addTopic = (courseId: string, topicData: Omit<Topic, 'id'>) => {
+    if (currentCourse && currentCourse.id === courseId) {
+      const newTopic: Topic = {
+        ...topicData,
+        id: Date.now().toString(),
+      };
+      
+      setCurrentCourse(prevCourse => {
+        const updatedCourse = { ...prevCourse };
+        updatedCourse.topics.push(newTopic);
+        return updatedCourse;
+      });
     }
   };
 
@@ -286,7 +352,13 @@ export function CourseProvider({ children }: CourseProviderProps) {
       currentCourse,
       currentTopic,
       setCurrentTopic,
-      updateTopicProgress
+      updateTopicProgress,
+      addQuestion,
+      addTopic,
+      user,
+      isAuthenticated,
+      login,
+      logout
     }}>
       {children}
     </CourseContext.Provider>
