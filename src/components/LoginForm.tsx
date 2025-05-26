@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -15,6 +16,7 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -28,9 +30,21 @@ export function LoginForm() {
     setIsLoading(true);
     
     try {
-      await signIn(email, password);
-    } catch (error) {
+      const result = await signIn(email, password);
+      if (!result.success) {
+        toast({
+          title: 'Erro no login',
+          description: result.error || 'Erro desconhecido ao fazer login',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
       console.error('Login error:', error);
+      toast({
+        title: 'Erro no login',
+        description: error.message || 'Erro ao fazer login. Verifique suas credenciais.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -41,9 +55,26 @@ export function LoginForm() {
     setIsLoading(true);
     
     try {
-      await signUp(email, password, name);
-    } catch (error) {
+      const result = await signUp(email, password, name);
+      if (result.success) {
+        toast({
+          title: 'Sucesso!',
+          description: 'Conta criada com sucesso! Você já pode fazer login.',
+        });
+      } else {
+        toast({
+          title: 'Erro no cadastro',
+          description: result.error || 'Erro desconhecido ao criar conta',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
       console.error('SignUp error:', error);
+      toast({
+        title: 'Erro no cadastro',
+        description: error.message || 'Erro ao criar conta. Tente novamente.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }

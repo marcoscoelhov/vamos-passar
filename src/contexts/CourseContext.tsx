@@ -11,7 +11,7 @@ interface CourseContextType {
   currentTopic: Topic | null;
   setCurrentTopic: (topic: Topic) => void;
   updateTopicProgress: (topicId: string, completed: boolean) => void;
-  addQuestion: (topicId: string, question: Omit<Question, 'id' | 'topic_id'>) => Promise<void>;
+  addQuestion: (topicId: string, question: Omit<Question, 'id'>) => Promise<void>;
   addTopic: (courseId: string, topic: { title: string; content: string }) => Promise<void>;
   user: any;
   profile: any;
@@ -47,10 +47,10 @@ export function CourseProvider({ children }: CourseProviderProps) {
 
   // Load first course and its topics when courses are available
   useEffect(() => {
-    if (courses.length > 0 && !currentCourse) {
+    if (courses.length > 0 && !currentCourse && !authLoading) {
       loadCourse(courses[0].id);
     }
-  }, [courses]);
+  }, [courses, authLoading]);
 
   const loadCourse = async (courseId: string) => {
     try {
@@ -139,7 +139,7 @@ export function CourseProvider({ children }: CourseProviderProps) {
     }
   };
 
-  const addQuestion = async (topicId: string, questionData: Omit<Question, 'id' | 'topic_id'>) => {
+  const addQuestion = async (topicId: string, questionData: Omit<Question, 'id'>) => {
     if (!profile?.is_admin) {
       throw new Error('Apenas administradores podem adicionar questões');
     }
@@ -183,8 +183,13 @@ export function CourseProvider({ children }: CourseProviderProps) {
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const result = await signIn(email, password);
-    return result.success;
+    try {
+      const result = await signIn(email, password);
+      return result.success;
+    } catch (error) {
+      console.error('Login error in context:', error);
+      return false;
+    }
   };
 
   const logout = () => {
