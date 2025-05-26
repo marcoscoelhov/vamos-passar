@@ -19,7 +19,7 @@ interface TopicFormProps {
 export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [parentTopicId, setParentTopicId] = useState<string>('');
+  const [parentTopicId, setParentTopicId] = useState<string>('__none__');
   const { addTopic, isLoading } = useTopics();
 
   const allTopics = flattenTopicHierarchy(course.topics);
@@ -34,13 +34,13 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
         course.id,
         { title, content },
         isAdmin,
-        parentTopicId || undefined
+        parentTopicId === '__none__' ? undefined : parentTopicId
       );
 
       // Reset form
       setTitle('');
       setContent('');
-      setParentTopicId('');
+      setParentTopicId('__none__');
       
       onTopicAdded();
     } catch (error) {
@@ -51,7 +51,7 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
   return (
     <Card className="p-6">
       <h3 className="text-lg font-semibold mb-6">
-        Adicionar Novo {parentTopicId ? 'Subtópico' : 'Tópico'}
+        Adicionar Novo {parentTopicId !== '__none__' ? 'Subtópico' : 'Tópico'}
       </h3>
 
       <div className="space-y-4">
@@ -62,7 +62,7 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
               <SelectValue placeholder="Selecione um tópico pai ou deixe vazio para tópico principal" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhum (Tópico Principal)</SelectItem>
+              <SelectItem value="__none__">Nenhum (Tópico Principal)</SelectItem>
               {allTopics.map((topic) => (
                 <SelectItem key={topic.id} value={topic.id}>
                   {'  '.repeat(topic.level)}{topic.title}
@@ -73,12 +73,12 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
         </div>
 
         <div>
-          <Label htmlFor="topic-title">Título do {parentTopicId ? 'Subtópico' : 'Tópico'}</Label>
+          <Label htmlFor="topic-title">Título do {parentTopicId !== '__none__' ? 'Subtópico' : 'Tópico'}</Label>
           <Input
             id="topic-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={`Digite o título do ${parentTopicId ? 'subtópico' : 'tópico'}`}
+            placeholder={`Digite o título do ${parentTopicId !== '__none__' ? 'subtópico' : 'tópico'}`}
             disabled={isLoading}
           />
         </div>
@@ -100,7 +100,7 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
           className="w-full"
           disabled={isLoading || !title || !content}
         >
-          {isLoading ? 'Adicionando...' : `Adicionar ${parentTopicId ? 'Subtópico' : 'Tópico'}`}
+          {isLoading ? 'Adicionando...' : `Adicionar ${parentTopicId !== '__none__' ? 'Subtópico' : 'Tópico'}`}
         </Button>
       </div>
     </Card>
