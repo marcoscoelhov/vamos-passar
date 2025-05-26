@@ -7,6 +7,8 @@ import { useCourse } from '@/contexts/CourseContext';
 import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
+import { LoadingSkeleton } from './LoadingSkeleton';
+import { logger } from '@/utils/logger';
 
 export function Header() {
   const {
@@ -16,8 +18,17 @@ export function Header() {
     isLoading
   } = useCourse();
 
+  const handleLogout = async () => {
+    try {
+      logger.info('User logging out');
+      await logout();
+    } catch (error) {
+      logger.error('Logout error', error);
+    }
+  };
+
   return (
-    <header className="bg-background border-b border-border px-4 py-3">
+    <header className="bg-background border-b border-border px-4 py-3 transition-colors duration-300">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-4">
           <Logo />
@@ -27,34 +38,47 @@ export function Header() {
           <ThemeToggle />
           
           {isLoading ? (
-            <div className="animate-pulse bg-muted h-8 w-20 rounded"></div>
+            <LoadingSkeleton variant="avatar" className="w-32" />
           ) : isAuthenticated ? (
             <>
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">{profile?.name || 'Usuário'}</span>
+                <span className="text-sm text-foreground font-medium">
+                  {profile?.name || 'Usuário'}
+                </span>
                 {profile?.is_admin && (
-                  <Badge variant="secondary" className="text-xs">Admin</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    Admin
+                  </Badge>
                 )}
               </div>
               
               {profile?.is_admin && (
                 <Link to="/admin">
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-2 hover:bg-accent transition-colors"
+                  >
                     <Settings className="w-4 h-4" />
                     Admin
                   </Button>
                 </Link>
               )}
               
-              <Button onClick={logout} variant="ghost" size="sm" className="flex items-center gap-2">
+              <Button 
+                onClick={handleLogout} 
+                variant="ghost" 
+                size="sm" 
+                className="flex items-center gap-2 hover:bg-accent hover:text-destructive transition-colors"
+              >
                 <LogOut className="w-4 h-4" />
                 Sair
               </Button>
             </>
           ) : (
             <Link to="/login">
-              <Button variant="default" size="sm">
+              <Button variant="default" size="sm" className="transition-colors">
                 Entrar
               </Button>
             </Link>

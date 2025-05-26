@@ -62,7 +62,7 @@
     --secondary-foreground: 0 0% 98%;
 
     --muted: 240 3.7% 15.9%;
-    --muted-foreground: 0 0% 80%;
+    --muted-foreground: 0 0% 85%;
 
     --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
@@ -75,7 +75,7 @@
     --ring: 240 4.9% 83.9%;
 
     --sidebar-background: 240 10% 5%;
-    --sidebar-foreground: 0 0% 95%;
+    --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 0 0% 98%;
     --sidebar-primary-foreground: 240 5.9% 10%;
     --sidebar-accent: 240 3.7% 15.9%;
@@ -91,6 +91,21 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
+  }
+}
+
+/* Garantir contraste adequado para links e elementos interativos */
+@layer components {
+  .dark .text-muted-foreground {
+    color: hsl(0 0% 85%);
+  }
+  
+  .dark .hover\:text-foreground:hover {
+    color: hsl(0 0% 98%);
+  }
+  
+  .dark [data-sidebar] {
+    color: hsl(0 0% 98%);
   }
 }
