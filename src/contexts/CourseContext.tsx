@@ -3,7 +3,9 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { useAuth } from '@/hooks/useAuth';
 import { useCourses } from '@/hooks/useCourses';
 import { useUserProgress } from '@/hooks/useUserProgress';
-import { Question, Topic, Course, DbQuestion, DbTopic } from '@/types/course';
+import { useQuestions } from '@/hooks/useQuestions';
+import { useTopics } from '@/hooks/useTopics';
+import { Question, Topic, Course, DbQuestion, DbTopic, Profile } from '@/types/course';
 import { mapDbQuestionToQuestion, mapDbTopicToTopic } from '@/utils/dataMappers';
 
 interface CourseContextType {
@@ -14,11 +16,12 @@ interface CourseContextType {
   addQuestion: (topicId: string, question: Omit<Question, 'id'>) => Promise<void>;
   addTopic: (courseId: string, topic: { title: string; content: string }) => Promise<void>;
   user: any;
-  profile: any;
+  profile: Profile | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  refreshCourse: () => void;
 }
 
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
@@ -37,8 +40,10 @@ interface CourseProviderProps {
 
 export function CourseProvider({ children }: CourseProviderProps) {
   const { user, profile, isAuthenticated, signIn, signOut, isLoading: authLoading } = useAuth();
-  const { courses, topics, questions, isLoading: coursesLoading, fetchTopics, fetchQuestions, addTopic: addTopicToDb, addQuestion: addQuestionToDb } = useCourses();
-  const { markTopicCompleted, saveQuestionAttempt, isTopicCompleted } = useUserProgress(user?.id);
+  const { courses, topics, questions, isLoading: coursesLoading, fetchTopics, fetchQuestions } = useCourses();
+  const { markTopicCompleted, isTopicCompleted } = useUserProgress(user?.id);
+  const { addQuestion: addQuestionHook } = useQuestions();
+  const { addTopic: addTopicHook } = useTopics();
 
   const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
@@ -93,6 +98,12 @@ export function CourseProvider({ children }: CourseProviderProps) {
     }
   };
 
+  const refreshCourse = () => {
+    if (currentCourse) {
+      loadCourse(currentCourse.id);
+    }
+  };
+
   const handleSetCurrentTopic = async (topic: Topic) => {
     // Load questions for this topic if not already loaded
     if (!topic.questions || topic.questions.length === 0) {
@@ -140,46 +151,15 @@ export function CourseProvider({ children }: CourseProviderProps) {
   };
 
   const addQuestion = async (topicId: string, questionData: Omit<Question, 'id'>) => {
-    if (!profile?.is_admin) {
-      throw new Error('Apenas administradores podem adicionar questões');
-    }
-
-    try {
-      await addQuestionToDb(
-        topicId,
-        questionData.question,
-        questionData.options,
-        questionData.correctAnswer,
-        questionData.explanation,
-        questionData.difficulty
-      );
-
-      // Refresh current topic if it's the one being updated
-      if (currentTopic?.id === topicId) {
-        const dbQuestions: DbQuestion[] = await fetchQuestions(topicId);
-        const mappedQuestions = dbQuestions.map(mapDbQuestionToQuestion);
-        setCurrentTopic(prev => prev ? { ...prev, questions: mappedQuestions } : null);
-      }
-    } catch (error) {
-      console.error('Error adding question:', error);
-      throw error;
-    }
+    const isAdmin = profile?.is_admin || false;
+    await addQuestionHook(topicId, questionData, isAdmin);
+    refreshCourse();
   };
 
   const addTopic = async (courseId: string, topicData: { title: string; content: string }) => {
-    if (!profile?.is_admin) {
-      throw new Error('Apenas administradores podem adicionar tópicos');
-    }
-
-    try {
-      await addTopicToDb(courseId, topicData.title, topicData.content);
-      
-      // Reload the course to get updated topics
-      await loadCourse(courseId);
-    } catch (error) {
-      console.error('Error adding topic:', error);
-      throw error;
-    }
+    const isAdmin = profile?.is_admin || false;
+    await addTopicHook(courseId, topicData, isAdmin);
+    refreshCourse();
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -212,6 +192,7 @@ export function CourseProvider({ children }: CourseProviderProps) {
       login,
       logout,
       isLoading,
+      refreshCourse,
     }}>
       {children}
     </CourseContext.Provider>

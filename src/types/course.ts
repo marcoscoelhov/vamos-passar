@@ -55,3 +55,23 @@ export interface DbTopic {
   created_at: string;
   updated_at: string;
 }
+
+// Additional types for better type safety
+export interface Profile {
+  id: string;
+  name: string;
+  email: string;
+  is_admin: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserProgress {
+  id: string;
+  user_id: string;
+  topic_id: string;
+  completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
