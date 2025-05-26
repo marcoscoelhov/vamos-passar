@@ -2,6 +2,11 @@
 import { Question, Topic, DbQuestion, DbTopic } from '@/types/course';
 
 export const mapDbQuestionToQuestion = (dbQuestion: DbQuestion): Question => {
+  // Ensure difficulty is one of the allowed values, default to 'medium' if invalid
+  const validDifficulty = ['easy', 'medium', 'hard'].includes(dbQuestion.difficulty || '') 
+    ? (dbQuestion.difficulty as 'easy' | 'medium' | 'hard')
+    : 'medium';
+
   return {
     id: dbQuestion.id,
     question: dbQuestion.question,
@@ -9,7 +14,7 @@ export const mapDbQuestionToQuestion = (dbQuestion: DbQuestion): Question => {
     correctAnswer: dbQuestion.correct_answer,
     explanation: dbQuestion.explanation,
     type: 'multiple-choice' as const,
-    difficulty: dbQuestion.difficulty,
+    difficulty: validDifficulty,
   };
 };
 

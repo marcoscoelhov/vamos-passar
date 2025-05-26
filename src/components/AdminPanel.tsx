@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,9 +58,10 @@ export function AdminPanel() {
       await addQuestion(selectedTopicId, {
         question: questionText,
         options: options.filter(opt => opt.trim()),
-        correct_answer: correctAnswer,
+        correctAnswer: correctAnswer,
         explanation: explanation,
         difficulty: difficulty,
+        type: 'multiple-choice' as const,
       });
       
       // Reset form

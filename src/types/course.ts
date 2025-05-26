@@ -36,12 +36,12 @@ export interface User {
 // Database types
 export interface DbQuestion {
   id: string;
-  topic_id: string;
+  topic_id: string | null;
   question: string;
   options: any; // Json from Supabase
   correct_answer: number;
   explanation: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: string | null;
   created_at: string;
   updated_at: string;
 }
