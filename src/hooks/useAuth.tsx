@@ -3,13 +3,7 @@ import { useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface Profile {
-  id: string;
-  name: string;
-  email: string;
-  is_admin: boolean;
-}
+import { Profile } from '@/types/course';
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
