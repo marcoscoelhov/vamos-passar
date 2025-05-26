@@ -6,6 +6,7 @@ import { useCourse } from '@/contexts/CourseContext';
 import { AdminOverview } from './admin/AdminOverview';
 import { TopicForm } from './admin/TopicForm';
 import { QuestionForm } from './admin/QuestionForm';
+import { BulkContentButton } from './admin/BulkContentButton';
 
 export function AdminPanel() {
   const { currentCourse, profile } = useCourse();
@@ -51,6 +52,14 @@ export function AdminPanel() {
               <PlusCircle className="w-5 h-5" />
               <h2 className="text-xl font-semibold">Gerenciar Tópicos</h2>
             </div>
+            
+            {isAdmin && (
+              <BulkContentButton 
+                course={currentCourse} 
+                onContentAdded={handleContentAdded}
+              />
+            )}
+            
             <TopicForm 
               course={currentCourse} 
               isAdmin={isAdmin}
