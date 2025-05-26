@@ -10,16 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, BookOpen, Target, Users, Plus, Minus } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
-import { Question } from '@/types/course';
-import { useToast } from '@/hooks/use-toast';
 
 export function AdminPanel() {
   const { currentCourse, addQuestion, addTopic } = useCourse();
-  const { toast } = useToast();
 
   // Estados para criar novo tópico
   const [newTopicTitle, setNewTopicTitle] = useState('');
   const [newTopicContent, setNewTopicContent] = useState('');
+  const [isAddingTopic, setIsAddingTopic] = useState(false);
 
   // Estados para criar nova questão
   const [selectedTopicId, setSelectedTopicId] = useState('');
@@ -28,68 +26,56 @@ export function AdminPanel() {
   const [correctAnswer, setCorrectAnswer] = useState(0);
   const [explanation, setExplanation] = useState('');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [isAddingQuestion, setIsAddingQuestion] = useState(false);
 
-  const handleAddTopic = () => {
+  const handleAddTopic = async () => {
     if (!currentCourse || !newTopicTitle || !newTopicContent) {
-      toast({
-        title: 'Erro',
-        description: 'Preencha todos os campos obrigatórios.',
-        variant: 'destructive',
-      });
       return;
     }
 
-    const newTopic = {
-      title: newTopicTitle,
-      content: newTopicContent,
-      completed: false,
-      order: currentCourse.topics.length + 1,
-    };
-
-    addTopic(currentCourse.id, newTopic);
-    setNewTopicTitle('');
-    setNewTopicContent('');
-    
-    toast({
-      title: 'Sucesso',
-      description: 'Tópico adicionado com sucesso!',
-    });
+    setIsAddingTopic(true);
+    try {
+      await addTopic(currentCourse.id, {
+        title: newTopicTitle,
+        content: newTopicContent,
+      });
+      
+      setNewTopicTitle('');
+      setNewTopicContent('');
+    } catch (error) {
+      console.error('Error adding topic:', error);
+    } finally {
+      setIsAddingTopic(false);
+    }
   };
 
-  const handleAddQuestion = () => {
+  const handleAddQuestion = async () => {
     if (!selectedTopicId || !questionText || options.some(opt => !opt.trim()) || !explanation) {
-      toast({
-        title: 'Erro',
-        description: 'Preencha todos os campos obrigatórios.',
-        variant: 'destructive',
-      });
       return;
     }
 
-    const newQuestion: Question = {
-      id: Date.now().toString(),
-      question: questionText,
-      options: options.filter(opt => opt.trim()),
-      correctAnswer: correctAnswer,
-      explanation: explanation,
-      type: 'multiple-choice',
-      difficulty: difficulty,
-    };
-
-    addQuestion(selectedTopicId, newQuestion);
-    
-    // Reset form
-    setSelectedTopicId('');
-    setQuestionText('');
-    setOptions(['', '', '', '']);
-    setCorrectAnswer(0);
-    setExplanation('');
-    setDifficulty('medium');
-    
-    toast({
-      title: 'Sucesso',
-      description: 'Questão adicionada com sucesso!',
-    });
+    setIsAddingQuestion(true);
+    try {
+      await addQuestion(selectedTopicId, {
+        question: questionText,
+        options: options.filter(opt => opt.trim()),
+        correct_answer: correctAnswer,
+        explanation: explanation,
+        difficulty: difficulty,
+      });
+      
+      // Reset form
+      setSelectedTopicId('');
+      setQuestionText('');
+      setOptions(['', '', '', '']);
+      setCorrectAnswer(0);
+      setExplanation('');
+      setDifficulty('medium');
+    } catch (error) {
+      console.error('Error adding question:', error);
+    } finally {
+      setIsAddingQuestion(false);
+    }
   };
 
   const handleOptionChange = (index: number, value: string) => {
@@ -214,6 +200,7 @@ export function AdminPanel() {
                     value={newTopicTitle}
                     onChange={(e) => setNewTopicTitle(e.target.value)}
                     placeholder="Digite o título do tópico"
+                    disabled={isAddingTopic}
                   />
                 </div>
 
@@ -225,11 +212,16 @@ export function AdminPanel() {
                     onChange={(e) => setNewTopicContent(e.target.value)}
                     placeholder="Digite o conteúdo do tópico usando markdown..."
                     rows={10}
+                    disabled={isAddingTopic}
                   />
                 </div>
 
-                <Button onClick={handleAddTopic} className="w-full">
-                  Adicionar Tópico
+                <Button 
+                  onClick={handleAddTopic} 
+                  className="w-full"
+                  disabled={isAddingTopic || !newTopicTitle || !newTopicContent}
+                >
+                  {isAddingTopic ? 'Adicionando...' : 'Adicionar Tópico'}
                 </Button>
               </div>
             </Card>
@@ -245,7 +237,7 @@ export function AdminPanel() {
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="topic-select">Tópico</Label>
-                  <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
+                  <Select value={selectedTopicId} onValueChange={setSelectedTopicId} disabled={isAddingQuestion}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um tópico" />
                     </SelectTrigger>
@@ -267,6 +259,7 @@ export function AdminPanel() {
                     onChange={(e) => setQuestionText(e.target.value)}
                     placeholder="Digite o enunciado da questão..."
                     rows={3}
+                    disabled={isAddingQuestion}
                   />
                 </div>
 
@@ -279,7 +272,7 @@ export function AdminPanel() {
                         variant="outline"
                         size="sm"
                         onClick={addOption}
-                        disabled={options.length >= 6}
+                        disabled={options.length >= 6 || isAddingQuestion}
                       >
                         <Plus className="w-4 h-4" />
                       </Button>
@@ -293,12 +286,14 @@ export function AdminPanel() {
                           onChange={(e) => handleOptionChange(index, e.target.value)}
                           placeholder={`Alternativa ${String.fromCharCode(65 + index)}`}
                           className="flex-1"
+                          disabled={isAddingQuestion}
                         />
                         <Button
                           type="button"
                           variant={index === correctAnswer ? "default" : "outline"}
                           size="sm"
                           onClick={() => setCorrectAnswer(index)}
+                          disabled={isAddingQuestion}
                         >
                           ✓
                         </Button>
@@ -307,7 +302,7 @@ export function AdminPanel() {
                           variant="outline"
                           size="sm"
                           onClick={() => removeOption(index)}
-                          disabled={options.length <= 2}
+                          disabled={options.length <= 2 || isAddingQuestion}
                         >
                           <Minus className="w-4 h-4" />
                         </Button>
@@ -318,7 +313,11 @@ export function AdminPanel() {
 
                 <div>
                   <Label htmlFor="difficulty">Dificuldade</Label>
-                  <Select value={difficulty} onValueChange={(value: 'easy' | 'medium' | 'hard') => setDifficulty(value)}>
+                  <Select 
+                    value={difficulty} 
+                    onValueChange={(value: 'easy' | 'medium' | 'hard') => setDifficulty(value)}
+                    disabled={isAddingQuestion}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -338,11 +337,22 @@ export function AdminPanel() {
                     onChange={(e) => setExplanation(e.target.value)}
                     placeholder="Digite a explicação da questão..."
                     rows={3}
+                    disabled={isAddingQuestion}
                   />
                 </div>
 
-                <Button onClick={handleAddQuestion} className="w-full">
-                  Adicionar Questão
+                <Button 
+                  onClick={handleAddQuestion} 
+                  className="w-full"
+                  disabled={
+                    isAddingQuestion ||
+                    !selectedTopicId ||
+                    !questionText ||
+                    options.some(opt => !opt.trim()) ||
+                    !explanation
+                  }
+                >
+                  {isAddingQuestion ? 'Adicionando...' : 'Adicionar Questão'}
                 </Button>
               </div>
             </Card>
