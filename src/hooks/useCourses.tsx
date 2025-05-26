@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { DbQuestion, DbTopic } from '@/types/course';
 
 interface Course {
   id: string;
@@ -11,32 +11,10 @@ interface Course {
   updated_at: string;
 }
 
-interface Topic {
-  id: string;
-  course_id: string;
-  title: string;
-  content: string;
-  order_index: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Question {
-  id: string;
-  topic_id: string;
-  question: string;
-  options: string[];
-  correct_answer: number;
-  explanation: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  created_at: string;
-  updated_at: string;
-}
-
 export function useCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [topics, setTopics] = useState<DbTopic[]>([]);
+  const [questions, setQuestions] = useState<DbQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 

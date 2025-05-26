@@ -3,34 +3,8 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { useAuth } from '@/hooks/useAuth';
 import { useCourses } from '@/hooks/useCourses';
 import { useUserProgress } from '@/hooks/useUserProgress';
-
-interface Topic {
-  id: string;
-  course_id: string;
-  title: string;
-  content: string;
-  order_index: number;
-  questions?: Question[];
-  completed?: boolean;
-}
-
-interface Question {
-  id: string;
-  topic_id: string;
-  question: string;
-  options: string[];
-  correct_answer: number;
-  explanation: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-}
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  topics: Topic[];
-  progress: number;
-}
+import { Question, Topic, Course, DbQuestion, DbTopic } from '@/types/course';
+import { mapDbQuestionToQuestion, mapDbTopicToTopic } from '@/utils/dataMappers';
 
 interface CourseContextType {
   currentCourse: Course | null;
@@ -83,19 +57,16 @@ export function CourseProvider({ children }: CourseProviderProps) {
       const course = courses.find(c => c.id === courseId);
       if (!course) return;
 
-      const courseTopics = await fetchTopics(courseId);
+      const courseTopics: DbTopic[] = await fetchTopics(courseId);
       
       // Load questions for each topic and check completion status
       const topicsWithQuestions = await Promise.all(
-        courseTopics.map(async (topic) => {
-          const topicQuestions = await fetchQuestions(topic.id);
-          const completed = user ? isTopicCompleted(topic.id) : false;
+        courseTopics.map(async (dbTopic) => {
+          const dbQuestions: DbQuestion[] = await fetchQuestions(dbTopic.id);
+          const mappedQuestions = dbQuestions.map(mapDbQuestionToQuestion);
+          const completed = user ? isTopicCompleted(dbTopic.id) : false;
           
-          return {
-            ...topic,
-            questions: topicQuestions,
-            completed,
-          };
+          return mapDbTopicToTopic(dbTopic, mappedQuestions, completed);
         })
       );
 
@@ -125,8 +96,9 @@ export function CourseProvider({ children }: CourseProviderProps) {
   const handleSetCurrentTopic = async (topic: Topic) => {
     // Load questions for this topic if not already loaded
     if (!topic.questions || topic.questions.length === 0) {
-      const topicQuestions = await fetchQuestions(topic.id);
-      topic.questions = topicQuestions;
+      const dbQuestions: DbQuestion[] = await fetchQuestions(topic.id);
+      const mappedQuestions = dbQuestions.map(mapDbQuestionToQuestion);
+      topic.questions = mappedQuestions;
     }
     
     setCurrentTopic(topic);
@@ -177,15 +149,16 @@ export function CourseProvider({ children }: CourseProviderProps) {
         topicId,
         questionData.question,
         questionData.options,
-        questionData.correct_answer,
+        questionData.correctAnswer,
         questionData.explanation,
         questionData.difficulty
       );
 
       // Refresh current topic if it's the one being updated
       if (currentTopic?.id === topicId) {
-        const updatedQuestions = await fetchQuestions(topicId);
-        setCurrentTopic(prev => prev ? { ...prev, questions: updatedQuestions } : null);
+        const dbQuestions: DbQuestion[] = await fetchQuestions(topicId);
+        const mappedQuestions = dbQuestions.map(mapDbQuestionToQuestion);
+        setCurrentTopic(prev => prev ? { ...prev, questions: mappedQuestions } : null);
       }
     } catch (error) {
       console.error('Error adding question:', error);

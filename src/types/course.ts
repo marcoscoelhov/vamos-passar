@@ -32,3 +32,26 @@ export interface User {
   email: string;
   isAdmin: boolean;
 }
+
+// Database types
+export interface DbQuestion {
+  id: string;
+  topic_id: string;
+  question: string;
+  options: any; // Json from Supabase
+  correct_answer: number;
+  explanation: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbTopic {
+  id: string;
+  course_id: string;
+  title: string;
+  content: string;
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+}
