@@ -24,7 +24,64 @@ export const mapDbTopicToTopic = (dbTopic: DbTopic, questions: Question[] = [], 
     title: dbTopic.title,
     content: dbTopic.content,
     order: dbTopic.order_index,
+    parentTopicId: dbTopic.parent_topic_id || undefined,
+    level: dbTopic.level,
     questions,
     completed,
+    children: [],
   };
+};
+
+export const buildTopicHierarchy = (topics: Topic[]): Topic[] => {
+  const topicMap = new Map<string, Topic>();
+  const rootTopics: Topic[] = [];
+
+  // Create a map of all topics
+  topics.forEach(topic => {
+    topicMap.set(topic.id, { ...topic, children: [] });
+  });
+
+  // Build the hierarchy
+  topics.forEach(topic => {
+    const mappedTopic = topicMap.get(topic.id)!;
+    
+    if (topic.parentTopicId) {
+      const parent = topicMap.get(topic.parentTopicId);
+      if (parent) {
+        parent.children!.push(mappedTopic);
+      }
+    } else {
+      rootTopics.push(mappedTopic);
+    }
+  });
+
+  // Sort children by order
+  const sortChildren = (topics: Topic[]) => {
+    topics.sort((a, b) => a.order - b.order);
+    topics.forEach(topic => {
+      if (topic.children && topic.children.length > 0) {
+        sortChildren(topic.children);
+      }
+    });
+  };
+
+  sortChildren(rootTopics);
+  
+  return rootTopics;
+};
+
+export const flattenTopicHierarchy = (topics: Topic[]): Topic[] => {
+  const flattened: Topic[] = [];
+  
+  const addTopicsRecursively = (topicList: Topic[]) => {
+    topicList.forEach(topic => {
+      flattened.push(topic);
+      if (topic.children && topic.children.length > 0) {
+        addTopicsRecursively(topic.children);
+      }
+    });
+  };
+  
+  addTopicsRecursively(topics);
+  return flattened;
 };

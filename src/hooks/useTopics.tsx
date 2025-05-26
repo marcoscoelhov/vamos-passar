@@ -11,7 +11,8 @@ export function useTopics() {
   const addTopic = async (
     courseId: string,
     topicData: { title: string; content: string },
-    isAdmin: boolean
+    isAdmin: boolean,
+    parentTopicId?: string
   ) => {
     if (!isAdmin) {
       throw new Error('Apenas administradores podem adicionar tópicos');
@@ -19,11 +20,11 @@ export function useTopics() {
 
     setIsLoading(true);
     try {
-      await addTopicToDb(courseId, topicData.title, topicData.content);
+      await addTopicToDb(courseId, topicData.title, topicData.content, parentTopicId);
       
       toast({
         title: 'Tópico adicionado',
-        description: 'O tópico foi adicionado com sucesso.',
+        description: parentTopicId ? 'O subtópico foi adicionado com sucesso.' : 'O tópico foi adicionado com sucesso.',
       });
 
       return true;

@@ -110,7 +110,9 @@ export type Database = {
           course_id: string | null
           created_at: string
           id: string
+          level: number
           order_index: number
+          parent_topic_id: string | null
           title: string
           updated_at: string
         }
@@ -119,7 +121,9 @@ export type Database = {
           course_id?: string | null
           created_at?: string
           id?: string
+          level?: number
           order_index: number
+          parent_topic_id?: string | null
           title: string
           updated_at?: string
         }
@@ -128,7 +132,9 @@ export type Database = {
           course_id?: string | null
           created_at?: string
           id?: string
+          level?: number
           order_index?: number
+          parent_topic_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -138,6 +144,63 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "topics_parent_topic_id_fkey"
+            columns: ["parent_topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_highlights: {
+        Row: {
+          context_after: string | null
+          context_before: string | null
+          created_at: string
+          highlighted_text: string
+          id: string
+          note: string | null
+          position_end: number
+          position_start: number
+          topic_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context_after?: string | null
+          context_before?: string | null
+          created_at?: string
+          highlighted_text: string
+          id?: string
+          note?: string | null
+          position_end: number
+          position_start: number
+          topic_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context_after?: string | null
+          context_before?: string | null
+          created_at?: string
+          highlighted_text?: string
+          id?: string
+          note?: string | null
+          position_end?: number
+          position_start?: number
+          topic_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_highlights_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
             referencedColumns: ["id"]
           },
         ]

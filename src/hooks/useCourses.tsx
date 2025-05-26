@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +54,7 @@ export function useCourses() {
         .from('topics')
         .select('*')
         .eq('course_id', courseId)
+        .order('level', { ascending: true })
         .order('order_index', { ascending: true });
 
       if (error) {
@@ -97,13 +99,37 @@ export function useCourses() {
     }
   };
 
-  const addTopic = async (courseId: string, title: string, content: string) => {
+  const addTopic = async (
+    courseId: string, 
+    title: string, 
+    content: string, 
+    parentTopicId?: string
+  ) => {
     try {
-      // Get the highest order_index for this course
-      const { data: lastTopic } = await supabase
+      // Get the highest order_index for this course and level
+      let orderQuery = supabase
         .from('topics')
         .select('order_index')
-        .eq('course_id', courseId)
+        .eq('course_id', courseId);
+
+      let level = 0;
+      if (parentTopicId) {
+        // Get parent topic level
+        const { data: parentData, error: parentError } = await supabase
+          .from('topics')
+          .select('level')
+          .eq('id', parentTopicId)
+          .single();
+
+        if (parentError) throw parentError;
+        level = parentData.level + 1;
+        
+        orderQuery = orderQuery.eq('parent_topic_id', parentTopicId);
+      } else {
+        orderQuery = orderQuery.is('parent_topic_id', null);
+      }
+
+      const { data: lastTopic } = await orderQuery
         .order('order_index', { ascending: false })
         .limit(1)
         .single();
@@ -118,6 +144,8 @@ export function useCourses() {
             title,
             content,
             order_index: newOrderIndex,
+            parent_topic_id: parentTopicId || null,
+            level,
           },
         ])
         .select()

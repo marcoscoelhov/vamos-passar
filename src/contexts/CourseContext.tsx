@@ -6,7 +6,7 @@ import { useUserProgress } from '@/hooks/useUserProgress';
 import { useQuestions } from '@/hooks/useQuestions';
 import { useTopics } from '@/hooks/useTopics';
 import { Question, Topic, Course, DbQuestion, DbTopic, Profile } from '@/types/course';
-import { mapDbQuestionToQuestion, mapDbTopicToTopic } from '@/utils/dataMappers';
+import { mapDbQuestionToQuestion, mapDbTopicToTopic, buildTopicHierarchy } from '@/utils/dataMappers';
 
 interface CourseContextType {
   currentCourse: Course | null;
@@ -14,7 +14,7 @@ interface CourseContextType {
   setCurrentTopic: (topic: Topic) => void;
   updateTopicProgress: (topicId: string, completed: boolean) => void;
   addQuestion: (topicId: string, question: Omit<Question, 'id'>) => Promise<void>;
-  addTopic: (courseId: string, topic: { title: string; content: string }) => Promise<void>;
+  addTopic: (courseId: string, topic: { title: string; content: string }, parentTopicId?: string) => Promise<void>;
   user: any;
   profile: Profile | null;
   isAuthenticated: boolean;
@@ -75,6 +75,9 @@ export function CourseProvider({ children }: CourseProviderProps) {
         })
       );
 
+      // Build hierarchical structure
+      const hierarchicalTopics = buildTopicHierarchy(topicsWithQuestions);
+
       // Calculate progress
       const completedTopics = topicsWithQuestions.filter(t => t.completed).length;
       const progress = topicsWithQuestions.length > 0 
@@ -83,15 +86,15 @@ export function CourseProvider({ children }: CourseProviderProps) {
 
       const enrichedCourse: Course = {
         ...course,
-        topics: topicsWithQuestions,
+        topics: hierarchicalTopics,
         progress,
       };
 
       setCurrentCourse(enrichedCourse);
       
       // Set first topic as current if none selected
-      if (!currentTopic && topicsWithQuestions.length > 0) {
-        setCurrentTopic(topicsWithQuestions[0]);
+      if (!currentTopic && hierarchicalTopics.length > 0) {
+        setCurrentTopic(hierarchicalTopics[0]);
       }
     } catch (error) {
       console.error('Error loading course:', error);
@@ -121,17 +124,42 @@ export function CourseProvider({ children }: CourseProviderProps) {
     try {
       await markTopicCompleted(topicId, completed);
       
-      // Update current course state
+      // Update current course state recursively
       if (currentCourse) {
+        const updateTopicInHierarchy = (topics: Topic[]): Topic[] => {
+          return topics.map(topic => {
+            if (topic.id === topicId) {
+              return { ...topic, completed };
+            }
+            if (topic.children && topic.children.length > 0) {
+              return {
+                ...topic,
+                children: updateTopicInHierarchy(topic.children)
+              };
+            }
+            return topic;
+          });
+        };
+
         setCurrentCourse(prev => {
           if (!prev) return prev;
           
-          const updatedTopics = prev.topics.map(topic =>
-            topic.id === topicId ? { ...topic, completed } : topic
-          );
+          const updatedTopics = updateTopicInHierarchy(prev.topics);
           
-          const completedCount = updatedTopics.filter(t => t.completed).length;
-          const progress = (completedCount / updatedTopics.length) * 100;
+          // Calculate new progress
+          const allTopics: Topic[] = [];
+          const flattenTopics = (topics: Topic[]) => {
+            topics.forEach(topic => {
+              allTopics.push(topic);
+              if (topic.children) {
+                flattenTopics(topic.children);
+              }
+            });
+          };
+          flattenTopics(updatedTopics);
+          
+          const completedCount = allTopics.filter(t => t.completed).length;
+          const progress = allTopics.length > 0 ? (completedCount / allTopics.length) * 100 : 0;
           
           return {
             ...prev,
@@ -156,9 +184,13 @@ export function CourseProvider({ children }: CourseProviderProps) {
     refreshCourse();
   };
 
-  const addTopic = async (courseId: string, topicData: { title: string; content: string }) => {
+  const addTopic = async (
+    courseId: string, 
+    topicData: { title: string; content: string }, 
+    parentTopicId?: string
+  ) => {
     const isAdmin = profile?.is_admin || false;
-    await addTopicHook(courseId, topicData, isAdmin);
+    await addTopicHook(courseId, topicData, isAdmin, parentTopicId);
     refreshCourse();
   };
 

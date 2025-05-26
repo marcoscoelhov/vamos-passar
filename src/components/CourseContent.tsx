@@ -1,13 +1,17 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Download, FileText, HelpCircle } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
+import { useDownload } from '@/hooks/useDownload';
 import { QuestionBlock } from './QuestionBlock';
+import { HighlightableContent } from './HighlightableContent';
 
 export function CourseContent() {
-  const { currentTopic } = useCourse();
+  const { currentTopic, currentCourse, user } = useCourse();
+  const { downloadTopic, downloadTopicsAsBundle, isDownloading } = useDownload();
 
   if (!currentTopic) {
     return (
@@ -24,67 +28,81 @@ export function CourseContent() {
     );
   }
 
-  // Função melhorada para converter markdown para HTML
-  const formatContent = (content: string) => {
-    return content
-      .split('\n')
-      .map(line => {
-        // Cabeçalhos
-        if (line.startsWith('## ')) {
-          return `<h2 class="text-2xl font-bold text-gray-900 mb-4 mt-6">${line.substring(3)}</h2>`;
-        }
-        if (line.startsWith('### ')) {
-          return `<h3 class="text-xl font-semibold text-gray-800 mb-3 mt-5">${line.substring(4)}</h3>`;
-        }
-        
-        // Citações
-        if (line.startsWith('> ')) {
-          return `<blockquote class="border-l-4 border-blue-500 pl-4 my-4 italic text-gray-700 bg-blue-50 py-2">${line.substring(2)}</blockquote>`;
-        }
-        
-        // Listas
-        if (line.startsWith('- ')) {
-          return `<li class="ml-4 mb-1 list-disc">${line.substring(2)}</li>`;
-        }
-        
-        // Linha vazia
-        if (line.trim() === '') {
-          return '<br>';
-        }
-        
-        // Texto normal com formatação inline
-        let formattedLine = line
-          .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
-          .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
-        
-        return `<p class="mb-4">${formattedLine}</p>`;
-      })
-      .join('');
+  const handleDownloadTopic = () => {
+    downloadTopic(currentTopic, true);
+  };
+
+  const handleDownloadCourse = () => {
+    if (currentCourse) {
+      downloadTopicsAsBundle(currentCourse.topics, currentCourse.title);
+    }
+  };
+
+  const scrollToQuestions = () => {
+    const questionsElement = document.getElementById('questions-section');
+    if (questionsElement) {
+      questionsElement.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       {/* Cabeçalho do tópico */}
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {currentTopic.title}
-          </h1>
-          {currentTopic.completed && (
-            <Badge className="bg-green-100 text-green-800">
-              Concluído
-            </Badge>
-          )}
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900">
+                {currentTopic.title}
+              </h1>
+              {currentTopic.completed && (
+                <Badge className="bg-green-100 text-green-800">
+                  Concluído
+                </Badge>
+              )}
+            </div>
+            {currentTopic.level > 0 && (
+              <div className="text-sm text-gray-500">
+                Subtópico • Nível {currentTopic.level}
+              </div>
+            )}
+          </div>
+          
+          {/* Botões de download */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadTopic}
+              disabled={isDownloading}
+              className="flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              {isDownloading ? 'Baixando...' : 'Baixar Tópico'}
+            </Button>
+            
+            {currentCourse && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadCourse}
+                disabled={isDownloading}
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Baixar Curso
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Conteúdo do tópico */}
+      {/* Conteúdo do tópico com highlights */}
       <Card className="p-8 mb-8">
-        <div 
-          className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-          dangerouslySetInnerHTML={{ 
-            __html: formatContent(currentTopic.content) 
-          }}
+        <HighlightableContent 
+          content={currentTopic.content}
+          topicId={currentTopic.id}
+          userId={user?.id}
         />
       </Card>
 
@@ -108,6 +126,17 @@ export function CourseContent() {
             />
           ))}
         </div>
+      )}
+
+      {/* Botão flutuante para questões */}
+      {currentTopic.questions && currentTopic.questions.length > 0 && (
+        <Button
+          onClick={scrollToQuestions}
+          className="fixed bottom-6 right-6 z-50 bg-green-600 hover:bg-green-700 text-white shadow-lg rounded-full w-12 h-12 p-0"
+          title="Ir para questões"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </Button>
       )}
     </div>
   );
