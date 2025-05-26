@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -5,6 +6,8 @@ import { LogOut, Settings, User } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
+import { ThemeToggle } from './ThemeToggle';
+
 export function Header() {
   const {
     profile,
@@ -12,29 +15,33 @@ export function Header() {
     logout,
     isLoading
   } = useCourse();
+
   if (isLoading) {
-    return <header className="bg-white border-b border-gray-200 px-4 py-3">
+    return <header className="bg-background border-b border-border px-4 py-3">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <Logo />
-            <h1 className="text-xl font-bold text-gray-900">VamosPassar</h1>
+            <h1 className="text-xl font-bold text-foreground">VamosPassar</h1>
           </div>
-          <div className="animate-pulse bg-gray-200 h-8 w-20 rounded"></div>
+          <div className="animate-pulse bg-muted h-8 w-20 rounded"></div>
         </div>
       </header>;
   }
-  return <header className="bg-white border-b border-gray-200 px-4 py-3">
+
+  return <header className="bg-background border-b border-border px-4 py-3">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-4">
           <Logo />
-          <h1 className="text-xl font-bold text-gray-900"></h1>
+          <h1 className="text-xl font-bold text-foreground"></h1>
         </div>
 
         <div className="flex items-center gap-4">
+          <ThemeToggle />
+          
           {isAuthenticated ? <>
               <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-gray-600" />
-                <span className="text-sm text-gray-700">{profile?.name || 'Usuário'}</span>
+                <User className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-foreground">{profile?.name || 'Usuário'}</span>
                 {profile?.is_admin && <Badge variant="secondary" className="text-xs">Admin</Badge>}
               </div>
               
