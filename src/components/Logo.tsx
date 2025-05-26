@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { GraduationCap } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -21,7 +22,7 @@ export function Logo({ size = 'md', showText = true }: LogoProps) {
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl blur-sm opacity-75"></div>
         <div className="relative bg-gradient-to-br from-blue-600 to-purple-700 rounded-xl p-2 shadow-lg">
@@ -38,6 +39,6 @@ export function Logo({ size = 'md', showText = true }: LogoProps) {
           )}
         </div>
       )}
-    </div>
+    </Link>
   );
 }
