@@ -7,7 +7,7 @@ import { Header } from '@/components/Header';
 
 export function CourseLayout() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
       <SidebarProvider>
         <div className="flex w-full">
