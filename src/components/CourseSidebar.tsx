@@ -4,7 +4,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -60,7 +59,7 @@ export function CourseSidebar() {
               variant="ghost"
               size="sm"
               onClick={toggleSidebar}
-              className="h-8 w-8 p-0 hover:bg-gray-100"
+              className="h-8 w-8 p-0 hover:bg-gray-100 flex-shrink-0"
             >
               <Menu className="h-4 w-4" />
             </Button>
@@ -91,7 +90,7 @@ export function CourseSidebar() {
                     e.stopPropagation();
                     handleToggleComplete(topic.id, topic.completed);
                   }}
-                  className="mr-3 text-gray-400 hover:text-blue-600 transition-colors"
+                  className="mr-3 text-gray-400 hover:text-blue-600 transition-colors flex-shrink-0"
                 >
                   {topic.completed ? (
                     <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -114,27 +113,29 @@ export function CourseSidebar() {
             ))}
           </div>
 
-          <div className="flex justify-between mt-6 pt-4 border-t border-gray-200">
-            <Button
-              onClick={goToPreviousTopic}
-              disabled={currentTopicIndex <= 0}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Anterior
-            </Button>
-            
-            <Button
-              onClick={goToNextTopic}
-              disabled={currentTopicIndex >= currentCourse.topics.length - 1}
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              Próximo
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+          <div className="flex flex-col gap-2 mt-6 pt-4 border-t border-gray-200">
+            <div className="flex justify-between gap-2">
+              <Button
+                onClick={goToPreviousTopic}
+                disabled={currentTopicIndex <= 0}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 flex-1"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Anterior</span>
+              </Button>
+              
+              <Button
+                onClick={goToNextTopic}
+                disabled={currentTopicIndex >= currentCourse.topics.length - 1}
+                size="sm"
+                className="flex items-center gap-2 flex-1"
+              >
+                <span className="hidden sm:inline">Próximo</span>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </SidebarContent>
       </Sidebar>
@@ -143,7 +144,7 @@ export function CourseSidebar() {
       {state === 'collapsed' && (
         <Button
           onClick={toggleSidebar}
-          className="fixed top-4 left-4 z-50 bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+          className="fixed top-20 left-4 z-50 bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
           size="sm"
         >
           <Menu className="w-4 h-4" />

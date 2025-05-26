@@ -24,18 +24,42 @@ export function CourseContent() {
     );
   }
 
-  // Função para converter markdown simples para HTML
+  // Função melhorada para converter markdown para HTML
   const formatContent = (content: string) => {
     return content
-      .replace(/## (.*$)/gim, '<h2 class="text-2xl font-bold text-gray-900 mb-4 mt-6">$1</h2>')
-      .replace(/### (.*$)/gim, '<h3 class="text-xl font-semibold text-gray-800 mb-3 mt-5">$1</h3>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-      .replace(/^- (.*$)/gim, '<li class="ml-4 mb-1">• $1</li>')
-      .replace(/^> (.*$)/gim, '<blockquote class="border-l-4 border-blue-500 pl-4 my-4 italic text-gray-700 bg-blue-50 py-2">$1</blockquote>')
-      .replace(/\n\n/g, '</p><p class="mb-4">')
-      .replace(/^\n/, '<p class="mb-4">')
-      + '</p>';
+      .split('\n')
+      .map(line => {
+        // Cabeçalhos
+        if (line.startsWith('## ')) {
+          return `<h2 class="text-2xl font-bold text-gray-900 mb-4 mt-6">${line.substring(3)}</h2>`;
+        }
+        if (line.startsWith('### ')) {
+          return `<h3 class="text-xl font-semibold text-gray-800 mb-3 mt-5">${line.substring(4)}</h3>`;
+        }
+        
+        // Citações
+        if (line.startsWith('> ')) {
+          return `<blockquote class="border-l-4 border-blue-500 pl-4 my-4 italic text-gray-700 bg-blue-50 py-2">${line.substring(2)}</blockquote>`;
+        }
+        
+        // Listas
+        if (line.startsWith('- ')) {
+          return `<li class="ml-4 mb-1 list-disc">${line.substring(2)}</li>`;
+        }
+        
+        // Linha vazia
+        if (line.trim() === '') {
+          return '<br>';
+        }
+        
+        // Texto normal com formatação inline
+        let formattedLine = line
+          .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+        
+        return `<p class="mb-4">${formattedLine}</p>`;
+      })
+      .join('');
   };
 
   return (

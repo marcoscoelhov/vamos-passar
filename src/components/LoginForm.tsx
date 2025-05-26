@@ -11,27 +11,39 @@ import { useToast } from '@/hooks/use-toast';
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useCourse();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    const success = login(email, password);
-    
-    if (success) {
-      toast({
-        title: 'Login realizado com sucesso!',
-        description: 'Bem-vindo à plataforma de cursos.',
-      });
-      navigate('/');
-    } else {
+    try {
+      const success = login(email, password);
+      
+      if (success) {
+        toast({
+          title: 'Login realizado com sucesso!',
+          description: 'Bem-vindo ao VamosPassar.',
+        });
+        navigate('/');
+      } else {
+        toast({
+          title: 'Erro no login',
+          description: 'Credenciais inválidas. Use admin/admin para acessar como administrador.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
       toast({
         title: 'Erro no login',
-        description: 'Credenciais inválidas. Use admin/admin para acessar.',
+        description: 'Ocorreu um erro inesperado. Tente novamente.',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -39,7 +51,7 @@ export function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="max-w-md w-full p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">EduPlatform</h1>
+          <h1 className="text-3xl font-bold text-gray-900">VamosPassar</h1>
           <p className="text-gray-600 mt-2">Faça login para acessar os cursos</p>
         </div>
 
@@ -53,6 +65,7 @@ export function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Digite seu email ou usuário"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -65,11 +78,12 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Digite sua senha"
               required
+              disabled={isLoading}
             />
           </div>
 
-          <Button type="submit" className="w-full">
-            Entrar
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Entrando...' : 'Entrar'}
           </Button>
 
           <div className="text-center">

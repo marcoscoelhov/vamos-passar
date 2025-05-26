@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, BookOpen, Target, Users } from 'lucide-react';
+import { PlusCircle, BookOpen, Target, Users, Plus, Minus } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { Question } from '@/types/course';
 import { useToast } from '@/hooks/use-toast';
@@ -57,7 +57,7 @@ export function AdminPanel() {
   };
 
   const handleAddQuestion = () => {
-    if (!selectedTopicId || !questionText || options.some(opt => !opt) || !explanation) {
+    if (!selectedTopicId || !questionText || options.some(opt => !opt.trim()) || !explanation) {
       toast({
         title: 'Erro',
         description: 'Preencha todos os campos obrigatórios.',
@@ -69,7 +69,7 @@ export function AdminPanel() {
     const newQuestion: Question = {
       id: Date.now().toString(),
       question: questionText,
-      options: options,
+      options: options.filter(opt => opt.trim()),
       correctAnswer: correctAnswer,
       explanation: explanation,
       type: 'multiple-choice',
@@ -96,6 +96,24 @@ export function AdminPanel() {
     const newOptions = [...options];
     newOptions[index] = value;
     setOptions(newOptions);
+  };
+
+  const addOption = () => {
+    if (options.length < 6) {
+      setOptions([...options, '']);
+    }
+  };
+
+  const removeOption = (index: number) => {
+    if (options.length > 2) {
+      const newOptions = options.filter((_, i) => i !== index);
+      setOptions(newOptions);
+      
+      // Ajustar resposta correta se necessário
+      if (correctAnswer >= newOptions.length) {
+        setCorrectAnswer(newOptions.length - 1);
+      }
+    }
   };
 
   if (!currentCourse) {
@@ -252,19 +270,29 @@ export function AdminPanel() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {options.map((option, index) => (
-                    <div key={index}>
-                      <Label htmlFor={`option-${index}`}>
-                        Alternativa {String.fromCharCode(65 + index)}
-                        {index === correctAnswer && <Badge className="ml-2">Correta</Badge>}
-                      </Label>
-                      <div className="flex gap-2">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Alternativas</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addOption}
+                        disabled={options.length >= 6}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {options.map((option, index) => (
+                      <div key={index} className="flex gap-2">
                         <Input
-                          id={`option-${index}`}
                           value={option}
                           onChange={(e) => handleOptionChange(index, e.target.value)}
-                          placeholder={`Digite a alternativa ${String.fromCharCode(65 + index)}`}
+                          placeholder={`Alternativa ${String.fromCharCode(65 + index)}`}
+                          className="flex-1"
                         />
                         <Button
                           type="button"
@@ -274,9 +302,18 @@ export function AdminPanel() {
                         >
                           ✓
                         </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeOption(index)}
+                          disabled={options.length <= 2}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
 
                 <div>
