@@ -63,8 +63,8 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
         </SelectItem>
       );
       
-      if (topic.subtopics && topic.subtopics.length > 0) {
-        options.push(...getTopicOptions(topic.subtopics, level + 1));
+      if (topic.children && topic.children.length > 0) {
+        options.push(...getTopicOptions(topic.children, level + 1));
       }
     });
     

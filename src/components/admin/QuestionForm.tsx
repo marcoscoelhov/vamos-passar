@@ -52,6 +52,7 @@ export function QuestionForm({ topics, isAdmin, onQuestionAdded }: QuestionFormP
           correctAnswer,
           explanation: explanation.trim(),
           difficulty,
+          type: 'multiple-choice'
         },
         isAdmin
       );
@@ -104,8 +105,8 @@ export function QuestionForm({ topics, isAdmin, onQuestionAdded }: QuestionFormP
     
     const addTopic = (topic: Topic) => {
       allTopics.push(topic);
-      if (topic.subtopics) {
-        topic.subtopics.forEach(addTopic);
+      if (topic.children) {
+        topic.children.forEach(addTopic);
       }
     };
     
