@@ -6,7 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Upload, FileText, File, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import mammoth from 'mammoth';
+
+// Import mammoth dynamically to handle potential loading issues
+let mammoth: any = null;
+try {
+  mammoth = require('mammoth');
+} catch (error) {
+  console.warn('Mammoth package not available:', error);
+}
 
 interface DocumentImporterProps {
   onContentExtracted: (content: string, suggestedTopics?: SuggestedTopic[]) => void;
@@ -32,6 +39,10 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
   };
 
   const processWordDocument = async (file: File): Promise<string> => {
+    if (!mammoth) {
+      throw new Error('Processamento de documentos Word não disponível. Tente novamente mais tarde.');
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const result = await mammoth.convertToHtml({ arrayBuffer });
     
@@ -59,7 +70,7 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
     const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
     const topics: SuggestedTopic[] = [];
     
-    headings.forEach((heading, index) => {
+    headings.forEach((heading) => {
       const level = parseInt(heading.tagName.charAt(1)) - 1;
       let topicContent = '';
       
