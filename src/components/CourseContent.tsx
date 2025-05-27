@@ -3,7 +3,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, HelpCircle } from 'lucide-react';
+import { Download, HelpCircle } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { useDownload } from '@/hooks/useDownload';
 import { QuestionBlock } from './QuestionBlock';
@@ -11,7 +11,7 @@ import { HighlightableContent } from './HighlightableContent';
 
 export function CourseContent() {
   const { currentTopic, currentCourse, user } = useCourse();
-  const { downloadTopic, downloadTopicsAsBundle, isDownloading } = useDownload();
+  const { downloadTopicsAsBundle, isDownloading } = useDownload();
 
   if (!currentTopic) {
     return (
@@ -27,10 +27,6 @@ export function CourseContent() {
       </div>
     );
   }
-
-  const handleDownloadTopic = () => {
-    downloadTopic(currentTopic, true);
-  };
 
   const handleDownloadCourse = () => {
     if (currentCourse) {
@@ -68,32 +64,19 @@ export function CourseContent() {
             )}
           </div>
           
-          {/* Botões de download */}
-          <div className="flex gap-2">
+          {/* Botão de download do curso */}
+          {currentCourse && (
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDownloadTopic}
+              onClick={handleDownloadCourse}
               disabled={isDownloading}
               className="flex items-center gap-2"
             >
-              <FileText className="w-4 h-4" />
-              {isDownloading ? 'Baixando...' : 'Baixar Tópico'}
+              <Download className="w-4 h-4" />
+              Baixar Curso
             </Button>
-            
-            {currentCourse && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadCourse}
-                disabled={isDownloading}
-                className="flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Baixar Curso
-              </Button>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
