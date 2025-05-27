@@ -11,7 +11,7 @@ import { HighlightableContent } from './HighlightableContent';
 
 export function CourseContent() {
   const { currentTopic, currentCourse, user } = useCourse();
-  const { downloadTopicsAsBundle, isDownloading } = useDownload();
+  const { generateTopicsAsPDF, isDownloading } = useDownload();
 
   if (!currentTopic) {
     return (
@@ -28,9 +28,9 @@ export function CourseContent() {
     );
   }
 
-  const handleDownloadCourse = () => {
+  const handleDownloadCoursePDF = () => {
     if (currentCourse) {
-      downloadTopicsAsBundle(currentCourse.topics, currentCourse.title);
+      generateTopicsAsPDF(currentCourse.topics, currentCourse.title);
     }
   };
 
@@ -43,6 +43,36 @@ export function CourseContent() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      {/* Botões de ação no topo */}
+      <div className="flex items-center justify-between mb-6">
+        {/* Botão para questões */}
+        {currentTopic.questions && currentTopic.questions.length > 0 && (
+          <Button
+            onClick={scrollToQuestions}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <HelpCircle className="w-4 h-4" />
+            Ir para Questões
+          </Button>
+        )}
+
+        {/* Botão de download do curso em PDF */}
+        {currentCourse && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadCoursePDF}
+            disabled={isDownloading}
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            {isDownloading ? 'Gerando PDF...' : 'Baixar Curso PDF'}
+          </Button>
+        )}
+      </div>
+
       {/* Cabeçalho do tópico */}
       <div className="mb-8">
         <div className="flex items-start justify-between mb-4">
@@ -63,20 +93,6 @@ export function CourseContent() {
               </div>
             )}
           </div>
-          
-          {/* Botão de download do curso */}
-          {currentCourse && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadCourse}
-              disabled={isDownloading}
-              className="flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Baixar Curso
-            </Button>
-          )}
         </div>
       </div>
 
@@ -109,17 +125,6 @@ export function CourseContent() {
             />
           ))}
         </div>
-      )}
-
-      {/* Botão flutuante para questões */}
-      {currentTopic.questions && currentTopic.questions.length > 0 && (
-        <Button
-          onClick={scrollToQuestions}
-          className="fixed bottom-6 right-6 z-50 bg-green-600 hover:bg-green-700 text-white shadow-lg rounded-full w-12 h-12 p-0"
-          title="Ir para questões"
-        >
-          <HelpCircle className="w-5 h-5" />
-        </Button>
       )}
     </div>
   );
