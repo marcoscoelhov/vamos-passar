@@ -161,41 +161,38 @@ export const generatePDFFromTopics = (topics: Topic[], courseName: string): jsPD
 
         yPosition += 3;
 
-        // Opções
+        // Opções (sem mostrar qual é a correta)
         pdf.setFont('helvetica', 'normal');
         question.options.forEach((option, optIndex) => {
-          const isCorrect = optIndex === question.correctAnswer;
-          const optionText = `${String.fromCharCode(65 + optIndex)}) ${option}${isCorrect ? ' ✓' : ''}`;
-          
-          if (isCorrect) {
-            pdf.setFont('helvetica', 'bold');
-          }
+          const optionText = `${String.fromCharCode(65 + optIndex)}) ${option}`;
           
           const optionLines = pdf.splitTextToSize(optionText, contentWidth - 10);
           optionLines.forEach((line: string) => {
             pdf.text(line, margin + 5, yPosition);
             yPosition += lineHeight;
           });
-          
-          if (isCorrect) {
-            pdf.setFont('helvetica', 'normal');
-          }
-        });
-
-        // Explicação
-        yPosition += 3;
-        pdf.setFont('helvetica', 'italic');
-        pdf.setFontSize(10);
-        const explanationText = `Explicação: ${question.explanation}`;
-        const explanationLines = pdf.splitTextToSize(explanationText, contentWidth);
-        explanationLines.forEach((line: string) => {
-          pdf.text(line, margin, yPosition);
-          yPosition += lineHeight;
         });
 
         yPosition += 8;
-        pdf.setFontSize(12);
-        pdf.setFont('helvetica', 'normal');
+      });
+
+      // Gabarito no final do tópico
+      if (yPosition > pageHeight - 50) {
+        pdf.addPage();
+        yPosition = 30;
+      }
+
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Gabarito:', margin, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      topic.questions.forEach((question, qIndex) => {
+        const correctLetter = String.fromCharCode(65 + question.correctAnswer);
+        pdf.text(`${qIndex + 1}. ${correctLetter}`, margin, yPosition);
+        yPosition += lineHeight;
       });
     }
   });
