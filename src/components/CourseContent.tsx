@@ -17,7 +17,7 @@ import { TopicContentSkeleton } from './TopicContentSkeleton';
 
 export function CourseContent() {
   const { currentTopic, currentCourse, user, isLoadingQuestions } = useCourse();
-  const { generateTopicsAsPDF, isDownloading } = useDownload();
+  const { downloadTopic, isDownloading } = useDownload();
   const { isBookmarked, toggleBookmark } = useBookmarks(user?.id);
   
   // Initialize keyboard shortcuts
@@ -38,9 +38,9 @@ export function CourseContent() {
     );
   }
 
-  const handleDownloadCoursePDF = () => {
-    if (currentCourse) {
-      generateTopicsAsPDF(currentCourse.topics, currentCourse.title);
+  const handleDownloadTopicPDF = () => {
+    if (currentTopic) {
+      downloadTopic(currentTopic, true);
     }
   };
 
@@ -80,19 +80,17 @@ export function CourseContent() {
             </Button>
           )}
 
-          {/* Botão de download do curso em PDF */}
-          {currentCourse && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadCoursePDF}
-              disabled={isDownloading}
-              className="flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              {isDownloading ? 'Gerando...' : 'PDF'}
-            </Button>
-          )}
+          {/* Botão de download do tópico atual em PDF */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadTopicPDF}
+            disabled={isDownloading}
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            {isDownloading ? 'Baixando...' : 'PDF'}
+          </Button>
         </div>
       </div>
 
