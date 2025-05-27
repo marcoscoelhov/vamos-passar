@@ -1,4 +1,3 @@
-
 export interface SuggestedTopic {
   title: string;
   content: string;
@@ -22,7 +21,34 @@ export const processWordDocument = async (file: File, updateStatus: StatusUpdate
     updateStatus('processing', 50, 'Extraindo conteúdo do documento...');
     
     const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.convertToHtml({ arrayBuffer });
+    
+    // Configurações avançadas do mammoth para melhor preservação de formatação
+    const options = {
+      arrayBuffer,
+      styleMap: [
+        "p[style-name='Heading 1'] => h1:fresh",
+        "p[style-name='Heading 2'] => h2:fresh",
+        "p[style-name='Heading 3'] => h3:fresh",
+        "p[style-name='Heading 4'] => h4:fresh",
+        "p[style-name='Heading 5'] => h5:fresh",
+        "p[style-name='Heading 6'] => h6:fresh",
+        "p[style-name='Title'] => h1:fresh",
+        "p[style-name='Subtitle'] => h2:fresh",
+        "r[style-name='Strong'] => strong",
+        "r[style-name='Emphasis'] => em"
+      ],
+      convertImage: mammoth.images.imgElement(function(image: any) {
+        return image.read("base64").then(function(imageBuffer: string) {
+          return {
+            src: "data:" + image.contentType + ";base64," + imageBuffer
+          };
+        });
+      }),
+      preserveLineBreaks: true,
+      includeDefaultStyleMap: true
+    };
+    
+    const result = await mammoth.convertToHtml(options);
     
     if (result.messages.length > 0) {
       console.warn('Avisos durante a conversão:', result.messages);
@@ -72,7 +98,7 @@ export const processPDFDocument = async (file: File, updateStatus: StatusUpdateC
   }
 };
 
-export const extractTopicsFromContent = (content: string, updateStatus: StatusUpdateCallback): SuggestedTopic[] => {
+export const extractTopicsFromContent = (content: string, updateStatus: StatusUpdateCallback, fileName?: string): SuggestedTopic[] => {
   updateStatus('extracting', 80, 'Identificando estrutura de tópicos...');
   
   const tempDiv = document.createElement('div');
@@ -81,28 +107,36 @@ export const extractTopicsFromContent = (content: string, updateStatus: StatusUp
   const headings = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6');
   const topics: SuggestedTopic[] = [];
   
-  headings.forEach((heading) => {
-    const level = parseInt(heading.tagName.charAt(1)) - 1;
-    let topicContent = '';
-    
-    let nextSibling = heading.nextElementSibling;
-    while (nextSibling && !nextSibling.matches('h1, h2, h3, h4, h5, h6')) {
-      topicContent += nextSibling.outerHTML || nextSibling.textContent || '';
-      nextSibling = nextSibling.nextElementSibling;
-    }
-    
-    if (heading.textContent && topicContent.trim()) {
-      topics.push({
-        title: heading.textContent.trim(),
-        content: topicContent.trim(),
-        level: level
-      });
-    }
-  });
+  // Se temos cabeçalhos, processar normalmente
+  if (headings.length > 0) {
+    headings.forEach((heading) => {
+      const level = parseInt(heading.tagName.charAt(1)) - 1;
+      let topicContent = '';
+      
+      let nextSibling = heading.nextElementSibling;
+      while (nextSibling && !nextSibling.matches('h1, h2, h3, h4, h5, h6')) {
+        topicContent += nextSibling.outerHTML || nextSibling.textContent || '';
+        nextSibling = nextSibling.nextElementSibling;
+      }
+      
+      if (heading.textContent && topicContent.trim()) {
+        topics.push({
+          title: heading.textContent.trim(),
+          content: topicContent.trim(),
+          level: level
+        });
+      }
+    });
+  }
   
+  // Se não há tópicos estruturados ou se há conteúdo sem cabeçalhos, usar nome do arquivo
   if (topics.length === 0 && content.trim()) {
+    const fileNameWithoutExtension = fileName 
+      ? fileName.replace(/\.(docx|pdf)$/i, '') 
+      : 'Documento Importado';
+    
     topics.push({
-      title: 'Conteúdo Importado',
+      title: fileNameWithoutExtension,
       content: content.trim(),
       level: 0
     });

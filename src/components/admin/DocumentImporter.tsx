@@ -64,7 +64,8 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
         throw new Error('Tipo de arquivo não suportado. Use arquivos .docx ou .pdf');
       }
       
-      const suggestedTopics = extractTopicsFromContent(extractedContent, updateProcessingStatus);
+      // Passar o nome do arquivo para a extração de tópicos
+      const suggestedTopics = extractTopicsFromContent(extractedContent, updateProcessingStatus, uploadedFile.name);
       
       updateProcessingStatus('complete', 100, 'Processamento concluído com sucesso!');
       
