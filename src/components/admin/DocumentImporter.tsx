@@ -4,16 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Upload, FileText, File, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Upload, FileText, File, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-// Import mammoth dynamically to handle potential loading issues
-let mammoth: any = null;
-try {
-  mammoth = require('mammoth');
-} catch (error) {
-  console.warn('Mammoth package not available:', error);
-}
 
 interface DocumentImporterProps {
   onContentExtracted: (content: string, suggestedTopics?: SuggestedTopic[]) => void;
@@ -25,45 +18,122 @@ interface SuggestedTopic {
   level: number;
 }
 
+interface ProcessingStatus {
+  stage: 'uploading' | 'processing' | 'extracting' | 'complete';
+  progress: number;
+  message: string;
+}
+
 export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Constantes de validação
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+  const SUPPORTED_EXTENSIONS = ['.docx', '.pdf'];
+
+  const validateFile = (file: File): string | null => {
+    if (file.size > MAX_FILE_SIZE) {
+      return `Arquivo muito grande. Máximo permitido: ${MAX_FILE_SIZE / 1024 / 1024}MB`;
+    }
+
+    const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!SUPPORTED_EXTENSIONS.includes(extension)) {
+      return `Tipo de arquivo não suportado. Use: ${SUPPORTED_EXTENSIONS.join(', ')}`;
+    }
+
+    return null;
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      const error = validateFile(file);
+      if (error) {
+        toast({
+          title: 'Erro na validação do arquivo',
+          description: error,
+          variant: 'destructive',
+        });
+        return;
+      }
       setUploadedFile(file);
     }
   };
 
-  const processWordDocument = async (file: File): Promise<string> => {
-    if (!mammoth) {
-      throw new Error('Processamento de documentos Word não disponível. Tente novamente mais tarde.');
-    }
+  const updateProcessingStatus = (stage: ProcessingStatus['stage'], progress: number, message: string) => {
+    setProcessingStatus({ stage, progress, message });
+  };
 
-    const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.convertToHtml({ arrayBuffer });
+  const processWordDocument = async (file: File): Promise<string> => {
+    updateProcessingStatus('processing', 25, 'Carregando biblioteca de processamento...');
     
-    if (result.messages.length > 0) {
-      console.warn('Avisos durante a conversão:', result.messages);
+    try {
+      // Dynamic import for mammoth
+      const mammoth = await import('mammoth');
+      
+      updateProcessingStatus('processing', 50, 'Extraindo conteúdo do documento...');
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.convertToHtml({ arrayBuffer });
+      
+      if (result.messages.length > 0) {
+        console.warn('Avisos durante a conversão:', result.messages);
+      }
+      
+      updateProcessingStatus('processing', 75, 'Processamento concluído');
+      
+      return result.value;
+    } catch (error) {
+      console.error('Erro ao processar documento Word:', error);
+      throw new Error('Erro ao processar documento Word. Verifique se o arquivo não está corrompido.');
     }
-    
-    return result.value;
   };
 
   const processPDFDocument = async (file: File): Promise<string> => {
-    // Simulação de processamento de PDF
-    // Em produção, você usaria uma biblioteca como pdf-parse ou uma API externa
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(`<p>Conteúdo extraído do PDF: ${file.name}</p><p>Este é um exemplo de conteúdo extraído. Em uma implementação real, o texto seria extraído do PDF.</p>`);
-      }, 2000);
-    });
+    updateProcessingStatus('processing', 25, 'Carregando biblioteca PDF...');
+    
+    try {
+      // Dynamic import for pdf-parse
+      const pdfParse = await import('pdf-parse');
+      
+      updateProcessingStatus('processing', 50, 'Extraindo texto do PDF...');
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const data = await pdfParse.default(arrayBuffer);
+      
+      updateProcessingStatus('processing', 75, 'Formatando conteúdo extraído...');
+      
+      // Convert plain text to basic HTML structure
+      const lines = data.text.split('\n').filter(line => line.trim() !== '');
+      let htmlContent = '';
+      
+      lines.forEach(line => {
+        const trimmedLine = line.trim();
+        
+        // Try to detect headings (lines that are short and possibly all caps or title case)
+        if (trimmedLine.length < 100 && 
+            (trimmedLine === trimmedLine.toUpperCase() || 
+             trimmedLine.match(/^[A-Z][^.]*$/))) {
+          htmlContent += `<h2>${trimmedLine}</h2>\n`;
+        } else {
+          htmlContent += `<p>${trimmedLine}</p>\n`;
+        }
+      });
+      
+      return htmlContent;
+    } catch (error) {
+      console.error('Erro ao processar PDF:', error);
+      throw new Error('Erro ao processar PDF. Verifique se o arquivo não está corrompido ou protegido por senha.');
+    }
   };
 
   const extractTopicsFromContent = (content: string): SuggestedTopic[] => {
+    updateProcessingStatus('extracting', 80, 'Identificando estrutura de tópicos...');
+    
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = content;
     
@@ -81,7 +151,7 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
         nextSibling = nextSibling.nextElementSibling;
       }
       
-      if (heading.textContent && topicContent) {
+      if (heading.textContent && topicContent.trim()) {
         topics.push({
           title: heading.textContent.trim(),
           content: topicContent.trim(),
@@ -90,6 +160,15 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
       }
     });
     
+    // Se não encontrou cabeçalhos estruturados, criar um tópico único
+    if (topics.length === 0 && content.trim()) {
+      topics.push({
+        title: 'Conteúdo Importado',
+        content: content.trim(),
+        level: 0
+      });
+    }
+    
     return topics;
   };
 
@@ -97,6 +176,7 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
     if (!uploadedFile) return;
     
     setIsProcessing(true);
+    updateProcessingStatus('uploading', 10, 'Iniciando processamento...');
     
     try {
       let extractedContent = '';
@@ -112,35 +192,55 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
       
       const suggestedTopics = extractTopicsFromContent(extractedContent);
       
-      onContentExtracted(extractedContent, suggestedTopics);
+      updateProcessingStatus('complete', 100, 'Processamento concluído com sucesso!');
       
-      toast({
-        title: 'Documento processado com sucesso',
-        description: `Conteúdo extraído e ${suggestedTopics.length} tópicos sugeridos.`,
-      });
-      
-      setUploadedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      // Small delay to show completion
+      setTimeout(() => {
+        onContentExtracted(extractedContent, suggestedTopics);
+        
+        toast({
+          title: 'Documento processado com sucesso',
+          description: `Conteúdo extraído e ${suggestedTopics.length} tópicos identificados.`,
+        });
+        
+        // Reset form
+        setUploadedFile(null);
+        setProcessingStatus(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }, 1000);
       
     } catch (error) {
       console.error('Erro ao processar documento:', error);
       toast({
         title: 'Erro ao processar documento',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        description: error instanceof Error ? error.message : 'Erro desconhecido ao processar o documento',
         variant: 'destructive',
       });
+      setProcessingStatus(null);
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const clearUploadedFile = () => {
+    setUploadedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const getSupportedFormats = () => {
     return [
-      { extension: '.docx', description: 'Documentos do Microsoft Word' },
-      { extension: '.pdf', description: 'Documentos PDF (em desenvolvimento)' }
+      { extension: '.docx', description: 'Documentos do Microsoft Word', status: 'Suportado' },
+      { extension: '.pdf', description: 'Documentos PDF', status: 'Suportado' }
     ];
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    const mb = bytes / 1024 / 1024;
+    return mb < 1 ? `${(bytes / 1024).toFixed(1)} KB` : `${mb.toFixed(1)} MB`;
   };
 
   return (
@@ -153,6 +253,7 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
         
         <p className="text-sm text-gray-600">
           Importe documentos Word (.docx) ou PDF para extrair conteúdo automaticamente com formatação preservada.
+          Tamanho máximo: {MAX_FILE_SIZE / 1024 / 1024}MB.
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -166,6 +267,7 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
               accept=".docx,.pdf"
               onChange={handleFileSelect}
               className="cursor-pointer"
+              disabled={isProcessing}
             />
           </div>
           
@@ -183,7 +285,22 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
           </div>
         </div>
         
-        {uploadedFile && (
+        {/* Processing Status */}
+        {processingStatus && (
+          <div className="space-y-3 p-4 bg-blue-50 rounded-md">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-blue-900">
+                {processingStatus.message}
+              </span>
+              <span className="text-sm text-blue-700">
+                {processingStatus.progress}%
+              </span>
+            </div>
+            <Progress value={processingStatus.progress} className="h-2" />
+          </div>
+        )}
+        
+        {uploadedFile && !processingStatus && (
           <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-md">
             {uploadedFile.name.endsWith('.docx') ? (
               <FileText className="w-8 h-8 text-blue-600" />
@@ -193,10 +310,20 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
             <div className="flex-1">
               <p className="font-medium text-sm">{uploadedFile.name}</p>
               <p className="text-xs text-gray-600">
-                {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                {formatFileSize(uploadedFile.size)}
               </p>
             </div>
-            <CheckCircle className="w-5 h-5 text-green-600" />
+            <div className="flex gap-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={clearUploadedFile}
+                disabled={isProcessing}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         )}
         
@@ -220,12 +347,16 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
         
         <div className="text-xs text-gray-500 space-y-1">
           <p className="flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            Documentos Word: Formatação será preservada automaticamente
+            <CheckCircle className="w-3 h-3 text-green-600" />
+            Documentos Word: Formatação preservada com precisão
           </p>
           <p className="flex items-center gap-1">
-            <AlertCircle className="w-3 h-3" />
-            PDFs: Extração de texto básica (imagens não incluídas)
+            <CheckCircle className="w-3 h-3 text-green-600" />
+            PDFs: Extração de texto com detecção automática de estrutura
+          </p>
+          <p className="flex items-center gap-1">
+            <AlertCircle className="w-3 h-3 text-yellow-600" />
+            Arquivos protegidos por senha não são suportados
           </p>
         </div>
       </div>
