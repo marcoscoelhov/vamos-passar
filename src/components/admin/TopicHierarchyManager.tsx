@@ -16,7 +16,9 @@ import {
   Eye,
   Copy,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Check,
+  X
 } from 'lucide-react';
 import {
   DndContext,
@@ -53,6 +55,7 @@ interface SortableTopicItemProps {
   isExpanded: boolean;
   isEditing: boolean;
   editTitle: string;
+  isSaving: boolean;
   onToggleExpand: (topicId: string) => void;
   onStartEdit: (topicId: string, title: string) => void;
   onSaveEdit: (topicId: string, newTitle: string) => void;
@@ -72,6 +75,7 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
   isExpanded,
   isEditing,
   editTitle,
+  isSaving,
   onToggleExpand,
   onStartEdit,
   onSaveEdit,
@@ -113,6 +117,12 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
     }
   };
 
+  const handleConfirmEdit = () => {
+    if (editTitle.trim()) {
+      onSaveEdit(topic.id, editTitle.trim());
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -126,21 +136,26 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
         className={cn(
           "group flex items-center gap-2 p-3 rounded-lg border border-transparent hover:border-gray-200 hover:bg-gray-50 transition-all",
           "min-h-[60px]",
-          hasContentIssues && "border-yellow-200 bg-yellow-50"
+          hasContentIssues && "border-yellow-200 bg-yellow-50",
+          isEditing && "border-blue-200 bg-blue-50"
         )}
         style={{ paddingLeft: `${16 + indent}px` }}
       >
         {/* Drag Handle */}
-        <div 
-          className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="w-4 h-4 text-gray-400" />
-        </div>
+        {!isEditing && (
+          <div 
+            className="opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="w-4 h-4 text-gray-400" />
+          </div>
+        )}
+
+        {isEditing && <div className="w-4" />}
 
         {/* Expand/Collapse */}
-        {hasChildren && (
+        {hasChildren && !isEditing && (
           <button
             onClick={() => onToggleExpand(topic.id)}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -153,7 +168,7 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
           </button>
         )}
         
-        {!hasChildren && <div className="w-4" />}
+        {(!hasChildren || isEditing) && <div className="w-4" />}
 
         {/* Icon */}
         <FileText className={cn(
@@ -161,17 +176,44 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
           hasContentIssues ? "text-yellow-600" : "text-blue-600"
         )} />
 
-        {/* Title */}
+        {/* Title or Edit Form */}
         <div className="flex-1 min-w-0">
           {isEditing ? (
-            <Input
-              value={editTitle}
-              onChange={(e) => onSetEditTitle(e.target.value)}
-              onKeyDown={handleKeyPress}
-              onBlur={() => onSaveEdit(topic.id, editTitle)}
-              className="h-8 text-sm"
-              autoFocus
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                value={editTitle}
+                onChange={(e) => onSetEditTitle(e.target.value)}
+                onKeyDown={handleKeyPress}
+                className="h-8 text-sm flex-1"
+                autoFocus
+                disabled={isSaving}
+                placeholder="Digite o título do tópico..."
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleConfirmEdit}
+                disabled={isSaving || !editTitle.trim()}
+                className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                title="Confirmar alteração"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onCancelEdit}
+                disabled={isSaving}
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="Cancelar edição"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           ) : (
             <div className="flex items-center gap-2">
               <span 
@@ -198,73 +240,75 @@ const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {hasContentIssues && (
+        {!isEditing && (
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {hasContentIssues && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onFixContent(topic)}
+                className="h-8 w-8 p-0 text-yellow-600 hover:text-yellow-700"
+                title="Corrigir formatação"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            )}
+            
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onFixContent(topic)}
-              className="h-8 w-8 p-0 text-yellow-600 hover:text-yellow-700"
-              title="Corrigir formatação"
+              onClick={() => onPreviewTopic(topic)}
+              className="h-8 w-8 p-0"
+              title="Visualizar conteúdo"
             >
-              <RefreshCw className="w-4 h-4" />
+              <Eye className="w-4 h-4" />
             </Button>
-          )}
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onPreviewTopic(topic)}
-            className="h-8 w-8 p-0"
-            title="Visualizar conteúdo"
-          >
-            <Eye className="w-4 h-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onStartEdit(topic.id, topic.title)}
-            className="h-8 w-8 p-0"
-            title="Editar título"
-          >
-            <Edit2 className="w-4 h-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDuplicateTopic(topic)}
-            className="h-8 w-8 p-0"
-            title="Duplicar tópico"
-          >
-            <Copy className="w-4 h-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onAddSubtopic(topic.id)}
-            className="h-8 w-8 p-0"
-            title="Adicionar subtópico"
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDeleteTopic(topic.id)}
-            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-            title="Excluir tópico"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onStartEdit(topic.id, topic.title)}
+              className="h-8 w-8 p-0"
+              title="Editar título"
+            >
+              <Edit2 className="w-4 h-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDuplicateTopic(topic)}
+              className="h-8 w-8 p-0"
+              title="Duplicar tópico"
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onAddSubtopic(topic.id)}
+              className="h-8 w-8 p-0"
+              title="Adicionar subtópico"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDeleteTopic(topic.id)}
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+              title="Excluir tópico"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Children */}
-      {hasChildren && isExpanded && (
+      {hasChildren && isExpanded && !isEditing && (
         <div className="mt-1">
           {children}
         </div>
@@ -283,6 +327,7 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
   const [newTopicTitle, setNewTopicTitle] = useState('');
   const [newTopicParent, setNewTopicParent] = useState<string | null>(null);
   const [isFixingContent, setIsFixingContent] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const { addTopic, isLoading: addingTopic } = useTopics();
   const { 
@@ -329,19 +374,29 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
   }, []);
 
   const saveEdit = useCallback(async (topicId: string, newTitle: string) => {
-    if (newTitle.trim() && newTitle.trim() !== editTitle) {
+    if (!newTitle.trim() || newTitle.trim() === editTitle) {
+      setEditingTopic(null);
+      setEditTitle('');
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
       const success = await updateTopicTitle(topicId, newTitle.trim());
       if (success) {
         onTopicUpdated();
+        setEditingTopic(null);
+        setEditTitle('');
       }
+    } finally {
+      setIsSavingEdit(false);
     }
-    setEditingTopic(null);
-    setEditTitle('');
   }, [updateTopicTitle, onTopicUpdated, editTitle]);
 
   const cancelEdit = useCallback(() => {
     setEditingTopic(null);
     setEditTitle('');
+    setIsSavingEdit(false);
   }, []);
 
   const handleDeleteTopic = useCallback((topicId: string) => {
@@ -421,6 +476,7 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
             isExpanded={expandedTopics.has(topic.id)}
             isEditing={editingTopic === topic.id}
             editTitle={editTitle}
+            isSaving={isSavingEdit}
             onToggleExpand={toggleExpanded}
             onStartEdit={startEdit}
             onSaveEdit={saveEdit}
@@ -442,14 +498,16 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
   }, [
     expandedTopics, 
     editingTopic, 
-    editTitle, 
+    editTitle,
+    isSavingEdit,
     toggleExpanded, 
     startEdit, 
     saveEdit, 
     cancelEdit, 
     handleDeleteTopic, 
     handleAddSubtopic, 
-    handleDuplicateTopic
+    handleDuplicateTopic,
+    handleFixContent
   ]);
 
   if (!isAdmin) {
@@ -511,7 +569,7 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
 
           <div className="text-sm text-gray-600 space-y-1">
             <p>• Arraste os tópicos pelo ícone de grip para reordená-los</p>
-            <p>• Clique no título de um tópico para editá-lo inline</p>
+            <p>• Clique no título de um tópico para editá-lo, use os botões para confirmar ou cancelar</p>
             <p>• Use os botões de ação que aparecem ao passar o mouse sobre cada tópico</p>
             <p>• Tópicos com formatação incorreta serão destacados em amarelo</p>
           </div>
