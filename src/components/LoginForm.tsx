@@ -9,13 +9,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from './LoadingSpinner';
+import { ArrowLeft } from 'lucide-react';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, isAuthenticated } = useAuth();
+  const [activeTab, setActiveTab] = useState('login');
+  const { signIn, signUp, resetPassword, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -108,6 +111,7 @@ export function LoginForm() {
         setEmail('');
         setPassword('');
         setName('');
+        setActiveTab('login');
       } else {
         console.error('Erro no cadastro:', result.error);
         toast({
@@ -128,6 +132,52 @@ export function LoginForm() {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetEmail.trim()) {
+      toast({
+        title: 'Email obrigatório',
+        description: 'Por favor, digite seu email para recuperar a senha.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      console.log('Tentando recuperação de senha para:', resetEmail);
+      const result = await resetPassword(resetEmail.trim());
+      
+      if (result.success) {
+        console.log('Email de recuperação enviado');
+        toast({
+          title: 'Email enviado!',
+          description: 'Verifique sua caixa de entrada para instruções de recuperação de senha.',
+        });
+        setResetEmail('');
+        setActiveTab('login');
+      } else {
+        console.error('Erro na recuperação:', result.error);
+        toast({
+          title: 'Erro na recuperação',
+          description: result.error?.message || 'Erro ao enviar email de recuperação. Tente novamente.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      console.error('Erro durante recuperação:', error);
+      toast({
+        title: 'Erro na recuperação',
+        description: 'Erro ao conectar com o servidor. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="max-w-md w-full p-8">
@@ -136,10 +186,11 @@ export function LoginForm() {
           <p className="text-gray-600 mt-2">Sua plataforma de estudos para concursos</p>
         </div>
 
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="login">Entrar</TabsTrigger>
             <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+            <TabsTrigger value="reset">Recuperar</TabsTrigger>
           </TabsList>
           
           <TabsContent value="login">
@@ -182,6 +233,17 @@ export function LoginForm() {
                   'Entrar'
                 )}
               </Button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('reset')}
+                  className="text-sm text-blue-600 hover:text-blue-500 underline"
+                  disabled={isLoading}
+                >
+                  Esqueceu sua senha?
+                </button>
+              </div>
             </form>
           </TabsContent>
           
@@ -240,6 +302,54 @@ export function LoginForm() {
                   'Criar conta'
                 )}
               </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="reset">
+            <form onSubmit={handleResetPassword} className="space-y-6">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Recuperar senha</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Digite seu email para receber as instruções de recuperação
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="reset-email">Email</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="Digite seu email"
+                  required
+                  disabled={isLoading}
+                  autoComplete="email"
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    Enviando...
+                  </div>
+                ) : (
+                  'Enviar email de recuperação'
+                )}
+              </Button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('login')}
+                  className="text-sm text-gray-600 hover:text-gray-500 flex items-center justify-center gap-1 mx-auto"
+                  disabled={isLoading}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Voltar ao login
+                </button>
+              </div>
             </form>
           </TabsContent>
         </Tabs>

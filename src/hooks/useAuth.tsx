@@ -115,6 +115,26 @@ export function useAuth() {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      console.log('Iniciando recuperação de senha para:', email);
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`,
+      });
+
+      if (error) {
+        console.error('Erro na recuperação de senha:', error);
+        throw error;
+      }
+
+      console.log('Email de recuperação enviado com sucesso');
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('Erro capturado no resetPassword:', error);
+      return { success: false, error };
+    }
+  };
+
   const signOut = async () => {
     try {
       console.log('Fazendo logout...');
@@ -135,6 +155,7 @@ export function useAuth() {
     isLoading,
     signIn,
     signUp,
+    resetPassword,
     signOut,
     isAuthenticated: !!session,
   };
