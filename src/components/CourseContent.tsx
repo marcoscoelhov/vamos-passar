@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ import { TopicContentSkeleton } from './TopicContentSkeleton';
 
 export function CourseContent() {
   const { currentTopic, currentCourse, user, isLoadingQuestions } = useCourse();
-  const { downloadTopic, isDownloading } = useDownload();
+  const { generateTopicsAsPDF, isDownloading } = useDownload();
   const { isBookmarked, toggleBookmark } = useBookmarks(user?.id);
   
   // Initialize keyboard shortcuts
@@ -39,8 +38,8 @@ export function CourseContent() {
   }
 
   const handleDownloadTopicPDF = () => {
-    if (currentTopic) {
-      downloadTopic(currentTopic, true);
+    if (currentTopic && currentCourse) {
+      generateTopicsAsPDF([currentTopic], currentTopic.title);
     }
   };
 
