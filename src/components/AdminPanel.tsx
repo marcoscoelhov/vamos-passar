@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, Target, Users, BarChart3, FileText } from 'lucide-react';
+import { PlusCircle, Target, Users, BarChart3, FileText, TreePine } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { AdminOverview } from './admin/AdminOverview';
 import { TopicForm } from './admin/TopicForm';
+import { TopicHierarchyManager } from './admin/TopicHierarchyManager';
 import { QuestionForm } from './admin/QuestionForm';
 import { BulkContentButton } from './admin/BulkContentButton';
 import { StudentsManagement } from './admin/StudentsManagement';
@@ -39,9 +40,10 @@ export function AdminPanel() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="hierarchy">Hierarquia</TabsTrigger>
             <TabsTrigger value="topics">Tópicos</TabsTrigger>
             <TabsTrigger value="questions">Questões</TabsTrigger>
             <TabsTrigger value="students">Alunos</TabsTrigger>
@@ -58,6 +60,18 @@ export function AdminPanel() {
               <h2 className="text-xl font-semibold">Dashboard Analítico</h2>
             </div>
             <AnalyticsDashboard />
+          </TabsContent>
+
+          <TabsContent value="hierarchy">
+            <div className="flex items-center gap-2 mb-6">
+              <TreePine className="w-5 h-5" />
+              <h2 className="text-xl font-semibold">Gerenciar Hierarquia de Tópicos</h2>
+            </div>
+            <TopicHierarchyManager 
+              course={currentCourse} 
+              isAdmin={isAdmin}
+              onTopicUpdated={handleContentAdded}
+            />
           </TabsContent>
 
           <TabsContent value="topics">
