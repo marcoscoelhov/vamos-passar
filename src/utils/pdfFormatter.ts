@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import { Topic } from '@/types/course';
 
@@ -129,7 +128,7 @@ export const generatePDFFromTopics = (topics: Topic[], courseName: string): jsPD
       }
     });
 
-    // Questões
+    // Questões (sem gabarito)
     if (topic.questions && topic.questions.length > 0) {
       yPosition += 10;
       
@@ -174,25 +173,6 @@ export const generatePDFFromTopics = (topics: Topic[], courseName: string): jsPD
         });
 
         yPosition += 8;
-      });
-
-      // Gabarito no final do tópico
-      if (yPosition > pageHeight - 50) {
-        pdf.addPage();
-        yPosition = 30;
-      }
-
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Gabarito:', margin, yPosition);
-      yPosition += 10;
-
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
-      topic.questions.forEach((question, qIndex) => {
-        const correctLetter = String.fromCharCode(65 + question.correctAnswer);
-        pdf.text(`${qIndex + 1}. ${correctLetter}`, margin, yPosition);
-        yPosition += lineHeight;
       });
     }
   });
