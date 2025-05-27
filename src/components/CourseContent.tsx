@@ -3,15 +3,25 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, HelpCircle } from 'lucide-react';
+import { Download, HelpCircle, Bookmark, BookmarkCheck } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { useDownload } from '@/hooks/useDownload';
+import { useBookmarks } from '@/hooks/useBookmarks';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { QuestionBlock } from './QuestionBlock';
 import { HighlightableContent } from './HighlightableContent';
+import { Breadcrumbs } from './Breadcrumbs';
+import { GlobalSearch } from './GlobalSearch';
+import { KeyboardShortcuts } from './KeyboardShortcuts';
+import { TopicContentSkeleton } from './TopicContentSkeleton';
 
 export function CourseContent() {
-  const { currentTopic, currentCourse, user } = useCourse();
+  const { currentTopic, currentCourse, user, isLoadingQuestions } = useCourse();
   const { generateTopicsAsPDF, isDownloading } = useDownload();
+  const { isBookmarked, toggleBookmark } = useBookmarks(user?.id);
+  
+  // Initialize keyboard shortcuts
+  useKeyboardShortcuts();
 
   if (!currentTopic) {
     return (
@@ -41,46 +51,77 @@ export function CourseContent() {
     }
   };
 
+  const handleToggleBookmark = () => {
+    toggleBookmark(currentTopic.id, currentTopic.title);
+  };
+
+  const topicIsBookmarked = isBookmarked(currentTopic.id);
+
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Botões de ação no topo */}
-      <div className="flex items-center justify-between mb-6">
-        {/* Botão para questões */}
-        {currentTopic.questions && currentTopic.questions.length > 0 && (
-          <Button
-            onClick={scrollToQuestions}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <HelpCircle className="w-4 h-4" />
-            Ir para Questões
-          </Button>
-        )}
+      {/* Barra superior com busca e atalhos */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <GlobalSearch />
+          <KeyboardShortcuts />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {/* Botão para questões */}
+          {currentTopic.questions && currentTopic.questions.length > 0 && (
+            <Button
+              onClick={scrollToQuestions}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Questões
+            </Button>
+          )}
 
-        {/* Botão de download do curso em PDF */}
-        {currentCourse && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadCoursePDF}
-            disabled={isDownloading}
-            className="flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            {isDownloading ? 'Gerando PDF...' : 'Baixar Curso PDF'}
-          </Button>
-        )}
+          {/* Botão de download do curso em PDF */}
+          {currentCourse && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadCoursePDF}
+              disabled={isDownloading}
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              {isDownloading ? 'Gerando...' : 'PDF'}
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Breadcrumbs */}
+      <Breadcrumbs />
 
       {/* Cabeçalho do tópico */}
       <div className="mb-8">
         <div className="flex items-start justify-between mb-4">
-          <div>
+          <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold text-gray-900">
                 {currentTopic.title}
               </h1>
+              
+              {/* Botão de marcador */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleBookmark}
+                className="text-gray-400 hover:text-yellow-500"
+              >
+                {topicIsBookmarked ? (
+                  <BookmarkCheck className="w-5 h-5 text-yellow-500" />
+                ) : (
+                  <Bookmark className="w-5 h-5" />
+                )}
+              </Button>
+              
               {currentTopic.completed && (
                 <Badge className="bg-green-100 text-green-800">
                   Concluído
@@ -106,25 +147,34 @@ export function CourseContent() {
       </Card>
 
       {/* Seção de questões */}
-      {currentTopic.questions && currentTopic.questions.length > 0 && (
-        <div id="questions-section" className="space-y-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Questões de Fixação
-            </h2>
-            <Badge variant="outline" className="text-sm">
-              {currentTopic.questions.length} questão(ões)
-            </Badge>
-          </div>
-          
-          {currentTopic.questions.map((question, index) => (
-            <QuestionBlock
-              key={question.id}
-              question={question}
-              questionNumber={index + 1}
-            />
-          ))}
+      {isLoadingQuestions ? (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Carregando questões...
+          </h2>
+          {/* Skeleton loading for questions could go here */}
         </div>
+      ) : (
+        currentTopic.questions && currentTopic.questions.length > 0 && (
+          <div id="questions-section" className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Questões de Fixação
+              </h2>
+              <Badge variant="outline" className="text-sm">
+                {currentTopic.questions.length} questão(ões)
+              </Badge>
+            </div>
+            
+            {currentTopic.questions.map((question, index) => (
+              <QuestionBlock
+                key={question.id}
+                question={question}
+                questionNumber={index + 1}
+              />
+            ))}
+          </div>
+        )
       )}
     </div>
   );
