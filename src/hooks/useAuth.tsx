@@ -13,17 +13,20 @@ export function useAuth() {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('Configurando auth state listener...');
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+      (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email || 'no user');
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile
+          // Fetch user profile with delay to avoid deadlock
           setTimeout(async () => {
             try {
+              console.log('Buscando perfil do usuário...');
               const { data: profileData, error } = await supabase
                 .from('profiles')
                 .select('*')
@@ -31,14 +34,17 @@ export function useAuth() {
                 .single();
               
               if (error) {
-                console.error('Error fetching profile:', error);
+                console.warn('Perfil não encontrado, usuário pode ser novo:', error.message);
+                setProfile(null);
               } else {
+                console.log('Perfil carregado:', profileData);
                 setProfile(profileData);
               }
             } catch (error) {
-              console.error('Error in profile fetch:', error);
+              console.error('Erro ao buscar perfil:', error);
+              setProfile(null);
             }
-          }, 0);
+          }, 100);
         } else {
           setProfile(null);
         }
@@ -47,7 +53,11 @@ export function useAuth() {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Erro ao recuperar sessão:', error);
+      }
+      console.log('Sessão inicial:', session?.user?.email || 'nenhuma sessão');
       setSession(session);
       setUser(session?.user ?? null);
       if (!session) {
@@ -60,42 +70,28 @@ export function useAuth() {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('Iniciando processo de login...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('Erro na autenticação:', error);
         throw error;
       }
 
-      toast({
-        title: 'Login realizado com sucesso!',
-        description: 'Bem-vindo ao VamosPassar.',
-      });
-
+      console.log('Login bem-sucedido:', data.user?.email);
       return { success: true, data };
     } catch (error: any) {
-      let message = 'Erro inesperado. Tente novamente.';
-      
-      if (error.message.includes('Invalid login credentials')) {
-        message = 'Email ou senha incorretos.';
-      } else if (error.message.includes('Email not confirmed')) {
-        message = 'Por favor, confirme seu email antes de fazer login.';
-      }
-
-      toast({
-        title: 'Erro no login',
-        description: message,
-        variant: 'destructive',
-      });
-
+      console.error('Erro capturado no signIn:', error);
       return { success: false, error };
     }
   };
 
   const signUp = async (email: string, password: string, name?: string) => {
     try {
+      console.log('Iniciando processo de cadastro...');
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -107,41 +103,28 @@ export function useAuth() {
       });
 
       if (error) {
+        console.error('Erro no cadastro:', error);
         throw error;
       }
 
-      toast({
-        title: 'Conta criada com sucesso!',
-        description: 'Verifique seu email para ativar a conta.',
-      });
-
+      console.log('Cadastro bem-sucedido:', data.user?.email);
       return { success: true, data };
     } catch (error: any) {
-      let message = 'Erro ao criar conta. Tente novamente.';
-      
-      if (error.message.includes('already been registered')) {
-        message = 'Este email já está em uso.';
-      }
-
-      toast({
-        title: 'Erro no cadastro',
-        description: message,
-        variant: 'destructive',
-      });
-
+      console.error('Erro capturado no signUp:', error);
       return { success: false, error };
     }
   };
 
   const signOut = async () => {
     try {
+      console.log('Fazendo logout...');
       await supabase.auth.signOut();
       toast({
         title: 'Logout realizado',
         description: 'Até logo!',
       });
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Erro no logout:', error);
     }
   };
 

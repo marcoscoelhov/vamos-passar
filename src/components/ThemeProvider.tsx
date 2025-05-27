@@ -13,57 +13,28 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ 
   children, 
-  defaultTheme = 'system',
-  enableSystem = true 
+  defaultTheme = 'light',
+  enableSystem = false 
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('theme');
-      logger.debug('Theme loaded from localStorage', { stored, defaultTheme });
-      return stored || defaultTheme;
-    }
-    return defaultTheme;
-  });
+  const [theme, setThemeState] = useState<string>('light');
 
   const setTheme = useCallback((newTheme: string) => {
-    logger.info('Theme changed', { from: theme, to: newTheme });
-    setThemeState(newTheme);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('theme', newTheme);
-    }
-  }, [theme]);
+    // Force light theme only
+    logger.info('Theme set to light (dark mode disabled)');
+    setThemeState('light');
+  }, []);
 
   const contextValue = useMemo(() => ({
-    theme,
+    theme: 'light',
     setTheme
-  }), [theme, setTheme]);
+  }), [setTheme]);
 
   useEffect(() => {
     const root = window.document.documentElement;
-    
-    const applyTheme = (themeToApply: string) => {
-      root.classList.remove('light', 'dark');
-      root.classList.add(themeToApply);
-      logger.debug('Theme applied to DOM', { theme: themeToApply });
-    };
-
-    if (theme === 'system' && enableSystem) {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      applyTheme(systemTheme);
-
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = (e: MediaQueryListEvent) => {
-        const newSystemTheme = e.matches ? 'dark' : 'light';
-        applyTheme(newSystemTheme);
-        logger.debug('System theme changed', { theme: newSystemTheme });
-      };
-
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    } else {
-      applyTheme(theme);
-    }
-  }, [theme, enableSystem]);
+    root.classList.remove('light', 'dark');
+    root.classList.add('light');
+    logger.debug('Theme forced to light mode');
+  }, []);
 
   return (
     <ThemeContext.Provider value={contextValue}>

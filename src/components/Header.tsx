@@ -6,7 +6,6 @@ import { LogOut, Settings, User } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
-import { ThemeToggle } from './ThemeToggle';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { logger } from '@/utils/logger';
 
@@ -28,15 +27,13 @@ export function Header() {
   };
 
   return (
-    <header className="bg-background border-b border-border px-4 py-3 transition-colors duration-300">
+    <header className="bg-background border-b border-border px-4 py-3">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-4">
           <Logo />
         </div>
 
         <div className="flex items-center gap-4">
-          <ThemeToggle />
-          
           {isLoading ? (
             <LoadingSkeleton variant="avatar" className="w-32" />
           ) : isAuthenticated ? (
@@ -58,7 +55,7 @@ export function Header() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex items-center gap-2 hover:bg-accent transition-colors"
+                    className="flex items-center gap-2 hover:bg-accent"
                   >
                     <Settings className="w-4 h-4" />
                     Admin
@@ -70,7 +67,7 @@ export function Header() {
                 onClick={handleLogout} 
                 variant="ghost" 
                 size="sm" 
-                className="flex items-center gap-2 hover:bg-accent hover:text-destructive transition-colors"
+                className="flex items-center gap-2 hover:bg-accent hover:text-destructive"
               >
                 <LogOut className="w-4 h-4" />
                 Sair
@@ -78,7 +75,7 @@ export function Header() {
             </>
           ) : (
             <Link to="/login">
-              <Button variant="default" size="sm" className="transition-colors">
+              <Button variant="default" size="sm">
                 Entrar
               </Button>
             </Link>
