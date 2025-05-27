@@ -22,7 +22,6 @@ export function useDragAndDrop({ topics, onReorder, onMoveToParent }: UseDragAnd
   }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
-    // Aqui podemos adicionar lógica para mostrar indicadores visuais
     console.log('Drag over:', event);
   }, []);
 

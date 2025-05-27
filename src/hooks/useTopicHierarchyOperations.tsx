@@ -61,11 +61,11 @@ export function useTopicHierarchyOperations() {
     }
   }, [toast]);
 
-  const reorderTopics = useCallback(async (topicIds: string[]) => {
+  const reorderTopics = useCallback(async (topics: Topic[]) => {
     setIsLoading(true);
     try {
-      const updates = topicIds.map((id, index) => ({
-        id,
+      const updates = topics.map((topic, index) => ({
+        id: topic.id,
         order_index: index + 1
       }));
 
