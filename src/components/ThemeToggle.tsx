@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 
-// Theme toggle disabled - app now uses light mode only
+// Simplified theme toggle - disabled and shows light mode only
 export function ThemeToggle() {
   return (
     <Button
@@ -10,10 +10,10 @@ export function ThemeToggle() {
       size="sm"
       disabled
       className="w-9 h-9 p-0 opacity-50 cursor-not-allowed"
-      title="Modo escuro desabilitado"
+      title="Modo claro ativo"
     >
       <span className="text-xs">☀️</span>
-      <span className="sr-only">Light mode only</span>
+      <span className="sr-only">Modo claro</span>
     </Button>
   );
 }

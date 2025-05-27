@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Highlight, DbHighlight } from '@/types/course';
@@ -9,7 +9,7 @@ export function useHighlights(topicId?: string, userId?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const mapDbHighlightToHighlight = (dbHighlight: DbHighlight): Highlight => ({
+  const mapDbHighlightToHighlight = useCallback((dbHighlight: DbHighlight): Highlight => ({
     id: dbHighlight.id,
     userId: dbHighlight.user_id,
     topicId: dbHighlight.topic_id,
@@ -21,9 +21,9 @@ export function useHighlights(topicId?: string, userId?: string) {
     note: dbHighlight.note || undefined,
     createdAt: dbHighlight.created_at,
     updatedAt: dbHighlight.updated_at,
-  });
+  }), []);
 
-  const fetchHighlights = async () => {
+  const fetchHighlights = useCallback(async () => {
     if (!topicId || !userId) return;
 
     try {
@@ -49,9 +49,9 @@ export function useHighlights(topicId?: string, userId?: string) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [topicId, userId, mapDbHighlightToHighlight, toast]);
 
-  const addHighlight = async (
+  const addHighlight = useCallback(async (
     highlightedText: string,
     positionStart: number,
     positionEnd: number,
@@ -98,9 +98,11 @@ export function useHighlights(topicId?: string, userId?: string) {
         variant: 'destructive',
       });
     }
-  };
+  }, [topicId, userId, mapDbHighlightToHighlight, toast]);
 
-  const updateHighlight = async (highlightId: string, note: string) => {
+  const updateHighlight = useCallback(async (highlightId: string, note: string) => {
+    if (!userId) return;
+
     try {
       const { data, error } = await supabase
         .from('user_highlights')
@@ -131,9 +133,11 @@ export function useHighlights(topicId?: string, userId?: string) {
         variant: 'destructive',
       });
     }
-  };
+  }, [userId, mapDbHighlightToHighlight, toast]);
 
-  const deleteHighlight = async (highlightId: string) => {
+  const deleteHighlight = useCallback(async (highlightId: string) => {
+    if (!userId) return;
+
     try {
       const { error } = await supabase
         .from('user_highlights')
@@ -157,18 +161,20 @@ export function useHighlights(topicId?: string, userId?: string) {
         variant: 'destructive',
       });
     }
-  };
+  }, [userId, toast]);
 
-  useEffect(() => {
-    fetchHighlights();
-  }, [topicId, userId]);
-
-  return {
+  const memoizedReturn = useMemo(() => ({
     highlights,
     isLoading,
     addHighlight,
     updateHighlight,
     deleteHighlight,
     fetchHighlights,
-  };
+  }), [highlights, isLoading, addHighlight, updateHighlight, deleteHighlight, fetchHighlights]);
+
+  useEffect(() => {
+    fetchHighlights();
+  }, [fetchHighlights]);
+
+  return memoizedReturn;
 }

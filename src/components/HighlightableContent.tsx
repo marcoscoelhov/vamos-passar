@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
@@ -14,56 +14,66 @@ interface HighlightableContentProps {
   userId?: string;
 }
 
-export function HighlightableContent({ content, topicId, userId }: HighlightableContentProps) {
+export const HighlightableContent = React.memo(function HighlightableContent({ 
+  content, 
+  topicId, 
+  userId 
+}: HighlightableContentProps) {
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [note, setNote] = useState('');
   const [editingHighlight, setEditingHighlight] = useState<string | null>(null);
+  const [editingNote, setEditingNote] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
   
   const { highlights, addHighlight, updateHighlight, deleteHighlight } = useHighlights(topicId, userId);
 
-  const formatContent = (content: string) => {
+  const formatContent = useCallback((content: string) => {
     return content
       .split('\n')
       .map(line => {
-        if (line.startsWith('## ')) {
-          return `<h2 class="text-2xl font-bold text-gray-900 mb-4 mt-6">${line.substring(3)}</h2>`;
+        const trimmedLine = line.trim();
+        
+        if (trimmedLine.startsWith('## ')) {
+          return `<h2 class="text-2xl font-bold text-gray-900 mb-4 mt-6">${trimmedLine.substring(3)}</h2>`;
         }
-        if (line.startsWith('### ')) {
-          return `<h3 class="text-xl font-semibold text-gray-800 mb-3 mt-5">${line.substring(4)}</h3>`;
+        if (trimmedLine.startsWith('### ')) {
+          return `<h3 class="text-xl font-semibold text-gray-800 mb-3 mt-5">${trimmedLine.substring(4)}</h3>`;
         }
-        if (line.startsWith('> ')) {
-          return `<blockquote class="border-l-4 border-blue-500 pl-4 my-4 italic text-gray-700 bg-blue-50 py-2">${line.substring(2)}</blockquote>`;
+        if (trimmedLine.startsWith('> ')) {
+          return `<blockquote class="border-l-4 border-blue-500 pl-4 my-4 italic text-gray-700 bg-blue-50 py-2">${trimmedLine.substring(2)}</blockquote>`;
         }
-        if (line.startsWith('- ')) {
-          return `<li class="ml-4 mb-1 list-disc">${line.substring(2)}</li>`;
+        if (trimmedLine.startsWith('- ')) {
+          return `<li class="ml-4 mb-1 list-disc">${trimmedLine.substring(2)}</li>`;
         }
-        if (line.trim() === '') {
+        if (trimmedLine === '') {
           return '<br>';
         }
         
-        let formattedLine = line
+        let formattedLine = trimmedLine
           .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
           .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
         
         return `<p class="mb-4">${formattedLine}</p>`;
       })
       .join('');
-  };
+  }, []);
 
-  const handleTextSelection = () => {
+  const handleTextSelection = useCallback(() => {
     const selection = window.getSelection();
-    if (selection && selection.toString().trim()) {
-      const range = selection.getRangeAt(0);
-      const selectedText = selection.toString();
+    if (!selection || !selection.toString().trim() || !userId) return;
+
+    const selectedText = selection.toString().trim();
+    const range = selection.getRangeAt(0);
+    
+    // Get position relative to content
+    const contentElement = contentRef.current;
+    if (contentElement) {
+      const textContent = contentElement.textContent || '';
+      const start = textContent.indexOf(selectedText);
       
-      // Get position relative to content
-      const contentElement = contentRef.current;
-      if (contentElement) {
-        const textContent = contentElement.textContent || '';
-        const start = textContent.indexOf(selectedText);
+      if (start !== -1) {
         const end = start + selectedText.length;
         
         setSelectedText(selectedText);
@@ -71,18 +81,21 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
         setShowNoteInput(true);
       }
     }
-  };
+  }, [userId]);
 
-  const handleAddHighlight = async () => {
+  const handleAddHighlight = useCallback(async () => {
     if (!selectedText || !selectionRange || !userId) return;
 
-    const contextBefore = (contentRef.current?.textContent || '').substring(
+    const contentElement = contentRef.current;
+    const textContent = contentElement?.textContent || '';
+    
+    const contextBefore = textContent.substring(
       Math.max(0, selectionRange.start - 50),
       selectionRange.start
     );
-    const contextAfter = (contentRef.current?.textContent || '').substring(
+    const contextAfter = textContent.substring(
       selectionRange.end,
-      Math.min((contentRef.current?.textContent || '').length, selectionRange.end + 50)
+      Math.min(textContent.length, selectionRange.end + 50)
     );
 
     await addHighlight(
@@ -100,47 +113,46 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
     setShowNoteInput(false);
     setNote('');
     window.getSelection()?.removeAllRanges();
-  };
+  }, [selectedText, selectionRange, userId, note, addHighlight]);
 
-  const handleUpdateHighlight = async (highlightId: string) => {
-    const highlight = highlights.find(h => h.id === highlightId);
-    if (highlight) {
-      await updateHighlight(highlightId, highlight.note || '');
-      setEditingHighlight(null);
-    }
-  };
+  const handleCancelSelection = useCallback(() => {
+    setShowNoteInput(false);
+    setSelectedText('');
+    setSelectionRange(null);
+    setNote('');
+    window.getSelection()?.removeAllRanges();
+  }, []);
 
-  const renderContentWithHighlights = () => {
-    if (!highlights.length) {
-      return (
-        <div 
-          ref={contentRef}
-          className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: formatContent(content) }}
-          onMouseUp={handleTextSelection}
-        />
-      );
-    }
+  const handleEditHighlight = useCallback((highlight: Highlight) => {
+    setEditingHighlight(highlight.id);
+    setEditingNote(highlight.note || '');
+  }, []);
 
-    // For now, we'll use a simpler approach and just show the original content
-    // A more sophisticated implementation would need to map highlights to DOM positions
-    return (
-      <div ref={contentRef} onMouseUp={handleTextSelection}>
-        <div 
-          className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: formatContent(content) }}
-        />
-      </div>
-    );
-  };
+  const handleSaveEdit = useCallback(async (highlightId: string) => {
+    await updateHighlight(highlightId, editingNote);
+    setEditingHighlight(null);
+    setEditingNote('');
+  }, [editingNote, updateHighlight]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingHighlight(null);
+    setEditingNote('');
+  }, []);
+
+  const formattedContent = useMemo(() => formatContent(content), [content, formatContent]);
 
   return (
     <div className="space-y-6">
-      {renderContentWithHighlights()}
+      <div 
+        ref={contentRef}
+        className="prose prose-lg max-w-none text-gray-700 leading-relaxed select-text"
+        dangerouslySetInnerHTML={{ __html: formattedContent }}
+        onMouseUp={handleTextSelection}
+      />
 
       {/* Highlight creation modal */}
       {showNoteInput && (
-        <Card className="fixed bottom-4 right-4 p-4 shadow-lg z-50 w-80">
+        <Card className="fixed bottom-4 right-4 p-4 shadow-lg z-50 w-80 animate-fade-in">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -150,18 +162,13 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  setShowNoteInput(false);
-                  setSelectedText('');
-                  setSelectionRange(null);
-                  setNote('');
-                }}
+                onClick={handleCancelSelection}
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
             
-            <div className="text-sm bg-yellow-50 p-2 rounded border">
+            <div className="text-sm bg-yellow-50 p-2 rounded border max-h-20 overflow-y-auto">
               "{selectedText}"
             </div>
             
@@ -179,12 +186,7 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => {
-                  setShowNoteInput(false);
-                  setSelectedText('');
-                  setSelectionRange(null);
-                  setNote('');
-                }}
+                onClick={handleCancelSelection}
               >
                 Cancelar
               </Button>
@@ -212,24 +214,19 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
                 {editingHighlight === highlight.id ? (
                   <div className="mt-2 space-y-2">
                     <Textarea
-                      value={highlight.note || ''}
-                      onChange={(e) => {
-                        const updatedHighlights = highlights.map(h =>
-                          h.id === highlight.id ? { ...h, note: e.target.value } : h
-                        );
-                        // This would need to be handled properly in the parent component
-                      }}
+                      value={editingNote}
+                      onChange={(e) => setEditingNote(e.target.value)}
                       placeholder="Adicione uma nota..."
                       className="min-h-[60px]"
                     />
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleUpdateHighlight(highlight.id)}>
+                      <Button size="sm" onClick={() => handleSaveEdit(highlight.id)}>
                         Salvar
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => setEditingHighlight(null)}
+                        onClick={handleCancelEdit}
                       >
                         Cancelar
                       </Button>
@@ -248,7 +245,7 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setEditingHighlight(highlight.id)}
+                        onClick={() => handleEditHighlight(highlight)}
                       >
                         <Edit className="w-3 h-3 mr-1" />
                         Editar nota
@@ -272,4 +269,4 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
       )}
     </div>
   );
-}
+});

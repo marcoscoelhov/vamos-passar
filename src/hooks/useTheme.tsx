@@ -1,19 +1,8 @@
 
-import React, { useContext } from 'react';
-
-interface ThemeContextType {
-  theme: string;
-  setTheme: (theme: string) => void;
-}
-
-const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
-
+// Simplified theme hook - light mode only
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
+  return {
+    theme: 'light' as const,
+    setTheme: () => {}, // No-op function for compatibility
+  };
 }
-
-export { ThemeContext };
