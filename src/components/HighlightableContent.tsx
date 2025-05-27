@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +22,9 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
   const contentRef = useRef<HTMLDivElement>(null);
   
   const { highlights, addHighlight, updateHighlight, deleteHighlight } = useHighlights(topicId, userId);
+
+  // Store the plain text content for position calculations
+  const plainTextContent = content;
 
   const formatContent = (content: string) => {
     return content
@@ -62,19 +64,26 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
     let highlightedContent = content;
     
     sortedHighlights.forEach((highlight) => {
-      const beforeHighlight = highlightedContent.substring(0, highlight.positionStart);
-      const highlightText = highlightedContent.substring(highlight.positionStart, highlight.positionEnd);
-      const afterHighlight = highlightedContent.substring(highlight.positionEnd);
+      // Find the exact text in the plain content
+      const textToHighlight = plainTextContent.substring(highlight.positionStart, highlight.positionEnd);
       
-      // Create highlighted span with tooltip for note
-      const highlightSpan = `<span 
-        class="bg-yellow-200 px-1 relative cursor-pointer highlight-span" 
-        data-highlight-id="${highlight.id}"
-        data-note="${highlight.note || ''}"
-        title="${highlight.note ? `Nota: ${highlight.note}` : 'Destaque'}"
-      >${highlightText}</span>`;
+      // Use a more precise way to find and replace the text in the formatted content
+      const regex = new RegExp(textToHighlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+      let matchCount = 0;
       
-      highlightedContent = beforeHighlight + highlightSpan + afterHighlight;
+      highlightedContent = highlightedContent.replace(regex, (match) => {
+        matchCount++;
+        // Only replace the first occurrence to avoid duplicates
+        if (matchCount === 1) {
+          return `<span 
+            class="bg-yellow-200 px-1 relative cursor-pointer highlight-span" 
+            data-highlight-id="${highlight.id}"
+            data-note="${highlight.note || ''}"
+            title="${highlight.note ? `Nota: ${highlight.note}` : 'Destaque'}"
+          >${match}</span>`;
+        }
+        return match;
+      });
     });
 
     return highlightedContent;
@@ -83,43 +92,48 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
   const handleTextSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.toString().trim()) {
-      const range = selection.getRangeAt(0);
-      const selectedText = selection.toString();
+      const selectedText = selection.toString().trim();
       
-      // Get position relative to plain text content
-      const contentElement = contentRef.current;
-      if (contentElement) {
-        const textContent = contentElement.textContent || '';
-        const start = textContent.indexOf(selectedText);
-        const end = start + selectedText.length;
-        
-        // Check if selection overlaps with existing highlights
-        const overlapping = highlights.some(highlight => 
-          (start < highlight.positionEnd && end > highlight.positionStart)
-        );
-        
-        if (overlapping) {
-          window.getSelection()?.removeAllRanges();
-          return;
-        }
-        
-        setSelectedText(selectedText);
-        setSelectionRange({ start, end });
-        setShowNoteInput(true);
+      // Find the position in the plain text content
+      const start = plainTextContent.indexOf(selectedText);
+      const end = start + selectedText.length;
+      
+      if (start === -1) {
+        console.log('Selected text not found in plain content');
+        window.getSelection()?.removeAllRanges();
+        return;
       }
+      
+      // Check if selection overlaps with existing highlights
+      const overlapping = highlights.some(highlight => 
+        (start < highlight.positionEnd && end > highlight.positionStart)
+      );
+      
+      if (overlapping) {
+        console.log('Selection overlaps with existing highlight');
+        window.getSelection()?.removeAllRanges();
+        return;
+      }
+      
+      console.log('Selected text:', selectedText, 'Position:', start, '-', end);
+      setSelectedText(selectedText);
+      setSelectionRange({ start, end });
+      setShowNoteInput(true);
     }
   };
 
   const handleAddHighlight = async () => {
     if (!selectedText || !selectionRange || !userId) return;
 
-    const contextBefore = (contentRef.current?.textContent || '').substring(
+    console.log('Adding highlight:', selectedText, selectionRange);
+
+    const contextBefore = plainTextContent.substring(
       Math.max(0, selectionRange.start - 50),
       selectionRange.start
     );
-    const contextAfter = (contentRef.current?.textContent || '').substring(
+    const contextAfter = plainTextContent.substring(
       selectionRange.end,
-      Math.min((contentRef.current?.textContent || '').length, selectionRange.end + 50)
+      Math.min(plainTextContent.length, selectionRange.end + 50)
     );
 
     await addHighlight(
@@ -158,8 +172,8 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
   };
 
   const renderContentWithHighlights = () => {
-    const plainContent = formatContent(content);
-    const highlightedContent = applyHighlightsToContent(plainContent, highlights);
+    const formattedContent = formatContent(plainTextContent);
+    const highlightedContent = applyHighlightsToContent(formattedContent, highlights);
     
     return (
       <div 
