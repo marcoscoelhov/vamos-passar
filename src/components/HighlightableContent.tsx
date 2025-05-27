@@ -53,18 +53,55 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
       .join('');
   };
 
+  const applyHighlightsToContent = (content: string, highlights: Highlight[]) => {
+    if (!highlights.length) return content;
+
+    // Sort highlights by position to avoid conflicts
+    const sortedHighlights = [...highlights].sort((a, b) => b.positionStart - a.positionStart);
+    
+    let highlightedContent = content;
+    
+    sortedHighlights.forEach((highlight) => {
+      const beforeHighlight = highlightedContent.substring(0, highlight.positionStart);
+      const highlightText = highlightedContent.substring(highlight.positionStart, highlight.positionEnd);
+      const afterHighlight = highlightedContent.substring(highlight.positionEnd);
+      
+      // Create highlighted span with tooltip for note
+      const highlightSpan = `<span 
+        class="bg-yellow-200 px-1 relative cursor-pointer highlight-span" 
+        data-highlight-id="${highlight.id}"
+        data-note="${highlight.note || ''}"
+        title="${highlight.note ? `Nota: ${highlight.note}` : 'Destaque'}"
+      >${highlightText}</span>`;
+      
+      highlightedContent = beforeHighlight + highlightSpan + afterHighlight;
+    });
+
+    return highlightedContent;
+  };
+
   const handleTextSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.toString().trim()) {
       const range = selection.getRangeAt(0);
       const selectedText = selection.toString();
       
-      // Get position relative to content
+      // Get position relative to plain text content
       const contentElement = contentRef.current;
       if (contentElement) {
         const textContent = contentElement.textContent || '';
         const start = textContent.indexOf(selectedText);
         const end = start + selectedText.length;
+        
+        // Check if selection overlaps with existing highlights
+        const overlapping = highlights.some(highlight => 
+          (start < highlight.positionEnd && end > highlight.positionStart)
+        );
+        
+        if (overlapping) {
+          window.getSelection()?.removeAllRanges();
+          return;
+        }
         
         setSelectedText(selectedText);
         setSelectionRange({ start, end });
@@ -110,27 +147,28 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
     }
   };
 
-  const renderContentWithHighlights = () => {
-    if (!highlights.length) {
-      return (
-        <div 
-          ref={contentRef}
-          className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: formatContent(content) }}
-          onMouseUp={handleTextSelection}
-        />
-      );
+  const handleHighlightClick = (event: React.MouseEvent) => {
+    const target = event.target as HTMLElement;
+    if (target.classList.contains('highlight-span')) {
+      const highlightId = target.getAttribute('data-highlight-id');
+      if (highlightId) {
+        setEditingHighlight(highlightId);
+      }
     }
+  };
 
-    // For now, we'll use a simpler approach and just show the original content
-    // A more sophisticated implementation would need to map highlights to DOM positions
+  const renderContentWithHighlights = () => {
+    const plainContent = formatContent(content);
+    const highlightedContent = applyHighlightsToContent(plainContent, highlights);
+    
     return (
-      <div ref={contentRef} onMouseUp={handleTextSelection}>
-        <div 
-          className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: formatContent(content) }}
-        />
-      </div>
+      <div 
+        ref={contentRef}
+        className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: highlightedContent }}
+        onMouseUp={handleTextSelection}
+        onClick={handleHighlightClick}
+      />
     );
   };
 
@@ -193,7 +231,66 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
         </Card>
       )}
 
-      {/* Highlights list */}
+      {/* Highlight editing modal */}
+      {editingHighlight && (
+        <Card className="fixed bottom-4 right-4 p-4 shadow-lg z-50 w-80">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Edit className="w-4 h-4 text-blue-600" />
+                <span className="font-medium">Editar Destaque</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditingHighlight(null)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {(() => {
+              const highlight = highlights.find(h => h.id === editingHighlight);
+              return highlight ? (
+                <>
+                  <div className="text-sm bg-yellow-50 p-2 rounded border">
+                    "{highlight.highlightedText}"
+                  </div>
+                  
+                  <Textarea
+                    value={highlight.note || ''}
+                    onChange={(e) => {
+                      // Update local state for immediate feedback
+                      const updatedHighlights = highlights.map(h =>
+                        h.id === editingHighlight ? { ...h, note: e.target.value } : h
+                      );
+                    }}
+                    placeholder="Adicione uma nota..."
+                    className="min-h-[60px]"
+                  />
+                  
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleUpdateHighlight(editingHighlight)} className="flex-1">
+                      Salvar
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => deleteHighlight(editingHighlight)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <X className="w-3 h-3 mr-1" />
+                      Remover
+                    </Button>
+                  </div>
+                </>
+              ) : null;
+            })()}
+          </div>
+        </Card>
+      )}
+
+      {/* Highlights summary */}
       {highlights.length > 0 && (
         <Card className="p-6 mt-8">
           <div className="flex items-center gap-2 mb-4">
@@ -202,71 +299,8 @@ export function HighlightableContent({ content, topicId, userId }: Highlightable
             <Badge variant="outline">{highlights.length}</Badge>
           </div>
           
-          <div className="space-y-4">
-            {highlights.map((highlight) => (
-              <div key={highlight.id} className="border-l-4 border-yellow-400 pl-4 py-2">
-                <div className="bg-yellow-50 p-3 rounded text-sm">
-                  "{highlight.highlightedText}"
-                </div>
-                
-                {editingHighlight === highlight.id ? (
-                  <div className="mt-2 space-y-2">
-                    <Textarea
-                      value={highlight.note || ''}
-                      onChange={(e) => {
-                        const updatedHighlights = highlights.map(h =>
-                          h.id === highlight.id ? { ...h, note: e.target.value } : h
-                        );
-                        // This would need to be handled properly in the parent component
-                      }}
-                      placeholder="Adicione uma nota..."
-                      className="min-h-[60px]"
-                    />
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleUpdateHighlight(highlight.id)}>
-                        Salvar
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setEditingHighlight(null)}
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {highlight.note && (
-                      <div className="mt-2 flex items-start gap-2 text-sm text-gray-600">
-                        <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                        <span>{highlight.note}</span>
-                      </div>
-                    )}
-                    
-                    <div className="mt-2 flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingHighlight(highlight.id)}
-                      >
-                        <Edit className="w-3 h-3 mr-1" />
-                        Editar nota
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteHighlight(highlight.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X className="w-3 h-3 mr-1" />
-                        Remover
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
+          <div className="text-sm text-gray-600">
+            Clique em qualquer destaque no texto para editar ou remover a nota.
           </div>
         </Card>
       )}
