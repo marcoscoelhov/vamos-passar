@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollToTop } from '@/components/ui/scroll-to-top';
 import { PlusCircle, Target, Users, BarChart3, FileText, TreePine } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { AdminOverview } from './admin/AdminOverview';
@@ -17,7 +18,6 @@ export function AdminPanel() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleContentAdded = () => {
-    // Trigger a refresh of the course data
     setRefreshKey(prev => prev + 1);
   };
 
@@ -32,93 +32,97 @@ export function AdminPanel() {
   const isAdmin = profile?.is_admin || false;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Administrativo</h1>
-          <p className="text-gray-600">Gerencie conteúdo, questões e monitore o desempenho</p>
-        </div>
+    <>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Administrativo</h1>
+            <p className="text-gray-600">Gerencie conteúdo, questões e monitore o desempenho</p>
+          </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="hierarchy">Hierarquia</TabsTrigger>
-            <TabsTrigger value="topics">Tópicos</TabsTrigger>
-            <TabsTrigger value="questions">Questões</TabsTrigger>
-            <TabsTrigger value="students">Alunos</TabsTrigger>
-            <TabsTrigger value="logs">Logs</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-7">
+              <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="hierarchy">Hierarquia</TabsTrigger>
+              <TabsTrigger value="topics">Tópicos</TabsTrigger>
+              <TabsTrigger value="questions">Questões</TabsTrigger>
+              <TabsTrigger value="students">Alunos</TabsTrigger>
+              <TabsTrigger value="logs">Logs</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="overview">
-            <AdminOverview course={currentCourse} />
-          </TabsContent>
+            <TabsContent value="overview">
+              <AdminOverview course={currentCourse} />
+            </TabsContent>
 
-          <TabsContent value="analytics">
-            <div className="flex items-center gap-2 mb-6">
-              <BarChart3 className="w-5 h-5" />
-              <h2 className="text-xl font-semibold">Dashboard Analítico</h2>
-            </div>
-            <AnalyticsDashboard />
-          </TabsContent>
+            <TabsContent value="analytics">
+              <div className="flex items-center gap-2 mb-6">
+                <BarChart3 className="w-5 h-5" />
+                <h2 className="text-xl font-semibold">Dashboard Analítico</h2>
+              </div>
+              <AnalyticsDashboard />
+            </TabsContent>
 
-          <TabsContent value="hierarchy">
-            <div className="flex items-center gap-2 mb-6">
-              <TreePine className="w-5 h-5" />
-              <h2 className="text-xl font-semibold">Gerenciar Hierarquia de Tópicos</h2>
-            </div>
-            <TopicHierarchyManager 
-              course={currentCourse} 
-              isAdmin={isAdmin}
-              onTopicUpdated={handleContentAdded}
-            />
-          </TabsContent>
-
-          <TabsContent value="topics">
-            <div className="flex items-center gap-2 mb-6">
-              <PlusCircle className="w-5 h-5" />
-              <h2 className="text-xl font-semibold">Gerenciar Tópicos</h2>
-            </div>
-            
-            {isAdmin && (
-              <BulkContentButton 
+            <TabsContent value="hierarchy">
+              <div className="flex items-center gap-2 mb-6">
+                <TreePine className="w-5 h-5" />
+                <h2 className="text-xl font-semibold">Gerenciar Hierarquia de Tópicos</h2>
+              </div>
+              <TopicHierarchyManager 
                 course={currentCourse} 
-                onContentAdded={handleContentAdded}
+                isAdmin={isAdmin}
+                onTopicUpdated={handleContentAdded}
               />
-            )}
-            
-            <TopicForm 
-              course={currentCourse} 
-              isAdmin={isAdmin}
-              onTopicAdded={handleContentAdded}
-            />
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="questions">
-            <div className="flex items-center gap-2 mb-6">
-              <Target className="w-5 h-5" />
-              <h2 className="text-xl font-semibold">Gerenciar Questões</h2>
-            </div>
-            <QuestionForm 
-              topics={currentCourse.topics}
-              isAdmin={isAdmin}
-              onQuestionAdded={handleContentAdded}
-            />
-          </TabsContent>
+            <TabsContent value="topics">
+              <div className="flex items-center gap-2 mb-6">
+                <PlusCircle className="w-5 h-5" />
+                <h2 className="text-xl font-semibold">Gerenciar Tópicos</h2>
+              </div>
+              
+              {isAdmin && (
+                <BulkContentButton 
+                  course={currentCourse} 
+                  onContentAdded={handleContentAdded}
+                />
+              )}
+              
+              <TopicForm 
+                course={currentCourse} 
+                isAdmin={isAdmin}
+                onTopicAdded={handleContentAdded}
+              />
+            </TabsContent>
 
-          <TabsContent value="students">
-            <StudentsManagement />
-          </TabsContent>
+            <TabsContent value="questions">
+              <div className="flex items-center gap-2 mb-6">
+                <Target className="w-5 h-5" />
+                <h2 className="text-xl font-semibold">Gerenciar Questões</h2>
+              </div>
+              <QuestionForm 
+                topics={currentCourse.topics}
+                isAdmin={isAdmin}
+                onQuestionAdded={handleContentAdded}
+              />
+            </TabsContent>
 
-          <TabsContent value="logs">
-            <div className="flex items-center gap-2 mb-6">
-              <FileText className="w-5 h-5" />
-              <h2 className="text-xl font-semibold">Logs de Auditoria</h2>
-            </div>
-            <AuditLogs />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="students">
+              <StudentsManagement />
+            </TabsContent>
+
+            <TabsContent value="logs">
+              <div className="flex items-center gap-2 mb-6">
+                <FileText className="w-5 h-5" />
+                <h2 className="text-xl font-semibold">Logs de Auditoria</h2>
+              </div>
+              <AuditLogs />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-    </div>
+      
+      <ScrollToTop />
+    </>
   );
 }
