@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, HelpCircle, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Download, HelpCircle, Bookmark, BookmarkCheck, Key } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { useDownload } from '@/hooks/useDownload';
 import { useBookmarks } from '@/hooks/useBookmarks';
@@ -13,6 +13,7 @@ import { Breadcrumbs } from './Breadcrumbs';
 import { GlobalSearch } from './GlobalSearch';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { TopicContentSkeleton } from './TopicContentSkeleton';
+import { AnswerKeyModal } from './AnswerKeyModal';
 
 export function CourseContent() {
   const { currentTopic, currentCourse, user, isLoadingQuestions } = useCourse();
@@ -90,6 +91,20 @@ export function CourseContent() {
             <Download className="w-4 h-4" />
             {isDownloading ? 'Baixando...' : 'PDF'}
           </Button>
+
+          {/* Botão de gabarito */}
+          {currentTopic.questions && currentTopic.questions.length > 0 && (
+            <AnswerKeyModal topic={currentTopic}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Key className="w-4 h-4" />
+                Gabarito
+              </Button>
+            </AnswerKeyModal>
+          )}
         </div>
       </div>
 
