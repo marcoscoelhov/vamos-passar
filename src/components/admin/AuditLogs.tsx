@@ -104,7 +104,7 @@ export function AuditLogs() {
               <SelectValue placeholder="Todas as tabelas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as tabelas</SelectItem>
+              <SelectItem value="all">Todas as tabelas</SelectItem>
               <SelectItem value="topics">Tópicos</SelectItem>
               <SelectItem value="questions">Questões</SelectItem>
               <SelectItem value="profiles">Perfis</SelectItem>
@@ -116,7 +116,7 @@ export function AuditLogs() {
               <SelectValue placeholder="Todas as ações" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as ações</SelectItem>
+              <SelectItem value="all">Todas as ações</SelectItem>
               <SelectItem value="INSERT">Criação</SelectItem>
               <SelectItem value="UPDATE">Atualização</SelectItem>
               <SelectItem value="DELETE">Exclusão</SelectItem>
@@ -231,7 +231,7 @@ export function AuditLogs() {
           <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">Nenhum log encontrado</h3>
           <p className="text-gray-600">
-            {filterTable || filterAction 
+            {filterTable && filterTable !== 'all' || filterAction && filterAction !== 'all'
               ? 'Nenhum log corresponde aos filtros aplicados.' 
               : 'Ainda não há logs de auditoria registrados.'
             }

@@ -20,13 +20,13 @@ export function useAuditLogs() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [filterTable, setFilterTable] = useState<string>('');
-  const [filterAction, setFilterAction] = useState<string>('');
+  const [filterTable, setFilterTable] = useState<string>('all');
+  const [filterAction, setFilterAction] = useState<string>('all');
   const { toast } = useToast();
 
   const ITEMS_PER_PAGE = 20;
 
-  const fetchLogs = async (page = 1, table = '', action = '') => {
+  const fetchLogs = async (page = 1, table = 'all', action = 'all') => {
     setIsLoading(true);
     try {
       const start = (page - 1) * ITEMS_PER_PAGE;
@@ -38,11 +38,11 @@ export function useAuditLogs() {
         .range(start, end)
         .order('created_at', { ascending: false });
 
-      if (table) {
+      if (table && table !== 'all') {
         query = query.eq('table_name', table);
       }
 
-      if (action) {
+      if (action && action !== 'all') {
         query = query.eq('action', action);
       }
 

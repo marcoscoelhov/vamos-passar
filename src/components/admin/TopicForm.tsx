@@ -19,7 +19,7 @@ interface TopicFormProps {
 export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [parentTopicId, setParentTopicId] = useState<string>('');
+  const [parentTopicId, setParentTopicId] = useState<string>('none');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { addTopic, isLoading } = useTopics();
 
@@ -37,13 +37,13 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
         course.id,
         { title: title.trim(), content: content.trim() },
         isAdmin,
-        parentTopicId || undefined
+        parentTopicId === 'none' ? undefined : parentTopicId
       );
       
       // Reset form
       setTitle('');
       setContent('');
-      setParentTopicId('');
+      setParentTopicId('none');
       setShowConfirmDialog(false);
       onTopicAdded();
     } catch (error) {
@@ -109,7 +109,7 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
               <SelectValue placeholder="Selecione um tópico pai ou deixe em branco" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhum (tópico principal)</SelectItem>
+              <SelectItem value="none">Nenhum (tópico principal)</SelectItem>
               {getTopicOptions(course.topics)}
             </SelectContent>
           </Select>
@@ -155,7 +155,7 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
             <AlertDialogTitle>Confirmar adição de tópico</AlertDialogTitle>
             <AlertDialogDescription>
               Você está prestes a adicionar um novo tópico "{title}" ao curso. 
-              {parentTopicId ? ' Este será um subtópico.' : ' Este será um tópico principal.'}
+              {parentTopicId && parentTopicId !== 'none' ? ' Este será um subtópico.' : ' Este será um tópico principal.'}
               
               <div className="mt-4 p-3 bg-gray-50 rounded">
                 <p className="text-sm"><strong>Título:</strong> {title}</p>
