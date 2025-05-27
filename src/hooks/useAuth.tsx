@@ -119,7 +119,7 @@ export function useAuth() {
     try {
       console.log('Iniciando recuperação de senha para:', email);
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/login?recovery=true`,
       });
 
       if (error) {
