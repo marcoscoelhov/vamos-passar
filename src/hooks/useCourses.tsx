@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DbQuestion, DbTopic } from '@/types/course';
@@ -12,20 +11,60 @@ interface Course {
   updated_at: string;
 }
 
+// Cache interfaces
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export function useCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [topics, setTopics] = useState<DbTopic[]>([]);
   const [questions, setQuestions] = useState<DbQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingStates, setLoadingStates] = useState({
+    courses: false,
+    topics: false,
+    questions: false,
+  });
+  
+  // Enhanced caching system
+  const [topicsCache] = useState(new Map<string, CacheEntry<DbTopic[]>>());
+  const [questionsCache] = useState(new Map<string, CacheEntry<DbQuestion[]>>());
+  
   const { toast } = useToast();
 
   useEffect(() => {
     fetchCourses();
   }, []);
 
-  const fetchCourses = async () => {
+  const showError = useCallback((title: string, description: string) => {
+    toast({
+      title,
+      description,
+      variant: 'destructive',
+    });
+  }, [toast]);
+
+  const showSuccess = useCallback((title: string, description: string) => {
+    toast({
+      title,
+      description,
+    });
+  }, [toast]);
+
+  const isValidCacheEntry = useCallback(<T,>(entry: CacheEntry<T> | undefined): boolean => {
+    if (!entry) return false;
+    return Date.now() - entry.timestamp < CACHE_DURATION;
+  }, []);
+
+  const fetchCourses = useCallback(async () => {
     try {
       setIsLoading(true);
+      setLoadingStates(prev => ({ ...prev, courses: true }));
+      
       const { data, error } = await supabase
         .from('courses')
         .select('*')
@@ -38,18 +77,24 @@ export function useCourses() {
       setCourses(data || []);
     } catch (error) {
       console.error('Error fetching courses:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar os cursos.',
-        variant: 'destructive',
-      });
+      showError('Erro', 'Não foi possível carregar os cursos.');
     } finally {
       setIsLoading(false);
+      setLoadingStates(prev => ({ ...prev, courses: false }));
     }
-  };
+  }, [showError]);
 
-  const fetchTopics = async (courseId: string) => {
+  const fetchTopics = useCallback(async (courseId: string) => {
     try {
+      setLoadingStates(prev => ({ ...prev, topics: true }));
+
+      // Check cache first
+      const cachedEntry = topicsCache.get(courseId);
+      if (isValidCacheEntry(cachedEntry)) {
+        setTopics(cachedEntry!.data);
+        return cachedEntry!.data;
+      }
+
       const { data, error } = await supabase
         .from('topics')
         .select('*')
@@ -61,21 +106,36 @@ export function useCourses() {
         throw error;
       }
 
-      setTopics(data || []);
-      return data || [];
+      const topicsData = data || [];
+      
+      // Update cache
+      topicsCache.set(courseId, {
+        data: topicsData,
+        timestamp: Date.now()
+      });
+      
+      setTopics(topicsData);
+      return topicsData;
     } catch (error) {
       console.error('Error fetching topics:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar os tópicos.',
-        variant: 'destructive',
-      });
+      showError('Erro', 'Não foi possível carregar os tópicos.');
       return [];
+    } finally {
+      setLoadingStates(prev => ({ ...prev, topics: false }));
     }
-  };
+  }, [topicsCache, isValidCacheEntry, showError]);
 
-  const fetchQuestions = async (topicId: string) => {
+  const fetchQuestions = useCallback(async (topicId: string) => {
     try {
+      setLoadingStates(prev => ({ ...prev, questions: true }));
+
+      // Check cache first
+      const cachedEntry = questionsCache.get(topicId);
+      if (isValidCacheEntry(cachedEntry)) {
+        setQuestions(cachedEntry!.data);
+        return cachedEntry!.data;
+      }
+
       const { data, error } = await supabase
         .from('questions')
         .select('*')
@@ -86,18 +146,36 @@ export function useCourses() {
         throw error;
       }
 
-      setQuestions(data || []);
-      return data || [];
+      const questionsData = data || [];
+      
+      // Update cache
+      questionsCache.set(topicId, {
+        data: questionsData,
+        timestamp: Date.now()
+      });
+      
+      setQuestions(questionsData);
+      return questionsData;
     } catch (error) {
       console.error('Error fetching questions:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar as questões.',
-        variant: 'destructive',
-      });
+      showError('Erro', 'Não foi possível carregar as questões.');
       return [];
+    } finally {
+      setLoadingStates(prev => ({ ...prev, questions: false }));
     }
-  };
+  }, [questionsCache, isValidCacheEntry, showError]);
+
+  const invalidateCache = useCallback((type: 'topics' | 'questions', id?: string) => {
+    if (type === 'topics' && id) {
+      topicsCache.delete(id);
+    } else if (type === 'questions' && id) {
+      questionsCache.delete(id);
+    } else if (type === 'topics') {
+      topicsCache.clear();
+    } else if (type === 'questions') {
+      questionsCache.clear();
+    }
+  }, [topicsCache, questionsCache]);
 
   const addTopic = async (
     courseId: string, 
@@ -636,18 +714,35 @@ Correspondência entre o ato e a previsão legal.
     }
   };
 
-  return {
+  const memoizedReturn = useMemo(() => ({
     courses,
     topics,
     questions,
     isLoading,
+    loadingStates,
     fetchCourses,
     fetchTopics,
     fetchQuestions,
+    invalidateCache,
     addTopic,
     addQuestion,
     addBulkContent,
-  };
+  }), [
+    courses,
+    topics,
+    questions,
+    isLoading,
+    loadingStates,
+    fetchCourses,
+    fetchTopics,
+    fetchQuestions,
+    invalidateCache,
+    addTopic,
+    addQuestion,
+    addBulkContent,
+  ]);
+
+  return memoizedReturn;
 }
 
 function getQuestionsForTopic(topicId: string) {
@@ -682,7 +777,7 @@ function getQuestionsForTopic(topicId: string) {
       question: "São direitos sociais, segundo o art. 6º da Constituição Federal:",
       options: [
         "Vida, liberdade e propriedade",
-        "Educação, saúde, trabalho e moradia",
+        "Educação, saúde, alimentação, trabalho e moradia",
         "Voto, elegibilidade e associação",
         "Livre manifestação e locomoção"
       ],

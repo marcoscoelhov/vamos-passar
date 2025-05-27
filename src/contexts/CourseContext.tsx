@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCourses } from '@/hooks/useCourses';
 import { useUserProgress } from '@/hooks/useUserProgress';
@@ -22,6 +22,8 @@ interface CourseContextType {
   logout: () => void;
   isLoading: boolean;
   refreshCourse: () => void;
+  questionsCache: Map<string, Question[]>;
+  isLoadingQuestions: boolean;
 }
 
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
@@ -38,7 +40,7 @@ interface CourseProviderProps {
   children: ReactNode;
 }
 
-export function CourseProvider({ children }: CourseProviderProps) {
+export const CourseProvider = React.memo(function CourseProvider({ children }: CourseProviderProps) {
   const { user, profile, isAuthenticated, signIn, signOut, isLoading: authLoading } = useAuth();
   const { courses, topics, questions, isLoading: coursesLoading, fetchTopics, fetchQuestions } = useCourses();
   const { markTopicCompleted, isTopicCompleted } = useUserProgress(user?.id);
@@ -47,8 +49,16 @@ export function CourseProvider({ children }: CourseProviderProps) {
 
   const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
+  const [questionsCache, setQuestionsCache] = useState<Map<string, Question[]>>(new Map());
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
 
   const isLoading = authLoading || coursesLoading;
+
+  // Memoize expensive calculations
+  const memoizedCourseData = useMemo(() => {
+    if (!courses.length || !currentCourse) return null;
+    return courses.find(c => c.id === currentCourse.id);
+  }, [courses, currentCourse?.id]);
 
   // Load first course and its topics when courses are available
   useEffect(() => {
@@ -57,7 +67,7 @@ export function CourseProvider({ children }: CourseProviderProps) {
     }
   }, [courses, authLoading]);
 
-  const loadCourse = async (courseId: string) => {
+  const loadCourse = useCallback(async (courseId: string) => {
     try {
       const course = courses.find(c => c.id === courseId);
       if (!course) return;
@@ -67,10 +77,19 @@ export function CourseProvider({ children }: CourseProviderProps) {
       // Load questions for each topic and check completion status
       const topicsWithQuestions = await Promise.all(
         courseTopics.map(async (dbTopic) => {
-          const dbQuestions: DbQuestion[] = await fetchQuestions(dbTopic.id);
-          const mappedQuestions = dbQuestions.map(mapDbQuestionToQuestion);
-          const completed = user ? isTopicCompleted(dbTopic.id) : false;
+          // Check cache first for questions
+          let mappedQuestions: Question[] = [];
+          if (questionsCache.has(dbTopic.id)) {
+            mappedQuestions = questionsCache.get(dbTopic.id)!;
+          } else {
+            const dbQuestions: DbQuestion[] = await fetchQuestions(dbTopic.id);
+            mappedQuestions = dbQuestions.map(mapDbQuestionToQuestion);
+            
+            // Update cache
+            setQuestionsCache(prev => new Map(prev).set(dbTopic.id, mappedQuestions));
+          }
           
+          const completed = user ? isTopicCompleted(dbTopic.id) : false;
           return mapDbTopicToTopic(dbTopic, mappedQuestions, completed);
         })
       );
@@ -99,26 +118,39 @@ export function CourseProvider({ children }: CourseProviderProps) {
     } catch (error) {
       console.error('Error loading course:', error);
     }
-  };
+  }, [courses, fetchTopics, fetchQuestions, questionsCache, user, isTopicCompleted, currentTopic]);
 
-  const refreshCourse = () => {
+  const refreshCourse = useCallback(() => {
     if (currentCourse) {
       loadCourse(currentCourse.id);
     }
-  };
+  }, [currentCourse, loadCourse]);
 
-  const handleSetCurrentTopic = async (topic: Topic) => {
-    // Load questions for this topic if not already loaded
-    if (!topic.questions || topic.questions.length === 0) {
-      const dbQuestions: DbQuestion[] = await fetchQuestions(topic.id);
-      const mappedQuestions = dbQuestions.map(mapDbQuestionToQuestion);
-      topic.questions = mappedQuestions;
+  const handleSetCurrentTopic = useCallback(async (topic: Topic) => {
+    // Load questions for this topic if not already loaded or cached
+    if ((!topic.questions || topic.questions.length === 0) && !questionsCache.has(topic.id)) {
+      setIsLoadingQuestions(true);
+      try {
+        const dbQuestions: DbQuestion[] = await fetchQuestions(topic.id);
+        const mappedQuestions = dbQuestions.map(mapDbQuestionToQuestion);
+        topic.questions = mappedQuestions;
+        
+        // Update cache
+        setQuestionsCache(prev => new Map(prev).set(topic.id, mappedQuestions));
+      } catch (error) {
+        console.error('Error loading questions:', error);
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    } else if (questionsCache.has(topic.id)) {
+      // Use cached questions
+      topic.questions = questionsCache.get(topic.id)!;
     }
     
     setCurrentTopic(topic);
-  };
+  }, [fetchQuestions, questionsCache]);
 
-  const updateTopicProgress = async (topicId: string, completed: boolean) => {
+  const updateTopicProgress = useCallback(async (topicId: string, completed: boolean) => {
     if (!user) return;
 
     try {
@@ -176,15 +208,23 @@ export function CourseProvider({ children }: CourseProviderProps) {
     } catch (error) {
       console.error('Error updating topic progress:', error);
     }
-  };
+  }, [user, markTopicCompleted, currentCourse, currentTopic]);
 
-  const addQuestion = async (topicId: string, questionData: Omit<Question, 'id'>) => {
+  const addQuestion = useCallback(async (topicId: string, questionData: Omit<Question, 'id'>) => {
     const isAdmin = profile?.is_admin || false;
     await addQuestionHook(topicId, questionData, isAdmin);
+    
+    // Clear cache for this topic to force reload
+    setQuestionsCache(prev => {
+      const newCache = new Map(prev);
+      newCache.delete(topicId);
+      return newCache;
+    });
+    
     refreshCourse();
-  };
+  }, [profile?.is_admin, addQuestionHook, refreshCourse]);
 
-  const addTopic = async (
+  const addTopic = useCallback(async (
     courseId: string, 
     topicData: { title: string; content: string }, 
     parentTopicId?: string
@@ -192,9 +232,9 @@ export function CourseProvider({ children }: CourseProviderProps) {
     const isAdmin = profile?.is_admin || false;
     await addTopicHook(courseId, topicData, isAdmin, parentTopicId);
     refreshCourse();
-  };
+  }, [profile?.is_admin, addTopicHook, refreshCourse]);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       const result = await signIn(email, password);
       return result.success;
@@ -202,31 +242,52 @@ export function CourseProvider({ children }: CourseProviderProps) {
       console.error('Login error in context:', error);
       return false;
     }
-  };
+  }, [signIn]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     signOut();
     setCurrentCourse(null);
     setCurrentTopic(null);
-  };
+    setQuestionsCache(new Map());
+  }, [signOut]);
+
+  const contextValue = useMemo(() => ({
+    currentCourse,
+    currentTopic,
+    setCurrentTopic: handleSetCurrentTopic,
+    updateTopicProgress,
+    addQuestion,
+    addTopic,
+    user,
+    profile,
+    isAuthenticated,
+    login,
+    logout,
+    isLoading,
+    refreshCourse,
+    questionsCache,
+    isLoadingQuestions,
+  }), [
+    currentCourse,
+    currentTopic,
+    handleSetCurrentTopic,
+    updateTopicProgress,
+    addQuestion,
+    addTopic,
+    user,
+    profile,
+    isAuthenticated,
+    login,
+    logout,
+    isLoading,
+    refreshCourse,
+    questionsCache,
+    isLoadingQuestions,
+  ]);
 
   return (
-    <CourseContext.Provider value={{
-      currentCourse,
-      currentTopic,
-      setCurrentTopic: handleSetCurrentTopic,
-      updateTopicProgress,
-      addQuestion,
-      addTopic,
-      user,
-      profile,
-      isAuthenticated,
-      login,
-      logout,
-      isLoading,
-      refreshCourse,
-    }}>
+    <CourseContext.Provider value={contextValue}>
       {children}
     </CourseContext.Provider>
   );
-}
+});
