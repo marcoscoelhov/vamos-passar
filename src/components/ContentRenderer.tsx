@@ -20,10 +20,11 @@ export function ContentRenderer({ content, highlights, onTextSelection, onHighli
     return (
       <div 
         ref={contentRef}
-        className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
+        className="prose prose-lg max-w-none text-gray-700 leading-relaxed select-text"
         dangerouslySetInnerHTML={{ __html: highlightedContent }}
         onMouseUp={onTextSelection}
         onClick={onHighlightClick}
+        style={{ userSelect: 'text' }}
       />
     );
   };
