@@ -8,6 +8,9 @@ export interface Student {
   name: string | null;
   email: string | null;
   is_admin: boolean | null;
+  role: string | null;
+  first_login: boolean | null;
+  must_change_password: boolean | null;
   created_at: string;
   progress_count: number;
   total_topics: number;
@@ -37,6 +40,9 @@ export function useStudents() {
           name,
           email,
           is_admin,
+          role,
+          first_login,
+          must_change_password,
           created_at
         `, { count: 'exact' })
         .range(start, end)

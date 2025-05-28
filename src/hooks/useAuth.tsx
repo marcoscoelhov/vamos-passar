@@ -10,6 +10,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [requiresFirstLogin, setRequiresFirstLogin] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -39,6 +40,13 @@ export function useAuth() {
               } else {
                 console.log('Perfil carregado:', profileData);
                 setProfile(profileData);
+                
+                // Check if user needs to complete first login flow
+                if (profileData.first_login || profileData.must_change_password) {
+                  setRequiresFirstLogin(true);
+                } else {
+                  setRequiresFirstLogin(false);
+                }
               }
             } catch (error) {
               console.error('Erro ao buscar perfil:', error);
@@ -47,6 +55,7 @@ export function useAuth() {
           }, 100);
         } else {
           setProfile(null);
+          setRequiresFirstLogin(false);
         }
         setIsLoading(false);
       }
@@ -128,14 +137,34 @@ export function useAuth() {
     }
   };
 
+  const completeFirstLogin = () => {
+    setRequiresFirstLogin(false);
+    // Refresh profile
+    if (user) {
+      setTimeout(async () => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileData) {
+          setProfile(profileData);
+        }
+      }, 100);
+    }
+  };
+
   return {
     session,
     user,
     profile,
     isLoading,
+    requiresFirstLogin,
     signIn,
     signUp,
     signOut,
+    completeFirstLogin,
     isAuthenticated: !!session,
   };
 }

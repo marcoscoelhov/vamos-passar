@@ -89,12 +89,15 @@ export interface DbHighlight {
   updated_at: string;
 }
 
-// Additional types for better type safety
+// Updated Profile interface with new fields
 export interface Profile {
   id: string;
   name: string;
   email: string;
   is_admin: boolean;
+  role: 'admin' | 'professor' | 'student';
+  must_change_password: boolean;
+  first_login: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -108,3 +111,24 @@ export interface UserProgress {
   created_at: string;
   updated_at: string;
 }
+
+export interface ProfessorPermission {
+  id: string;
+  professor_id: string;
+  permission_name: string;
+  granted: boolean;
+  granted_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const PROFESSOR_PERMISSIONS = {
+  MANAGE_TOPICS: 'manage_topics',
+  MANAGE_QUESTIONS: 'manage_questions',
+  VIEW_ANALYTICS: 'view_analytics',
+  MANAGE_STUDENTS: 'manage_students',
+  MANAGE_HIERARCHY: 'manage_hierarchy',
+  BULK_CONTENT: 'bulk_content',
+} as const;
+
+export type ProfessorPermissionType = typeof PROFESSOR_PERMISSIONS[keyof typeof PROFESSOR_PERMISSIONS];

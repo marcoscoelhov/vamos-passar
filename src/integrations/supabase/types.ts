@@ -72,29 +72,83 @@ export type Database = {
         }
         Relationships: []
       }
+      professor_permissions: {
+        Row: {
+          created_at: string | null
+          granted: boolean | null
+          granted_by: string | null
+          id: string
+          permission_name: string
+          professor_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          granted?: boolean | null
+          granted_by?: string | null
+          id?: string
+          permission_name: string
+          professor_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          granted?: boolean | null
+          granted_by?: string | null
+          id?: string
+          permission_name?: string
+          professor_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professor_permissions_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professor_permissions_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
           email: string | null
+          first_login: boolean | null
           id: string
           is_admin: boolean | null
+          must_change_password: boolean | null
           name: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           email?: string | null
+          first_login?: boolean | null
           id: string
           is_admin?: boolean | null
+          must_change_password?: boolean | null
           name?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string | null
+          first_login?: boolean | null
           id?: string
           is_admin?: boolean | null
+          must_change_password?: boolean | null
           name?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string
         }
         Relationships: []
@@ -322,10 +376,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_professor_permission: {
+        Args: { _user_id: string; _permission: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "professor" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -440,6 +497,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "professor", "student"],
+    },
   },
 } as const
