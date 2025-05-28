@@ -1,33 +1,17 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCourses } from '@/hooks/useCourses';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useQuestions } from '@/hooks/useQuestions';
 import { useTopics } from '@/hooks/useTopics';
-import { Question, Topic, Course, DbQuestion, DbTopic, Profile } from '@/types/course';
-import { mapDbQuestionToQuestion, mapDbTopicToTopic, buildTopicHierarchy } from '@/utils/dataMappers';
+import { Question } from '@/types/course';
 import { logger } from '@/utils/logger';
-
-interface CourseContextType {
-  currentCourse: Course | null;
-  currentTopic: Topic | null;
-  setCurrentTopic: (topic: Topic) => void;
-  updateTopicProgress: (topicId: string, completed: boolean) => void;
-  addQuestion: (topicId: string, question: Omit<Question, 'id'>) => Promise<void>;
-  addTopic: (courseId: string, topic: { title: string; content: string }, parentTopicId?: string) => Promise<void>;
-  user: any;
-  profile: Profile | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  isLoading: boolean;
-  refreshCourse: () => void;
-  questionsCache: Map<string, Question[]>;
-  isLoadingQuestions: boolean;
-  error: string | null;
-  retryOperation: () => void;
-}
+import { CourseContextType } from './types/CourseContextTypes';
+import { useCourseState } from './hooks/useCourseState';
+import { useCourseLoader } from './hooks/useCourseLoader';
+import { useTopicOperations } from './hooks/useTopicOperations';
+import { useProgressOperations } from './hooks/useProgressOperations';
 
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
 
@@ -40,7 +24,7 @@ export function useCourse() {
 }
 
 interface CourseProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export const CourseProvider = React.memo(function CourseProvider({ children }: CourseProviderProps) {
@@ -50,107 +34,70 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
   const { addQuestion: addQuestionHook } = useQuestions();
   const { addTopic: addTopicHook } = useTopics();
 
-  const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
-  const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
-  const [questionsCache, setQuestionsCache] = useState<Map<string, Question[]>>(new Map());
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const {
+    currentCourse,
+    setCurrentCourse,
+    currentTopic,
+    setCurrentTopic,
+    questionsCache,
+    setQuestionsCache,
+    isLoadingQuestions,
+    setIsLoadingQuestions,
+    error,
+    setError,
+    clearError,
+    retryOperation,
+  } = useCourseState();
 
   const isLoading = authLoading || coursesLoading;
 
-  // Memoize expensive calculations
-  const memoizedCourseData = useMemo(() => {
-    if (!courses.length || !currentCourse) return null;
-    return courses.find(c => c.id === currentCourse.id);
-  }, [courses, currentCourse?.id]);
+  const { loadCourse } = useCourseLoader({
+    courses,
+    fetchTopics,
+    fetchQuestions,
+    questionsCache,
+    setQuestionsCache,
+    user,
+    isTopicCompleted,
+    setCurrentCourse,
+    setError,
+    clearError,
+  });
+
+  const { handleSetCurrentTopic } = useTopicOperations({
+    fetchQuestions,
+    questionsCache,
+    setQuestionsCache,
+    setIsLoadingQuestions,
+    setCurrentTopic,
+    setError,
+    clearError,
+  });
+
+  const { updateTopicProgress } = useProgressOperations({
+    user,
+    markTopicCompleted,
+    currentCourse,
+    setCurrentCourse,
+    currentTopic,
+    setCurrentTopic,
+    setError,
+    clearError,
+  });
 
   // Load first course and its topics when courses are available
   useEffect(() => {
     if (courses.length > 0 && !currentCourse && !authLoading) {
       loadCourse(courses[0].id);
     }
-  }, [courses, authLoading]);
+  }, [courses, authLoading, currentCourse, loadCourse]);
 
-  const loadCourse = useCallback(async (courseId: string) => {
-    try {
-      setError(null);
-      const course = courses.find(c => c.id === courseId);
-      if (!course) {
-        throw new Error('Curso não encontrado');
-      }
-
-      const courseTopics: DbTopic[] = await fetchTopics(courseId);
-      
-      if (!courseTopics || courseTopics.length === 0) {
-        logger.warn('No topics found for course', { courseId });
-        setCurrentCourse({
-          ...course,
-          topics: [],
-          progress: 0,
-        });
-        return;
-      }
-      
-      // Load questions for each topic and check completion status
-      const topicsWithQuestions = await Promise.all(
-        courseTopics.map(async (dbTopic) => {
-          try {
-            // Check cache first for questions
-            let mappedQuestions: Question[] = [];
-            if (questionsCache.has(dbTopic.id)) {
-              mappedQuestions = questionsCache.get(dbTopic.id)!;
-            } else {
-              const dbQuestions: DbQuestion[] = await fetchQuestions(dbTopic.id);
-              mappedQuestions = dbQuestions ? dbQuestions.map(mapDbQuestionToQuestion) : [];
-              
-              // Update cache
-              setQuestionsCache(prev => new Map(prev).set(dbTopic.id, mappedQuestions));
-            }
-            
-            const completed = user ? isTopicCompleted(dbTopic.id) : false;
-            return mapDbTopicToTopic(dbTopic, mappedQuestions, completed);
-          } catch (error) {
-            logger.error('Error loading topic data', { topicId: dbTopic.id, error });
-            // Return topic without questions if there's an error
-            const completed = user ? isTopicCompleted(dbTopic.id) : false;
-            return mapDbTopicToTopic(dbTopic, [], completed);
-          }
-        })
-      );
-
-      // Build hierarchical structure
-      const hierarchicalTopics = buildTopicHierarchy(topicsWithQuestions);
-
-      // Calculate progress
-      const completedTopics = topicsWithQuestions.filter(t => t.completed).length;
-      const progress = topicsWithQuestions.length > 0 
-        ? (completedTopics / topicsWithQuestions.length) * 100 
-        : 0;
-
-      const enrichedCourse: Course = {
-        ...course,
-        topics: hierarchicalTopics,
-        progress,
-      };
-
-      setCurrentCourse(enrichedCourse);
-      
-      // Set first topic as current if none selected
-      if (!currentTopic && hierarchicalTopics.length > 0) {
-        setCurrentTopic(hierarchicalTopics[0]);
-      }
-
-      logger.info('Course loaded successfully', { 
-        courseId, 
-        topicsCount: topicsWithQuestions.length,
-        progress: progress.toFixed(1)
-      });
-    } catch (error) {
-      logger.error('Error loading course', { courseId, error });
-      setError(`Erro ao carregar curso: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+  // Set first topic as current when course is loaded
+  useEffect(() => {
+    if (currentCourse && !currentTopic && currentCourse.topics.length > 0) {
+      setCurrentTopic(currentCourse.topics[0]);
     }
-  }, [courses, fetchTopics, fetchQuestions, questionsCache, user, isTopicCompleted, currentTopic]);
+  }, [currentCourse, currentTopic, setCurrentTopic]);
 
   const refreshCourse = useCallback(() => {
     if (currentCourse) {
@@ -159,116 +106,9 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     }
   }, [currentCourse, loadCourse]);
 
-  const retryOperation = useCallback(() => {
-    setRetryCount(prev => prev + 1);
-    setError(null);
-    if (currentCourse) {
-      loadCourse(currentCourse.id);
-    }
-  }, [currentCourse, loadCourse]);
-
-  const handleSetCurrentTopic = useCallback(async (topic: Topic) => {
-    try {
-      setError(null);
-      // Load questions for this topic if not already loaded or cached
-      if ((!topic.questions || topic.questions.length === 0) && !questionsCache.has(topic.id)) {
-        setIsLoadingQuestions(true);
-        try {
-          const dbQuestions: DbQuestion[] = await fetchQuestions(topic.id);
-          const mappedQuestions = dbQuestions ? dbQuestions.map(mapDbQuestionToQuestion) : [];
-          topic.questions = mappedQuestions;
-          
-          // Update cache
-          setQuestionsCache(prev => new Map(prev).set(topic.id, mappedQuestions));
-          
-          logger.debug('Questions loaded for topic', { topicId: topic.id, questionCount: mappedQuestions.length });
-        } catch (error) {
-          logger.error('Error loading questions for topic', { topicId: topic.id, error });
-          // Continue with empty questions array
-          topic.questions = [];
-        } finally {
-          setIsLoadingQuestions(false);
-        }
-      } else if (questionsCache.has(topic.id)) {
-        // Use cached questions
-        topic.questions = questionsCache.get(topic.id)!;
-      }
-      
-      setCurrentTopic(topic);
-      logger.debug('Current topic set', { topicId: topic.id, title: topic.title });
-    } catch (error) {
-      logger.error('Error setting current topic', { topicId: topic.id, error });
-      setError('Erro ao carregar tópico');
-    }
-  }, [fetchQuestions, questionsCache]);
-
-  const updateTopicProgress = useCallback(async (topicId: string, completed: boolean) => {
-    if (!user) return;
-
-    try {
-      setError(null);
-      await markTopicCompleted(topicId, completed);
-      
-      // Update current course state recursively
-      if (currentCourse) {
-        const updateTopicInHierarchy = (topics: Topic[]): Topic[] => {
-          return topics.map(topic => {
-            if (topic.id === topicId) {
-              return { ...topic, completed };
-            }
-            if (topic.children && topic.children.length > 0) {
-              return {
-                ...topic,
-                children: updateTopicInHierarchy(topic.children)
-              };
-            }
-            return topic;
-          });
-        };
-
-        setCurrentCourse(prev => {
-          if (!prev) return prev;
-          
-          const updatedTopics = updateTopicInHierarchy(prev.topics);
-          
-          // Calculate new progress
-          const allTopics: Topic[] = [];
-          const flattenTopics = (topics: Topic[]) => {
-            topics.forEach(topic => {
-              allTopics.push(topic);
-              if (topic.children) {
-                flattenTopics(topic.children);
-              }
-            });
-          };
-          flattenTopics(updatedTopics);
-          
-          const completedCount = allTopics.filter(t => t.completed).length;
-          const progress = allTopics.length > 0 ? (completedCount / allTopics.length) * 100 : 0;
-          
-          return {
-            ...prev,
-            topics: updatedTopics,
-            progress,
-          };
-        });
-        
-        // Update current topic if it's the one being updated
-        if (currentTopic?.id === topicId) {
-          setCurrentTopic(prev => prev ? { ...prev, completed } : null);
-        }
-      }
-      
-      logger.info('Topic progress updated', { topicId, completed, userId: user.id });
-    } catch (error) {
-      logger.error('Error updating topic progress', { topicId, completed, userId: user.id, error });
-      setError('Erro ao atualizar progresso do tópico');
-    }
-  }, [user, markTopicCompleted, currentCourse, currentTopic]);
-
   const addQuestion = useCallback(async (topicId: string, questionData: Omit<Question, 'id'>) => {
     try {
-      setError(null);
+      clearError();
       const isAdmin = profile?.is_admin || false;
       await addQuestionHook(topicId, questionData, isAdmin);
       
@@ -285,7 +125,7 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
       setError('Erro ao adicionar questão');
       throw error;
     }
-  }, [profile?.is_admin, addQuestionHook, refreshCourse]);
+  }, [profile?.is_admin, addQuestionHook, refreshCourse, clearError, setError, setQuestionsCache]);
 
   const addTopic = useCallback(async (
     courseId: string, 
@@ -293,7 +133,7 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     parentTopicId?: string
   ) => {
     try {
-      setError(null);
+      clearError();
       const isAdmin = profile?.is_admin || false;
       await addTopicHook(courseId, topicData, isAdmin, parentTopicId);
       refreshCourse();
@@ -302,11 +142,11 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
       setError('Erro ao adicionar tópico');
       throw error;
     }
-  }, [profile?.is_admin, addTopicHook, refreshCourse]);
+  }, [profile?.is_admin, addTopicHook, refreshCourse, clearError, setError]);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      setError(null);
+      clearError();
       const result = await signIn(email, password);
       return result.success;
     } catch (error) {
@@ -314,7 +154,7 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
       setError('Erro ao fazer login');
       return false;
     }
-  }, [signIn]);
+  }, [signIn, clearError, setError]);
 
   const logout = useCallback(() => {
     try {
@@ -322,13 +162,13 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
       setCurrentCourse(null);
       setCurrentTopic(null);
       setQuestionsCache(new Map());
-      setError(null);
+      clearError();
       logger.info('User logged out, context cleared');
     } catch (error) {
       logger.error('Error during logout', { error });
       setError('Erro ao fazer logout');
     }
-  }, [signOut]);
+  }, [signOut, setCurrentCourse, setCurrentTopic, setQuestionsCache, clearError, setError]);
 
   const contextValue = useMemo(() => ({
     currentCourse,
