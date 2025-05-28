@@ -1,10 +1,11 @@
+
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Highlighter, MessageSquare, X, Edit, AlertTriangle } from 'lucide-react';
-import { useHighlights } from '@/hooks/useHighlights';
+import { useOptimizedHighlights } from '@/hooks/useOptimizedHighlights';
 import { Highlight } from '@/types/course';
 import { SectionErrorBoundary } from '@/components/SectionErrorBoundary';
 import { logger } from '@/utils/logger';
@@ -26,11 +27,23 @@ export const HighlightableContent = React.memo(function HighlightableContent({
   const [note, setNote] = useState('');
   const [editingHighlight, setEditingHighlight] = useState<string | null>(null);
   const [editingNote, setEditingNote] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   
-  const { highlights, addHighlight, updateHighlight, deleteHighlight, isLoading } = useHighlights(topicId, userId);
+  const { 
+    highlights, 
+    addHighlight, 
+    updateHighlight, 
+    deleteHighlight, 
+    isLoading,
+    isAdding,
+    isUpdating,
+    isDeleting
+  } = useOptimizedHighlights({
+    topicId,
+    userId,
+    enableRealTimeUpdates: true
+  });
 
   const formatContent = useCallback((content: string) => {
     try {
@@ -103,9 +116,8 @@ export const HighlightableContent = React.memo(function HighlightableContent({
   }, [userId]);
 
   const handleAddHighlight = useCallback(async () => {
-    if (!selectedText || !selectionRange || !userId || isProcessing) return;
+    if (!selectedText || !selectionRange || !userId || isAdding) return;
 
-    setIsProcessing(true);
     setError(null);
 
     try {
@@ -139,10 +151,8 @@ export const HighlightableContent = React.memo(function HighlightableContent({
     } catch (error) {
       logger.error('Error adding highlight', { error });
       setError('Erro ao salvar destaque. Tente novamente.');
-    } finally {
-      setIsProcessing(false);
     }
-  }, [selectedText, selectionRange, userId, note, addHighlight, isProcessing]);
+  }, [selectedText, selectionRange, userId, note, addHighlight, isAdding]);
 
   const handleCancelSelection = useCallback(() => {
     setShowNoteInput(false);
@@ -160,9 +170,8 @@ export const HighlightableContent = React.memo(function HighlightableContent({
   }, []);
 
   const handleSaveEdit = useCallback(async (highlightId: string) => {
-    if (isProcessing) return;
+    if (isUpdating) return;
     
-    setIsProcessing(true);
     setError(null);
 
     try {
@@ -172,10 +181,8 @@ export const HighlightableContent = React.memo(function HighlightableContent({
     } catch (error) {
       logger.error('Error updating highlight', { error });
       setError('Erro ao atualizar destaque. Tente novamente.');
-    } finally {
-      setIsProcessing(false);
     }
-  }, [editingNote, updateHighlight, isProcessing]);
+  }, [editingNote, updateHighlight, isUpdating]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingHighlight(null);
@@ -184,9 +191,8 @@ export const HighlightableContent = React.memo(function HighlightableContent({
   }, []);
 
   const handleDeleteHighlight = useCallback(async (highlightId: string) => {
-    if (isProcessing) return;
+    if (isDeleting) return;
     
-    setIsProcessing(true);
     setError(null);
 
     try {
@@ -194,10 +200,8 @@ export const HighlightableContent = React.memo(function HighlightableContent({
     } catch (error) {
       logger.error('Error deleting highlight', { error });
       setError('Erro ao remover destaque. Tente novamente.');
-    } finally {
-      setIsProcessing(false);
     }
-  }, [deleteHighlight, isProcessing]);
+  }, [deleteHighlight, isDeleting]);
 
   const formattedContent = useMemo(() => formatContent(content), [content, formatContent]);
 
@@ -241,7 +245,7 @@ export const HighlightableContent = React.memo(function HighlightableContent({
                   variant="ghost"
                   size="sm"
                   onClick={handleCancelSelection}
-                  disabled={isProcessing}
+                  disabled={isAdding}
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -256,7 +260,7 @@ export const HighlightableContent = React.memo(function HighlightableContent({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="min-h-[60px]"
-                disabled={isProcessing}
+                disabled={isAdding}
               />
               
               <div className="flex gap-2">
@@ -264,15 +268,15 @@ export const HighlightableContent = React.memo(function HighlightableContent({
                   onClick={handleAddHighlight} 
                   size="sm" 
                   className="flex-1"
-                  disabled={isProcessing}
+                  disabled={isAdding}
                 >
-                  {isProcessing ? 'Salvando...' : 'Salvar Destaque'}
+                  {isAdding ? 'Salvando...' : 'Salvar Destaque'}
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={handleCancelSelection}
-                  disabled={isProcessing}
+                  disabled={isAdding}
                 >
                   Cancelar
                 </Button>
@@ -307,21 +311,21 @@ export const HighlightableContent = React.memo(function HighlightableContent({
                         onChange={(e) => setEditingNote(e.target.value)}
                         placeholder="Adicione uma nota..."
                         className="min-h-[60px]"
-                        disabled={isProcessing}
+                        disabled={isUpdating}
                       />
                       <div className="flex gap-2">
                         <Button 
                           size="sm" 
                           onClick={() => handleSaveEdit(highlight.id)}
-                          disabled={isProcessing}
+                          disabled={isUpdating}
                         >
-                          {isProcessing ? 'Salvando...' : 'Salvar'}
+                          {isUpdating ? 'Salvando...' : 'Salvar'}
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={handleCancelEdit}
-                          disabled={isProcessing}
+                          disabled={isUpdating}
                         >
                           Cancelar
                         </Button>
@@ -341,7 +345,7 @@ export const HighlightableContent = React.memo(function HighlightableContent({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEditHighlight(highlight)}
-                          disabled={isProcessing}
+                          disabled={isUpdating || isDeleting}
                         >
                           <Edit className="w-3 h-3 mr-1" />
                           Editar nota
@@ -351,10 +355,10 @@ export const HighlightableContent = React.memo(function HighlightableContent({
                           size="sm"
                           onClick={() => handleDeleteHighlight(highlight.id)}
                           className="text-red-600 hover:text-red-700"
-                          disabled={isProcessing}
+                          disabled={isUpdating || isDeleting}
                         >
                           <X className="w-3 h-3 mr-1" />
-                          Remover
+                          {isDeleting ? 'Removendo...' : 'Remover'}
                         </Button>
                       </div>
                     </>
