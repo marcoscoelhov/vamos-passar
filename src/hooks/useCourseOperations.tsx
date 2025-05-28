@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DbQuestion, DbTopic } from '@/types/course';
+import { logger } from '@/utils/logger';
 
 interface Course {
   id: string;
@@ -38,6 +39,9 @@ export function useCourseOperations() {
     parentTopicId?: string
   ) => {
     try {
+      setIsLoading(true);
+      logger.info('Adding new topic', { courseId, title, parentTopicId });
+
       // Get the highest order_index for this course and level
       let orderQuery = supabase
         .from('topics')
@@ -87,6 +91,7 @@ export function useCourseOperations() {
         throw error;
       }
 
+      logger.info('Topic added successfully', { topicId: data.id });
       toast({
         title: 'Sucesso',
         description: 'Tópico adicionado com sucesso!',
@@ -94,13 +99,15 @@ export function useCourseOperations() {
 
       return data;
     } catch (error) {
-      console.error('Error adding topic:', error);
+      logger.error('Error adding topic', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível adicionar o tópico.',
         variant: 'destructive',
       });
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -113,6 +120,9 @@ export function useCourseOperations() {
     difficulty: 'easy' | 'medium' | 'hard'
   ) => {
     try {
+      setIsLoading(true);
+      logger.info('Adding new question', { topicId, difficulty });
+
       const { data, error } = await supabase
         .from('questions')
         .insert([
@@ -132,6 +142,7 @@ export function useCourseOperations() {
         throw error;
       }
 
+      logger.info('Question added successfully', { questionId: data.id });
       toast({
         title: 'Sucesso',
         description: 'Questão adicionada com sucesso!',
@@ -139,13 +150,15 @@ export function useCourseOperations() {
 
       return data;
     } catch (error) {
-      console.error('Error adding question:', error);
+      logger.error('Error adding question', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível adicionar a questão.',
         variant: 'destructive',
       });
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

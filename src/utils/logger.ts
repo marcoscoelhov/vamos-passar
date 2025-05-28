@@ -10,49 +10,49 @@ interface LogEntry {
 
 class Logger {
   private isDevelopment = import.meta.env.DEV;
-  private enabledLevels: LogLevel[] = this.isDevelopment 
-    ? ['debug', 'info', 'warn', 'error']
-    : ['warn', 'error'];
+  
+  private log(level: LogLevel, message: string, data?: any) {
+    if (!this.isDevelopment && level === 'debug') {
+      return; // Skip debug logs in production
+    }
 
-  private formatMessage(level: LogLevel, message: string, data?: any): void {
-    if (!this.enabledLevels.includes(level)) return;
+    const entry: LogEntry = {
+      level,
+      message,
+      data,
+      timestamp: new Date().toISOString()
+    };
 
-    const timestamp = new Date().toISOString();
-    const logEntry: LogEntry = { level, message, timestamp, data };
-
-    const style = this.getLogStyle(level);
-    
-    if (data) {
-      console[level](`%c[${level.toUpperCase()}] ${message}`, style, data);
-    } else {
-      console[level](`%c[${level.toUpperCase()}] ${message}`, style);
+    switch (level) {
+      case 'debug':
+        console.debug(`[${entry.timestamp}] DEBUG:`, message, data || '');
+        break;
+      case 'info':
+        console.info(`[${entry.timestamp}] INFO:`, message, data || '');
+        break;
+      case 'warn':
+        console.warn(`[${entry.timestamp}] WARN:`, message, data || '');
+        break;
+      case 'error':
+        console.error(`[${entry.timestamp}] ERROR:`, message, data || '');
+        break;
     }
   }
 
-  private getLogStyle(level: LogLevel): string {
-    const styles = {
-      debug: 'color: #666; font-weight: normal;',
-      info: 'color: #2563eb; font-weight: normal;',
-      warn: 'color: #d97706; font-weight: bold;',
-      error: 'color: #dc2626; font-weight: bold;'
-    };
-    return styles[level];
+  debug(message: string, data?: any) {
+    this.log('debug', message, data);
   }
 
-  debug(message: string, data?: any): void {
-    this.formatMessage('debug', message, data);
+  info(message: string, data?: any) {
+    this.log('info', message, data);
   }
 
-  info(message: string, data?: any): void {
-    this.formatMessage('info', message, data);
+  warn(message: string, data?: any) {
+    this.log('warn', message, data);
   }
 
-  warn(message: string, data?: any): void {
-    this.formatMessage('warn', message, data);
-  }
-
-  error(message: string, data?: any): void {
-    this.formatMessage('error', message, data);
+  error(message: string, data?: any) {
+    this.log('error', message, data);
   }
 }
 
