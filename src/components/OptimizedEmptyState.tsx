@@ -3,14 +3,14 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-interface EmptyStateProps {
+interface OptimizedEmptyStateProps {
   title: string;
   description: string;
   icon?: React.ReactNode;
   action?: {
     label: string;
     onClick: () => void;
-    variant?: 'default' | 'outline' | 'ghost' | 'link';
+    variant?: 'default' | 'outline' | 'ghost';
   };
   className?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -22,14 +22,26 @@ const sizeClasses = {
   lg: 'p-12 space-y-6'
 };
 
-export const EmptyState = React.memo(function EmptyState({
+const iconSizes = {
+  sm: 'w-8 h-8',
+  md: 'w-12 h-12',
+  lg: 'w-16 h-16'
+};
+
+const titleSizes = {
+  sm: 'text-base',
+  md: 'text-lg',
+  lg: 'text-xl'
+};
+
+export const OptimizedEmptyState = React.memo(function OptimizedEmptyState({
   title,
   description,
   icon,
   action,
   className,
   size = 'md'
-}: EmptyStateProps) {
+}: OptimizedEmptyStateProps) {
   return (
     <div className={cn(
       "flex flex-col items-center justify-center text-center",
@@ -37,13 +49,13 @@ export const EmptyState = React.memo(function EmptyState({
       className
     )}>
       {icon && (
-        <div className="text-gray-400 mb-2">
+        <div className={cn("text-gray-400 mb-2", iconSizes[size])}>
           {icon}
         </div>
       )}
       
       <div className="space-y-2">
-        <h3 className="text-lg font-medium text-gray-900">
+        <h3 className={cn("font-medium text-gray-900", titleSizes[size])}>
           {title}
         </h3>
         <p className="text-sm text-gray-500 max-w-md">
@@ -53,7 +65,7 @@ export const EmptyState = React.memo(function EmptyState({
       
       {action && (
         <Button 
-          onClick={action.onClick}
+          onClick={action.onClick} 
           variant={action.variant || 'default'}
           className="mt-4"
         >

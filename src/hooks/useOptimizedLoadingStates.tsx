@@ -1,19 +1,16 @@
 
 import { useState, useCallback, useMemo } from 'react';
-import { logger } from '@/utils/logger';
 
 interface LoadingStates {
   [key: string]: boolean;
 }
 
-export function useLoadingStates(initialStates: LoadingStates = {}) {
+export function useOptimizedLoadingStates(initialStates: LoadingStates = {}) {
   const [loadingStates, setLoadingStates] = useState<LoadingStates>(initialStates);
 
   const setLoading = useCallback((key: string, isLoading: boolean) => {
-    logger.debug(`Setting loading state for ${key}`, { isLoading });
     setLoadingStates(prev => {
-      // Evita re-render desnecessário se o estado não mudar
-      if (prev[key] === isLoading) return prev;
+      if (prev[key] === isLoading) return prev; // Evita re-render desnecessário
       return {
         ...prev,
         [key]: isLoading
@@ -29,8 +26,11 @@ export function useLoadingStates(initialStates: LoadingStates = {}) {
     return Object.values(loadingStates).some(Boolean);
   }, [loadingStates]);
 
+  const loadingKeys = useMemo((): string[] => {
+    return Object.keys(loadingStates).filter(key => loadingStates[key]);
+  }, [loadingStates]);
+
   const resetAll = useCallback(() => {
-    logger.debug('Resetting all loading states');
     setLoadingStates({});
   }, []);
 
@@ -38,23 +38,26 @@ export function useLoadingStates(initialStates: LoadingStates = {}) {
     key: string, 
     asyncFn: () => Promise<T>
   ): Promise<T> => {
-    logger.debug(`Starting async operation with loading state for ${key}`);
     setLoading(key, true);
     try {
-      const result = await asyncFn();
-      return result;
+      return await asyncFn();
     } finally {
       setLoading(key, false);
-      logger.debug(`Completed async operation for ${key}`);
     }
   }, [setLoading]);
+
+  const batchSetLoading = useCallback((updates: Record<string, boolean>) => {
+    setLoadingStates(prev => ({ ...prev, ...updates }));
+  }, []);
 
   return {
     loadingStates,
     setLoading,
     isLoading,
     isAnyLoading,
+    loadingKeys,
     resetAll,
     withLoading,
+    batchSetLoading,
   };
 }
