@@ -3,7 +3,7 @@ import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCourses } from '@/hooks/useCourses';
 import { useUserProgress } from '@/hooks/useUserProgress';
-import { Question } from '@/types/course';
+import { Question, Course } from '@/types/course';
 import { logger } from '@/utils/logger';
 import { CourseContextType } from './types/CourseContextTypes';
 import { useCourseState } from './hooks/useCourseState';
@@ -48,7 +48,7 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
     ttl: 10 * 60 * 1000, // 10 minutes
   });
 
-  const coursesCache = useOptimizedCache('courses', {
+  const coursesCache = useOptimizedCache<Course[]>('courses', {
     maxSize: 10,
     ttl: 30 * 60 * 1000, // 30 minutes
   });
@@ -58,11 +58,15 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
     const cacheKey = 'transformed_courses';
     const cached = coursesCache.get(cacheKey);
     
-    if (cached) {
+    if (cached && Array.isArray(cached)) {
       return cached;
     }
 
-    const transformed = rawCourses.map(course => ({
+    if (!rawCourses || !Array.isArray(rawCourses)) {
+      return [];
+    }
+
+    const transformed: Course[] = rawCourses.map(course => ({
       ...course,
       topics: [],
       progress: 0
@@ -136,9 +140,12 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
     const cacheKey = `course_${courseId}`;
     const cached = coursesCache.get(cacheKey);
     
-    if (cached && !user) {
-      setCurrentCourse(cached);
-      return;
+    if (cached && Array.isArray(cached) && cached.length > 0 && !user) {
+      const course = cached.find((c: Course) => c.id === courseId);
+      if (course) {
+        setCurrentCourse(course);
+        return;
+      }
     }
 
     await loadCourse(courseId);
@@ -146,14 +153,14 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
 
   // Load first course with optimization
   React.useEffect(() => {
-    if (courses.length > 0 && !currentCourse && !authLoading) {
+    if (courses && Array.isArray(courses) && courses.length > 0 && !currentCourse && !authLoading) {
       optimizedLoadCourse(courses[0].id);
     }
   }, [courses, authLoading, currentCourse, optimizedLoadCourse]);
 
   // Set first topic as current when course is loaded
   React.useEffect(() => {
-    if (currentCourse && !currentTopic && currentCourse.topics.length > 0) {
+    if (currentCourse && !currentTopic && currentCourse.topics && currentCourse.topics.length > 0) {
       setCurrentTopic(currentCourse.topics[0]);
     }
   }, [currentCourse, currentTopic, setCurrentTopic]);
