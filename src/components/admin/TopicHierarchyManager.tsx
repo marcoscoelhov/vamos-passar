@@ -28,6 +28,7 @@ import { TopicTreeRenderer } from './topic-hierarchy/TopicTreeRenderer';
 import { NewTopicForm } from './topic-hierarchy/NewTopicForm';
 import { TopicPreviewDialog } from './topic-hierarchy/TopicPreviewDialog';
 import { DeleteConfirmationDialog } from './topic-hierarchy/DeleteConfirmationDialog';
+import { logger } from '@/utils/logger';
 
 interface TopicHierarchyManagerProps {
   course: Course;
@@ -115,16 +116,19 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
       }, [] as string[]);
     };
     setExpandedTopics(new Set(getAllTopicIds(course.topics)));
+    logger.debug('Expanded all topics');
   }, [course.topics]);
 
   const collapseAll = useCallback(() => {
     setExpandedTopics(new Set());
+    logger.debug('Collapsed all topics');
   }, []);
 
   // Funções de edição
   const startEdit = useCallback((topicId: string, title: string) => {
     setEditingTopic(topicId);
     setEditTitle(title);
+    logger.debug('Started editing topic', { topicId, title });
   }, []);
 
   const saveEdit = useCallback(async (topicId: string, newTitle: string) => {
@@ -146,15 +150,17 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
     setIsSavingEdit(true);
     
     try {
+      logger.debug('Saving topic edit', { topicId, oldTitle: currentTitle, newTitle: trimmedNewTitle });
       const success = await updateTopicTitle(topicId, trimmedNewTitle);
       
       if (success) {
         onTopicUpdated();
         setEditingTopic(null);
         setEditTitle('');
+        logger.info('Topic title updated successfully', { topicId, newTitle: trimmedNewTitle });
       }
     } catch (error) {
-      console.error('Erro durante a atualização:', error);
+      logger.error('Error updating topic title', { topicId, error });
     } finally {
       setIsSavingEdit(false);
     }
@@ -164,18 +170,22 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
     setEditingTopic(null);
     setEditTitle('');
     setIsSavingEdit(false);
+    logger.debug('Cancelled topic edit');
   }, []);
 
   // Funções de gerenciamento de tópicos
   const handleDeleteTopic = useCallback((topicId: string) => {
     setDeleteTopicId(topicId);
+    logger.debug('Initiated topic deletion', { topicId });
   }, []);
 
   const confirmDelete = useCallback(async () => {
     if (deleteTopicId) {
+      logger.debug('Confirming topic deletion', { topicId: deleteTopicId });
       const success = await deleteTopic(deleteTopicId);
       if (success) {
         onTopicUpdated();
+        logger.info('Topic deleted successfully', { topicId: deleteTopicId });
       }
       setDeleteTopicId(null);
     }
@@ -184,6 +194,7 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
   const handleAddSubtopic = useCallback((parentId: string) => {
     setNewTopicParent(parentId);
     setShowNewTopicForm(true);
+    logger.debug('Adding subtopic', { parentId });
   }, []);
 
   const handleCreateNewTopic = useCallback(async () => {
@@ -192,6 +203,7 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
     }
 
     try {
+      logger.debug('Creating new topic', { title: newTopicTitle, parentId: newTopicParent });
       await addTopic(
         course.id,
         { title: newTopicTitle.trim(), content: '<p>Conteúdo do novo tópico...</p>' },
@@ -202,30 +214,37 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
       setNewTopicParent(null);
       setShowNewTopicForm(false);
       onTopicUpdated();
+      logger.info('New topic created successfully', { title: newTopicTitle });
     } catch (error) {
-      console.error('Erro ao criar tópico:', error);
+      logger.error('Error creating new topic', { title: newTopicTitle, error });
     }
   }, [newTopicTitle, newTopicParent, addTopic, course.id, isAdmin, onTopicUpdated]);
 
   const handleDuplicateTopic = useCallback(async (topic: Topic) => {
+    logger.debug('Duplicating topic', { topicId: topic.id, title: topic.title });
     const success = await duplicateTopic(topic, course.id, topic.parentTopicId);
     if (success) {
       onTopicUpdated();
+      logger.info('Topic duplicated successfully', { originalId: topic.id });
     }
   }, [duplicateTopic, course.id, onTopicUpdated]);
 
   const handleFixContent = useCallback(async (topic: Topic) => {
     setIsFixingContent(true);
     try {
+      logger.debug('Fixing topic content', { topicId: topic.id });
       const sanitizedContent = sanitizeHtmlContent(topic.content);
       
       // TODO: Implementar atualização do conteúdo no banco
-      console.log('Conteúdo original:', topic.content);
-      console.log('Conteúdo corrigido:', sanitizedContent);
+      logger.debug('Content sanitization completed', { 
+        topicId: topic.id,
+        originalLength: topic.content.length,
+        sanitizedLength: sanitizedContent.length
+      });
       
       onTopicUpdated();
     } catch (error) {
-      console.error('Erro ao corrigir conteúdo:', error);
+      logger.error('Error fixing content', { topicId: topic.id, error });
     } finally {
       setIsFixingContent(false);
     }
@@ -235,6 +254,7 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
     setShowNewTopicForm(false);
     setNewTopicTitle('');
     setNewTopicParent(null);
+    logger.debug('Cancelled new topic form');
   }, []);
 
   // Cálculo de loading otimizado
