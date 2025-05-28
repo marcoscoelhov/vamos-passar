@@ -2,13 +2,10 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
-import { Target, Users, BarChart3, FileText, TreePine } from 'lucide-react';
+import { TrendingUp, BookOpen, FileText } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
-import { AdminOverview } from './admin/AdminOverview';
-import { TopicManagement } from './admin/TopicManagement';
-import { QuestionForm } from './admin/QuestionForm';
-import { StudentsManagement } from './admin/StudentsManagement';
-import { AnalyticsDashboard } from './admin/AnalyticsDashboard';
+import { OverviewAndAnalytics } from './admin/OverviewAndAnalytics';
+import { ContentManagement } from './admin/ContentManagement';
 import { AuditLogs } from './admin/AuditLogs';
 
 export function AdminPanel() {
@@ -35,53 +32,38 @@ export function AdminPanel() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Administrativo</h1>
-            <p className="text-gray-600">Gerencie conteúdo, questões e monitore o desempenho</p>
+            <p className="text-gray-600">Gerencie conteúdo, monitore desempenho e administre usuários</p>
           </div>
 
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="topics">Tópicos</TabsTrigger>
-              <TabsTrigger value="questions">Questões</TabsTrigger>
-              <TabsTrigger value="students">Alunos</TabsTrigger>
-              <TabsTrigger value="logs">Logs</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Visão Geral
+              </TabsTrigger>
+              <TabsTrigger value="content" className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Conteúdo
+              </TabsTrigger>
+              <TabsTrigger value="logs" className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Logs
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
-              <AdminOverview course={currentCourse} />
+              <OverviewAndAnalytics 
+                key={refreshKey}
+                course={currentCourse} 
+              />
             </TabsContent>
 
-            <TabsContent value="analytics">
-              <div className="flex items-center gap-2 mb-6">
-                <BarChart3 className="w-5 h-5" />
-                <h2 className="text-xl font-semibold">Dashboard Analítico</h2>
-              </div>
-              <AnalyticsDashboard />
-            </TabsContent>
-
-            <TabsContent value="topics">
-              <TopicManagement 
+            <TabsContent value="content">
+              <ContentManagement 
                 course={currentCourse} 
                 isAdmin={isAdmin}
                 onContentAdded={handleContentAdded}
               />
-            </TabsContent>
-
-            <TabsContent value="questions">
-              <div className="flex items-center gap-2 mb-6">
-                <Target className="w-5 h-5" />
-                <h2 className="text-xl font-semibold">Gerenciar Questões</h2>
-              </div>
-              <QuestionForm 
-                topics={currentCourse.topics}
-                isAdmin={isAdmin}
-                onQuestionAdded={handleContentAdded}
-              />
-            </TabsContent>
-
-            <TabsContent value="students">
-              <StudentsManagement />
             </TabsContent>
 
             <TabsContent value="logs">
