@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { Suspense } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,13 +8,61 @@ import { useCourse } from '@/contexts/CourseContext';
 import { useDownload } from '@/hooks/useDownload';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { QuestionBlock } from './QuestionBlock';
-import { HighlightableContent } from './HighlightableContent';
 import { Breadcrumbs } from './Breadcrumbs';
-import { GlobalSearch } from './GlobalSearch';
-import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { TopicContentSkeleton } from './TopicContentSkeleton';
-import { AnswerKeyModal } from './AnswerKeyModal';
+import { LoadingSkeleton } from './LoadingSkeleton';
+import { logger } from '@/utils/logger';
+
+// Lazy load heavy components
+const QuestionBlock = React.lazy(() => 
+  import('./QuestionBlock').then(module => {
+    logger.debug('QuestionBlock component loaded');
+    return { default: module.QuestionBlock };
+  }).catch(error => {
+    logger.error('Error loading QuestionBlock component', error);
+    throw error;
+  })
+);
+
+const HighlightableContent = React.lazy(() => 
+  import('./HighlightableContent').then(module => {
+    logger.debug('HighlightableContent component loaded');
+    return { default: module.HighlightableContent };
+  }).catch(error => {
+    logger.error('Error loading HighlightableContent component', error);
+    throw error;
+  })
+);
+
+const GlobalSearch = React.lazy(() => 
+  import('./GlobalSearch').then(module => {
+    logger.debug('GlobalSearch component loaded');
+    return { default: module.GlobalSearch };
+  }).catch(error => {
+    logger.error('Error loading GlobalSearch component', error);
+    throw error;
+  })
+);
+
+const KeyboardShortcuts = React.lazy(() => 
+  import('./KeyboardShortcuts').then(module => {
+    logger.debug('KeyboardShortcuts component loaded');
+    return { default: module.KeyboardShortcuts };
+  }).catch(error => {
+    logger.error('Error loading KeyboardShortcuts component', error);
+    throw error;
+  })
+);
+
+const AnswerKeyModal = React.lazy(() => 
+  import('./AnswerKeyModal').then(module => {
+    logger.debug('AnswerKeyModal component loaded');
+    return { default: module.AnswerKeyModal };
+  }).catch(error => {
+    logger.error('Error loading AnswerKeyModal component', error);
+    throw error;
+  })
+);
 
 export function CourseContent() {
   const { currentTopic, currentCourse, user, isLoadingQuestions } = useCourse();
@@ -40,6 +89,10 @@ export function CourseContent() {
 
   const handleDownloadTopicPDF = () => {
     if (currentTopic && currentCourse) {
+      logger.debug('Generating PDF for topic', { 
+        topicId: currentTopic.id, 
+        topicTitle: currentTopic.title 
+      });
       generateTopicsAsPDF([currentTopic], currentTopic.title);
     }
   };
@@ -48,10 +101,15 @@ export function CourseContent() {
     const questionsElement = document.getElementById('questions-section');
     if (questionsElement) {
       questionsElement.scrollIntoView({ behavior: 'smooth' });
+      logger.debug('Scrolled to questions section');
     }
   };
 
   const handleToggleBookmark = () => {
+    logger.debug('Toggling bookmark for topic', { 
+      topicId: currentTopic.id,
+      topicTitle: currentTopic.title 
+    });
     toggleBookmark(currentTopic.id, currentTopic.title);
   };
 
@@ -62,8 +120,12 @@ export function CourseContent() {
       {/* Barra superior com busca e atalhos */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <GlobalSearch />
-          <KeyboardShortcuts />
+          <Suspense fallback={<LoadingSkeleton variant="button" className="w-64 h-8" />}>
+            <GlobalSearch />
+          </Suspense>
+          <Suspense fallback={<LoadingSkeleton variant="button" className="w-32 h-8" />}>
+            <KeyboardShortcuts />
+          </Suspense>
         </div>
         
         <div className="flex items-center gap-2">
@@ -94,16 +156,18 @@ export function CourseContent() {
 
           {/* Botão de gabarito */}
           {currentTopic.questions && currentTopic.questions.length > 0 && (
-            <AnswerKeyModal topic={currentTopic}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <Key className="w-4 h-4" />
-                Gabarito
-              </Button>
-            </AnswerKeyModal>
+            <Suspense fallback={<LoadingSkeleton variant="button" className="w-24 h-8" />}>
+              <AnswerKeyModal topic={currentTopic}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Key className="w-4 h-4" />
+                  Gabarito
+                </Button>
+              </AnswerKeyModal>
+            </Suspense>
           )}
         </div>
       </div>
@@ -151,11 +215,13 @@ export function CourseContent() {
 
       {/* Conteúdo do tópico com highlights */}
       <Card className="p-8 mb-8">
-        <HighlightableContent 
-          content={currentTopic.content}
-          topicId={currentTopic.id}
-          userId={user?.id}
-        />
+        <Suspense fallback={<TopicContentSkeleton />}>
+          <HighlightableContent 
+            content={currentTopic.content}
+            topicId={currentTopic.id}
+            userId={user?.id}
+          />
+        </Suspense>
       </Card>
 
       {/* Seção de questões */}
@@ -164,7 +230,7 @@ export function CourseContent() {
           <h2 className="text-2xl font-bold text-gray-900">
             Carregando questões...
           </h2>
-          {/* Skeleton loading for questions could go here */}
+          <LoadingSkeleton variant="card" className="w-full h-48" />
         </div>
       ) : (
         currentTopic.questions && currentTopic.questions.length > 0 && (
@@ -178,13 +244,21 @@ export function CourseContent() {
               </Badge>
             </div>
             
-            {currentTopic.questions.map((question, index) => (
-              <QuestionBlock
-                key={question.id}
-                question={question}
-                questionNumber={index + 1}
-              />
-            ))}
+            <Suspense fallback={
+              <div className="space-y-4">
+                {Array.from({ length: currentTopic.questions.length }).map((_, index) => (
+                  <LoadingSkeleton key={index} variant="card" className="w-full h-32" />
+                ))}
+              </div>
+            }>
+              {currentTopic.questions.map((question, index) => (
+                <QuestionBlock
+                  key={question.id}
+                  question={question}
+                  questionNumber={index + 1}
+                />
+              ))}
+            </Suspense>
           </div>
         )
       )}

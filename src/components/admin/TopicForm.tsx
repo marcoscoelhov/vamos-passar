@@ -1,12 +1,60 @@
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Course } from '@/types/course';
-import { DocumentImporter } from './DocumentImporter';
-import { TopicSuggestions } from './TopicSuggestions';
-import { ManualTopicForm } from './ManualTopicForm';
-import { TopicPreviewDialog } from './TopicPreviewDialog';
-import { AccessDeniedCard } from './AccessDeniedCard';
 import { useTopics } from '@/hooks/useTopics';
+import { LoadingSkeleton } from '@/components/LoadingSkeleton';
+import { logger } from '@/utils/logger';
+
+// Lazy load heavy components
+const DocumentImporter = React.lazy(() => 
+  import('./DocumentImporter').then(module => {
+    logger.debug('DocumentImporter component loaded');
+    return { default: module.DocumentImporter };
+  }).catch(error => {
+    logger.error('Error loading DocumentImporter component', error);
+    throw error;
+  })
+);
+
+const TopicSuggestions = React.lazy(() => 
+  import('./TopicSuggestions').then(module => {
+    logger.debug('TopicSuggestions component loaded');
+    return { default: module.TopicSuggestions };
+  }).catch(error => {
+    logger.error('Error loading TopicSuggestions component', error);
+    throw error;
+  })
+);
+
+const ManualTopicForm = React.lazy(() => 
+  import('./ManualTopicForm').then(module => {
+    logger.debug('ManualTopicForm component loaded');
+    return { default: module.ManualTopicForm };
+  }).catch(error => {
+    logger.error('Error loading ManualTopicForm component', error);
+    throw error;
+  })
+);
+
+const TopicPreviewDialog = React.lazy(() => 
+  import('./TopicPreviewDialog').then(module => {
+    logger.debug('TopicPreviewDialog component loaded');
+    return { default: module.TopicPreviewDialog };
+  }).catch(error => {
+    logger.error('Error loading TopicPreviewDialog component', error);
+    throw error;
+  })
+);
+
+const AccessDeniedCard = React.lazy(() => 
+  import('./AccessDeniedCard').then(module => {
+    logger.debug('AccessDeniedCard component loaded');
+    return { default: module.AccessDeniedCard };
+  }).catch(error => {
+    logger.error('Error loading AccessDeniedCard component', error);
+    throw error;
+  })
+);
 
 interface TopicFormProps {
   course: Course;
@@ -26,11 +74,16 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
   const { addTopic } = useTopics();
 
   const handleContentExtracted = (extractedContent: string, suggestions: SuggestedTopic[] = []) => {
+    logger.debug('Content extracted for topic suggestions', {
+      contentLength: extractedContent.length,
+      suggestionsCount: suggestions.length
+    });
     setSuggestedTopics(suggestions);
   };
 
   const handleCreateTopicFromSuggestion = async (suggestion: SuggestedTopic) => {
     try {
+      logger.debug('Creating topic from suggestion', { title: suggestion.title });
       await addTopic(
         course.id,
         { title: suggestion.title, content: suggestion.content },
@@ -41,39 +94,52 @@ export function TopicForm({ course, isAdmin, onTopicAdded }: TopicFormProps) {
       // Remover da lista de sugestões
       setSuggestedTopics(prev => prev.filter(s => s !== suggestion));
       onTopicAdded();
+      logger.info('Topic created successfully from suggestion', { title: suggestion.title });
     } catch (error) {
-      console.error('Error creating topic from suggestion:', error);
+      logger.error('Error creating topic from suggestion', { error, title: suggestion.title });
     }
   };
 
   if (!isAdmin) {
-    return <AccessDeniedCard />;
+    return (
+      <Suspense fallback={<LoadingSkeleton variant="card" className="w-full h-32" />}>
+        <AccessDeniedCard />
+      </Suspense>
+    );
   }
 
   return (
     <div className="space-y-6">
       {/* Importador de Documentos */}
-      <DocumentImporter onContentExtracted={handleContentExtracted} />
+      <Suspense fallback={<LoadingSkeleton variant="card" className="w-full h-48" />}>
+        <DocumentImporter onContentExtracted={handleContentExtracted} />
+      </Suspense>
       
       {/* Sugestões de Tópicos */}
-      <TopicSuggestions
-        suggestions={suggestedTopics}
-        onCreateTopic={handleCreateTopicFromSuggestion}
-        onPreviewTopic={setPreviewTopic}
-      />
+      <Suspense fallback={<LoadingSkeleton variant="card" className="w-full h-32" />}>
+        <TopicSuggestions
+          suggestions={suggestedTopics}
+          onCreateTopic={handleCreateTopicFromSuggestion}
+          onPreviewTopic={setPreviewTopic}
+        />
+      </Suspense>
 
       {/* Formulário Manual */}
-      <ManualTopicForm 
-        course={course} 
-        isAdmin={isAdmin} 
-        onTopicAdded={onTopicAdded} 
-      />
+      <Suspense fallback={<LoadingSkeleton variant="card" className="w-full h-64" />}>
+        <ManualTopicForm 
+          course={course} 
+          isAdmin={isAdmin} 
+          onTopicAdded={onTopicAdded} 
+        />
+      </Suspense>
 
       {/* Preview Dialog */}
-      <TopicPreviewDialog 
-        topic={previewTopic} 
-        onClose={() => setPreviewTopic(null)} 
-      />
+      <Suspense fallback={null}>
+        <TopicPreviewDialog 
+          topic={previewTopic} 
+          onClose={() => setPreviewTopic(null)} 
+        />
+      </Suspense>
     </div>
   );
 }
