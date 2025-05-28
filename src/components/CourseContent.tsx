@@ -1,68 +1,14 @@
 
-import React, { Suspense } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Download, HelpCircle, Bookmark, BookmarkCheck, Key } from 'lucide-react';
+import React from 'react';
 import { useCourse } from '@/contexts/CourseContext';
 import { useDownload } from '@/hooks/useDownload';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { Breadcrumbs } from './Breadcrumbs';
-import { TopicContentSkeleton } from './TopicContentSkeleton';
-import { LoadingSkeleton } from './LoadingSkeleton';
+import { CourseContentHeader } from '@/components/course-content/CourseContentHeader';
+import { TopicHeader } from '@/components/course-content/TopicHeader';
+import { TopicContentSection } from '@/components/course-content/TopicContentSection';
+import { QuestionsSection } from '@/components/course-content/QuestionsSection';
 import { logger } from '@/utils/logger';
-
-// Lazy load heavy components
-const QuestionBlock = React.lazy(() => 
-  import('./QuestionBlock').then(module => {
-    logger.debug('QuestionBlock component loaded');
-    return { default: module.QuestionBlock };
-  }).catch(error => {
-    logger.error('Error loading QuestionBlock component', error);
-    throw error;
-  })
-);
-
-const HighlightableContent = React.lazy(() => 
-  import('./HighlightableContent').then(module => {
-    logger.debug('HighlightableContent component loaded');
-    return { default: module.HighlightableContent };
-  }).catch(error => {
-    logger.error('Error loading HighlightableContent component', error);
-    throw error;
-  })
-);
-
-const GlobalSearch = React.lazy(() => 
-  import('./GlobalSearch').then(module => {
-    logger.debug('GlobalSearch component loaded');
-    return { default: module.GlobalSearch };
-  }).catch(error => {
-    logger.error('Error loading GlobalSearch component', error);
-    throw error;
-  })
-);
-
-const KeyboardShortcuts = React.lazy(() => 
-  import('./KeyboardShortcuts').then(module => {
-    logger.debug('KeyboardShortcuts component loaded');
-    return { default: module.KeyboardShortcuts };
-  }).catch(error => {
-    logger.error('Error loading KeyboardShortcuts component', error);
-    throw error;
-  })
-);
-
-const AnswerKeyModal = React.lazy(() => 
-  import('./AnswerKeyModal').then(module => {
-    logger.debug('AnswerKeyModal component loaded');
-    return { default: module.AnswerKeyModal };
-  }).catch(error => {
-    logger.error('Error loading AnswerKeyModal component', error);
-    throw error;
-  })
-);
 
 export function CourseContent() {
   const { currentTopic, currentCourse, user, isLoadingQuestions } = useCourse();
@@ -117,151 +63,28 @@ export function CourseContent() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Barra superior com busca e atalhos */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Suspense fallback={<LoadingSkeleton variant="button" className="w-64 h-8" />}>
-            <GlobalSearch />
-          </Suspense>
-          <Suspense fallback={<LoadingSkeleton variant="button" className="w-32 h-8" />}>
-            <KeyboardShortcuts />
-          </Suspense>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Botão para questões */}
-          {currentTopic.questions && currentTopic.questions.length > 0 && (
-            <Button
-              onClick={scrollToQuestions}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <HelpCircle className="w-4 h-4" />
-              Questões
-            </Button>
-          )}
+      <CourseContentHeader
+        currentTopic={currentTopic}
+        isDownloading={isDownloading}
+        onDownloadTopicPDF={handleDownloadTopicPDF}
+        onScrollToQuestions={scrollToQuestions}
+      />
 
-          {/* Botão de download do tópico atual em PDF */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadTopicPDF}
-            disabled={isDownloading}
-            className="flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            {isDownloading ? 'Baixando...' : 'PDF'}
-          </Button>
+      <TopicHeader
+        currentTopic={currentTopic}
+        topicIsBookmarked={topicIsBookmarked}
+        onToggleBookmark={handleToggleBookmark}
+      />
 
-          {/* Botão de gabarito */}
-          {currentTopic.questions && currentTopic.questions.length > 0 && (
-            <Suspense fallback={<LoadingSkeleton variant="button" className="w-24 h-8" />}>
-              <AnswerKeyModal topic={currentTopic}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Key className="w-4 h-4" />
-                  Gabarito
-                </Button>
-              </AnswerKeyModal>
-            </Suspense>
-          )}
-        </div>
-      </div>
+      <TopicContentSection
+        currentTopic={currentTopic}
+        userId={user?.id}
+      />
 
-      {/* Breadcrumbs */}
-      <Breadcrumbs />
-
-      {/* Cabeçalho do tópico */}
-      <div className="mb-8">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900">
-                {currentTopic.title}
-              </h1>
-              
-              {/* Botão de marcador */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleToggleBookmark}
-                className="text-gray-400 hover:text-yellow-500"
-              >
-                {topicIsBookmarked ? (
-                  <BookmarkCheck className="w-5 h-5 text-yellow-500" />
-                ) : (
-                  <Bookmark className="w-5 h-5" />
-                )}
-              </Button>
-              
-              {currentTopic.completed && (
-                <Badge className="bg-green-100 text-green-800">
-                  Concluído
-                </Badge>
-              )}
-            </div>
-            {currentTopic.level > 0 && (
-              <div className="text-sm text-gray-500">
-                Subtópico • Nível {currentTopic.level}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Conteúdo do tópico com highlights */}
-      <Card className="p-8 mb-8">
-        <Suspense fallback={<TopicContentSkeleton />}>
-          <HighlightableContent 
-            content={currentTopic.content}
-            topicId={currentTopic.id}
-            userId={user?.id}
-          />
-        </Suspense>
-      </Card>
-
-      {/* Seção de questões */}
-      {isLoadingQuestions ? (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Carregando questões...
-          </h2>
-          <LoadingSkeleton variant="card" className="w-full h-48" />
-        </div>
-      ) : (
-        currentTopic.questions && currentTopic.questions.length > 0 && (
-          <div id="questions-section" className="space-y-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Questões de Fixação
-              </h2>
-              <Badge variant="outline" className="text-sm">
-                {currentTopic.questions.length} questão(ões)
-              </Badge>
-            </div>
-            
-            <Suspense fallback={
-              <div className="space-y-4">
-                {Array.from({ length: currentTopic.questions.length }).map((_, index) => (
-                  <LoadingSkeleton key={index} variant="card" className="w-full h-32" />
-                ))}
-              </div>
-            }>
-              {currentTopic.questions.map((question, index) => (
-                <QuestionBlock
-                  key={question.id}
-                  question={question}
-                  questionNumber={index + 1}
-                />
-              ))}
-            </Suspense>
-          </div>
-        )
-      )}
+      <QuestionsSection
+        currentTopic={currentTopic}
+        isLoadingQuestions={isLoadingQuestions}
+      />
     </div>
   );
 }
