@@ -1,4 +1,6 @@
 
+import { MockedFunction } from 'vitest';
+
 /**
  * Common testing utilities and types
  */
@@ -9,13 +11,13 @@ export interface MockSupabaseResponse<T = any> {
 }
 
 export interface MockSupabaseQuery {
-  select: jest.Mock;
-  insert: jest.Mock;
-  update: jest.Mock;
-  delete: jest.Mock;
-  eq: jest.Mock;
-  order: jest.Mock;
-  single: jest.Mock;
+  select: MockedFunction<any>;
+  insert: MockedFunction<any>;
+  update: MockedFunction<any>;
+  delete: MockedFunction<any>;
+  eq: MockedFunction<any>;
+  order: MockedFunction<any>;
+  single: MockedFunction<any>;
 }
 
 export interface TestHighlight {
