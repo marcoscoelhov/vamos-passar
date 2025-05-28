@@ -10,9 +10,9 @@ interface UseCourseContextOperationsProps {
   setCurrentCourse: (course: any) => void;
   setCurrentTopic: (topic: Topic) => void;
   setQuestionsCache: (fn: (prev: Map<string, Question[]>) => Map<string, Question[]>) => void;
-  markTopicCompleted: (topicId: string, completed: boolean) => Promise<void>;
-  addQuestionHook: (topicId: string, questionData: Omit<Question, 'id'>, isAdmin: boolean) => Promise<void>;
-  addTopicHook: (courseId: string, topicData: { title: string; content: string }, isAdmin: boolean, parentTopicId?: string) => Promise<void>;
+  markTopicCompleted: (topicId: string, completed: boolean) => Promise<any>;
+  addQuestionHook: (topicId: string, questionData: Omit<Question, 'id'>, isAdmin: boolean) => Promise<any>;
+  addTopicHook: (courseId: string, topicData: { title: string; content: string }, isAdmin: boolean, parentTopicId?: string) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
   signOut: () => void;
   refreshCourse: () => void;
@@ -132,7 +132,7 @@ export function useCourseContextOperations({
     signOut();
     setCurrentCourse(null);
     setCurrentTopic(null);
-    setQuestionsCache(new Map());
+    setQuestionsCache(() => new Map<string, Question[]>());
   }, [signOut, setCurrentCourse, setCurrentTopic, setQuestionsCache]);
 
   return {
