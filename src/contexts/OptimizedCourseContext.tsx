@@ -69,7 +69,7 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
 
   // Debounced cache operations
   const debouncedCacheSet = useCallback(
-    debounce('cache_set', (key: string, data: any) => {
+    debounce('cache_set', (key: string, data: Course[]) => {
       coursesCache.set(key, data);
     }, { delay: 100 }),
     [debounce, coursesCache]
@@ -88,11 +88,11 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
       return [];
     }
 
-    const transformed: Course[] = rawCourses.map(course => ({
+    const transformed: Course[] = rawCourses.map((course: any) => ({
       ...course,
       topics: course.topics || [],
       progress: course.progress || 0
-    }));
+    } as Course));
 
     // Use debounced cache set to prevent excessive updates
     debouncedCacheSet(cacheKey, transformed);
@@ -116,7 +116,7 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
 
   const isLoading = authLoading;
 
-  // Throttled wrapper for markTopicCompleted
+  // Throttled wrapper for markTopicCompleted with proper Promise return
   const wrappedMarkTopicCompleted = useCallback(
     throttle('mark_topic_completed', async (topicId: string, completed: boolean): Promise<void> => {
       if (progressDataRef.current.markTopicCompleted) {
