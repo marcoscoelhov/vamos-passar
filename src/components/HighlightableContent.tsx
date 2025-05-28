@@ -7,17 +7,22 @@ import { Badge } from '@/components/ui/badge';
 import { Highlighter, MessageSquare, X, Edit } from 'lucide-react';
 import { useHighlights } from '@/hooks/useHighlights';
 import { Highlight } from '@/types/course';
+import { InlineContentEditor } from './InlineContentEditor';
 
 interface HighlightableContentProps {
   content: string;
   topicId: string;
   userId?: string;
+  isAdmin?: boolean;
+  onContentUpdated?: (newContent: string) => void;
 }
 
 export const HighlightableContent = React.memo(function HighlightableContent({ 
   content, 
   topicId, 
-  userId 
+  userId,
+  isAdmin = false,
+  onContentUpdated
 }: HighlightableContentProps) {
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
@@ -25,6 +30,7 @@ export const HighlightableContent = React.memo(function HighlightableContent({
   const [note, setNote] = useState('');
   const [editingHighlight, setEditingHighlight] = useState<string | null>(null);
   const [editingNote, setEditingNote] = useState('');
+  const [currentContent, setCurrentContent] = useState(content);
   const contentRef = useRef<HTMLDivElement>(null);
   
   const { highlights, addHighlight, updateHighlight, deleteHighlight } = useHighlights(topicId, userId);
@@ -59,6 +65,13 @@ export const HighlightableContent = React.memo(function HighlightableContent({
       })
       .join('');
   }, []);
+
+  const handleContentUpdated = useCallback((newContent: string) => {
+    setCurrentContent(newContent);
+    if (onContentUpdated) {
+      onContentUpdated(newContent);
+    }
+  }, [onContentUpdated]);
 
   const handleTextSelection = useCallback(() => {
     const selection = window.getSelection();
@@ -139,10 +152,21 @@ export const HighlightableContent = React.memo(function HighlightableContent({
     setEditingNote('');
   }, []);
 
-  const formattedContent = useMemo(() => formatContent(content), [content, formatContent]);
+  // Use currentContent (which may be updated by editor) instead of the original content prop
+  const formattedContent = useMemo(() => formatContent(currentContent), [currentContent, formatContent]);
 
   return (
     <div className="space-y-6">
+      {/* Inline Content Editor - only show for admins */}
+      {isAdmin && (
+        <InlineContentEditor
+          topicId={topicId}
+          content={currentContent}
+          isAdmin={isAdmin}
+          onContentUpdated={handleContentUpdated}
+        />
+      )}
+
       <div 
         ref={contentRef}
         className="prose prose-lg max-w-none text-gray-700 leading-relaxed select-text"

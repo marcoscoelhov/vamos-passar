@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeHtmlContent, validateHtmlContent } from '@/utils/contentSanitizer';
 
 export function useTopicOperations() {
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +29,51 @@ export function useTopicOperations() {
       toast({
         title: 'Erro ao atualizar',
         description: 'Não foi possível atualizar o título do tópico.',
+        variant: 'destructive',
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  const updateTopicContent = useCallback(async (topicId: string, newContent: string) => {
+    setIsLoading(true);
+    try {
+      // Validate and sanitize content
+      const validation = validateHtmlContent(newContent);
+      if (!validation.isValid) {
+        toast({
+          title: 'Conteúdo inválido',
+          description: `Problemas encontrados: ${validation.errors.join(', ')}`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+
+      const sanitizedContent = sanitizeHtmlContent(newContent);
+
+      const { error } = await supabase
+        .from('topics')
+        .update({ 
+          content: sanitizedContent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', topicId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Conteúdo atualizado',
+        description: 'O conteúdo do tópico foi atualizado com sucesso.',
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar conteúdo:', error);
+      toast({
+        title: 'Erro ao atualizar',
+        description: 'Não foi possível atualizar o conteúdo do tópico.',
         variant: 'destructive',
       });
       return false;
@@ -94,6 +140,7 @@ export function useTopicOperations() {
   return {
     isLoading,
     updateTopicTitle,
+    updateTopicContent,
     deleteTopic,
   };
 }

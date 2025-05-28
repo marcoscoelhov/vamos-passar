@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,12 +17,15 @@ import { TopicContentSkeleton } from './TopicContentSkeleton';
 import { AnswerKeyModal } from './AnswerKeyModal';
 
 export function CourseContent() {
-  const { currentTopic, currentCourse, user, isLoadingQuestions } = useCourse();
+  const { currentTopic, currentCourse, user, isLoadingQuestions, refreshCurrentTopic } = useCourse();
   const { generateTopicsAsPDF, isDownloading } = useDownload();
   const { isBookmarked, toggleBookmark } = useBookmarks(user?.id);
   
   // Initialize keyboard shortcuts
   useKeyboardShortcuts();
+
+  // Check if user is admin
+  const isAdmin = user?.is_admin || false;
 
   if (!currentTopic) {
     return (
@@ -53,6 +57,12 @@ export function CourseContent() {
 
   const handleToggleBookmark = () => {
     toggleBookmark(currentTopic.id, currentTopic.title);
+  };
+
+  const handleContentUpdated = (newContent: string) => {
+    // Content has been updated, we could refresh the topic context
+    // or handle other side effects here
+    console.log('Content updated for topic:', currentTopic.id);
   };
 
   const topicIsBookmarked = isBookmarked(currentTopic.id);
@@ -149,12 +159,14 @@ export function CourseContent() {
         </div>
       </div>
 
-      {/* Conteúdo do tópico com highlights */}
+      {/* Conteúdo do tópico com highlights e editor inline para admins */}
       <Card className="p-8 mb-8">
         <HighlightableContent 
           content={currentTopic.content}
           topicId={currentTopic.id}
           userId={user?.id}
+          isAdmin={isAdmin}
+          onContentUpdated={handleContentUpdated}
         />
       </Card>
 
