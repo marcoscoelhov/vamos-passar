@@ -34,7 +34,7 @@ export function useTopicOperations({
           const mappedQuestions = dbQuestions ? dbQuestions.map(mapDbQuestionToQuestion) : [];
           topic.questions = mappedQuestions;
           
-          // Update cache
+          // Update cache with proper typing
           setQuestionsCache(prev => new Map(prev).set(topic.id, mappedQuestions));
           
           logger.debug('Questions loaded for topic', { topicId: topic.id, questionCount: mappedQuestions.length });

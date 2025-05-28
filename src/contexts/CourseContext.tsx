@@ -29,10 +29,19 @@ interface CourseProviderProps {
 
 export const CourseProvider = React.memo(function CourseProvider({ children }: CourseProviderProps) {
   const { user, profile, isAuthenticated, signIn, signOut, isLoading: authLoading } = useAuth();
-  const { courses, topics, questions, isLoading: coursesLoading, fetchTopics, fetchQuestions } = useCourses();
+  const { courses: rawCourses, topics, questions, isLoading: coursesLoading, fetchTopics, fetchQuestions } = useCourses();
   const { markTopicCompleted, isTopicCompleted } = useUserProgress(user?.id);
   const { addQuestion: addQuestionHook } = useQuestions();
   const { addTopic: addTopicHook } = useTopics();
+
+  // Transform courses to match Course type with topics and progress
+  const courses = useMemo(() => {
+    return rawCourses.map(course => ({
+      ...course,
+      topics: [],
+      progress: 0
+    }));
+  }, [rawCourses]);
 
   const {
     currentCourse,
@@ -50,6 +59,11 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
   } = useCourseState();
 
   const isLoading = authLoading || coursesLoading;
+
+  // Wrap markTopicCompleted to match expected signature
+  const wrappedMarkTopicCompleted = useCallback(async (topicId: string, completed: boolean): Promise<void> => {
+    await markTopicCompleted(topicId, completed);
+  }, [markTopicCompleted]);
 
   const { loadCourse } = useCourseLoader({
     courses,
@@ -76,7 +90,7 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
 
   const { updateTopicProgress } = useProgressOperations({
     user,
-    markTopicCompleted,
+    markTopicCompleted: wrappedMarkTopicCompleted,
     currentCourse,
     setCurrentCourse,
     currentTopic,

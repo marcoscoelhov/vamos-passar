@@ -61,7 +61,7 @@ export function useCourseLoader({
               const dbQuestions: DbQuestion[] = await fetchQuestions(dbTopic.id);
               mappedQuestions = dbQuestions ? dbQuestions.map(mapDbQuestionToQuestion) : [];
               
-              // Update cache
+              // Update cache with proper typing
               setQuestionsCache(prev => new Map(prev).set(dbTopic.id, mappedQuestions));
             }
             
