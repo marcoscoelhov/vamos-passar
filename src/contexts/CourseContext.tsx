@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCourses } from '@/hooks/useCourses';
@@ -22,6 +21,7 @@ interface CourseContextType {
   logout: () => void;
   isLoading: boolean;
   refreshCourse: () => void;
+  refreshCurrentTopic: () => void;
   questionsCache: Map<string, Question[]>;
   isLoadingQuestions: boolean;
 }
@@ -125,6 +125,13 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
       loadCourse(currentCourse.id);
     }
   }, [currentCourse, loadCourse]);
+
+  const refreshCurrentTopic = useCallback(async () => {
+    if (currentTopic) {
+      // Reload the current topic with fresh data
+      await handleSetCurrentTopic(currentTopic);
+    }
+  }, [currentTopic, handleSetCurrentTopic]);
 
   const handleSetCurrentTopic = useCallback(async (topic: Topic) => {
     // Load questions for this topic if not already loaded or cached
@@ -265,6 +272,7 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     logout,
     isLoading,
     refreshCourse,
+    refreshCurrentTopic,
     questionsCache,
     isLoadingQuestions,
   }), [
@@ -281,6 +289,7 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     logout,
     isLoading,
     refreshCourse,
+    refreshCurrentTopic,
     questionsCache,
     isLoadingQuestions,
   ]);
