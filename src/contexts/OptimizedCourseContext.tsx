@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCourses } from '@/hooks/useCourses';
 import { useUserProgress } from '@/hooks/useUserProgress';
@@ -13,6 +13,7 @@ import { useProgressOperations } from './hooks/useProgressOperations';
 import { useOptimizedCache } from '@/hooks/useOptimizedCache';
 import { usePerformance } from './PerformanceContext';
 import { useWebWorkerOperations } from '@/hooks/useWebWorkerOperations';
+import { useOptimizedOperations } from '@/hooks/useOptimizedOperations';
 
 const OptimizedCourseContext = createContext<CourseContextType | undefined>(undefined);
 
@@ -34,15 +35,28 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
   const { trackRender } = usePerformance();
   const endRender = trackRender('OptimizedCourseProvider');
   
+  // Stable references using refs
+  const authDataRef = useRef({ user: null, profile: null, isAuthenticated: false, isLoading: true });
+  const coursesDataRef = useRef({ courses: [], fetchTopics: null, fetchQuestions: null });
+  const progressDataRef = useRef({ markTopicCompleted: null, isTopicCompleted: null });
+  
+  // Use optimized operations for debouncing and throttling
+  const { debounce, throttle, batchOperation } = useOptimizedOperations();
+  
   // Stable references
   const { user, profile, isAuthenticated, signIn, signOut, isLoading: authLoading } = useAuth();
   const { courses: rawCourses, fetchTopics, fetchQuestions } = useCourses();
   const { markTopicCompleted, isTopicCompleted } = useUserProgress(user?.id);
   
+  // Update refs with current values
+  authDataRef.current = { user, profile, isAuthenticated, isLoading: authLoading };
+  coursesDataRef.current = { courses: rawCourses || [], fetchTopics, fetchQuestions };
+  progressDataRef.current = { markTopicCompleted, isTopicCompleted };
+  
   // Web Worker operations
   const { processBatchTopics, calculateProgress } = useWebWorkerOperations();
   
-  // Optimized cache
+  // Optimized cache with stable references
   const questionsCache = useOptimizedCache<Question[]>('questions', {
     maxSize: 50,
     ttl: 10 * 60 * 1000, // 10 minutes
@@ -53,7 +67,15 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
     ttl: 30 * 60 * 1000, // 30 minutes
   });
 
-  // Memoized courses transformation
+  // Debounced cache operations
+  const debouncedCacheSet = useCallback(
+    debounce('cache_set', (key: string, data: any) => {
+      coursesCache.set(key, data);
+    }, { delay: 100 }),
+    [debounce, coursesCache]
+  );
+
+  // Memoized courses transformation with stable cache
   const courses = useMemo(() => {
     const cacheKey = 'transformed_courses';
     const cached = coursesCache.get(cacheKey);
@@ -68,13 +90,14 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
 
     const transformed: Course[] = rawCourses.map(course => ({
       ...course,
-      topics: [],
-      progress: 0
+      topics: course.topics || [],
+      progress: course.progress || 0
     }));
 
-    coursesCache.set(cacheKey, transformed);
+    // Use debounced cache set to prevent excessive updates
+    debouncedCacheSet(cacheKey, transformed);
     return transformed;
-  }, [rawCourses, coursesCache]);
+  }, [rawCourses, coursesCache, debouncedCacheSet]);
 
   const {
     currentCourse,
@@ -93,29 +116,34 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
 
   const isLoading = authLoading;
 
-  // Optimized wrapper for markTopicCompleted
-  const wrappedMarkTopicCompleted = useCallback(async (topicId: string, completed: boolean): Promise<void> => {
-    await markTopicCompleted(topicId, completed);
-    // Invalidate relevant caches
-    questionsCache.invalidate(`topic_${topicId}`);
-  }, [markTopicCompleted, questionsCache]);
+  // Throttled wrapper for markTopicCompleted
+  const wrappedMarkTopicCompleted = useCallback(
+    throttle('mark_topic_completed', async (topicId: string, completed: boolean): Promise<void> => {
+      if (progressDataRef.current.markTopicCompleted) {
+        await progressDataRef.current.markTopicCompleted(topicId, completed);
+        // Invalidate relevant caches
+        questionsCache.invalidate(`topic_${topicId}`);
+      }
+    }, 500),
+    [throttle, questionsCache]
+  );
 
-  // Optimized hooks with caching
+  // Optimized hooks with caching and stable references
   const { loadCourse } = useCourseLoader({
     courses,
-    fetchTopics,
-    fetchQuestions,
+    fetchTopics: coursesDataRef.current.fetchTopics,
+    fetchQuestions: coursesDataRef.current.fetchQuestions,
     questionsCache: questionsMapCache,
     setQuestionsCache,
-    user,
-    isTopicCompleted,
+    user: authDataRef.current.user,
+    isTopicCompleted: progressDataRef.current.isTopicCompleted,
     setCurrentCourse,
     setError,
     clearError,
   });
 
   const { handleSetCurrentTopic } = useTopicOperations({
-    fetchQuestions,
+    fetchQuestions: coursesDataRef.current.fetchQuestions,
     questionsCache: questionsMapCache,
     setQuestionsCache,
     setIsLoadingQuestions,
@@ -125,7 +153,7 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
   });
 
   const { updateTopicProgress } = useProgressOperations({
-    user,
+    user: authDataRef.current.user,
     markTopicCompleted: wrappedMarkTopicCompleted,
     currentCourse,
     setCurrentCourse,
@@ -135,45 +163,76 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
     clearError,
   });
 
-  // Optimized course loading with caching
-  const optimizedLoadCourse = useCallback(async (courseId: string) => {
-    const cacheKey = `course_${courseId}`;
-    const cached = coursesCache.get(cacheKey);
-    
-    if (cached && Array.isArray(cached) && cached.length > 0 && !user) {
-      const course = cached.find((c: Course) => c.id === courseId);
-      if (course) {
-        setCurrentCourse(course);
+  // Optimized course loading with caching and circuit breaker
+  const loadCourseCount = useRef(0);
+  const optimizedLoadCourse = useCallback(
+    debounce('load_course', async (courseId: string) => {
+      // Circuit breaker - prevent excessive loading
+      if (loadCourseCount.current > 10) {
+        logger.warn('Circuit breaker activated for course loading');
         return;
       }
-    }
+      
+      loadCourseCount.current++;
+      
+      try {
+        const cacheKey = `course_${courseId}`;
+        const cached = coursesCache.get(cacheKey);
+        
+        if (cached && Array.isArray(cached) && cached.length > 0 && !authDataRef.current.user) {
+          const course = cached.find((c: Course) => c.id === courseId);
+          if (course) {
+            setCurrentCourse(course);
+            return;
+          }
+        }
 
-    await loadCourse(courseId);
-  }, [loadCourse, coursesCache, setCurrentCourse, user]);
+        await loadCourse(courseId);
+      } finally {
+        // Reset counter after delay
+        setTimeout(() => {
+          loadCourseCount.current = Math.max(0, loadCourseCount.current - 1);
+        }, 5000);
+      }
+    }, { delay: 300 }),
+    [debounce, loadCourse, coursesCache, setCurrentCourse]
+  );
 
-  // Load first course with optimization
+  // Load first course with optimization and circuit breaker
+  const firstCourseLoaded = useRef(false);
   React.useEffect(() => {
-    if (courses && Array.isArray(courses) && courses.length > 0 && !currentCourse && !authLoading) {
+    if (courses && Array.isArray(courses) && courses.length > 0 && !currentCourse && !authLoading && !firstCourseLoaded.current) {
+      firstCourseLoaded.current = true;
       optimizedLoadCourse(courses[0].id);
     }
   }, [courses, authLoading, currentCourse, optimizedLoadCourse]);
 
   // Set first topic as current when course is loaded
+  const firstTopicSet = useRef(false);
   React.useEffect(() => {
-    if (currentCourse && !currentTopic && currentCourse.topics && currentCourse.topics.length > 0) {
+    if (currentCourse && !currentTopic && currentCourse.topics && currentCourse.topics.length > 0 && !firstTopicSet.current) {
+      firstTopicSet.current = true;
       setCurrentTopic(currentCourse.topics[0]);
     }
   }, [currentCourse, currentTopic, setCurrentTopic]);
 
-  const refreshCourse = useCallback(() => {
-    if (currentCourse) {
-      logger.debug('Refreshing course', { courseId: currentCourse.id });
-      // Clear caches for refresh
-      coursesCache.invalidate(`course_${currentCourse.id}`);
-      questionsCache.invalidate();
-      optimizedLoadCourse(currentCourse.id);
-    }
-  }, [currentCourse, optimizedLoadCourse, coursesCache, questionsCache]);
+  // Reset refs when course changes
+  React.useEffect(() => {
+    firstTopicSet.current = false;
+  }, [currentCourse?.id]);
+
+  const refreshCourse = useCallback(
+    throttle('refresh_course', () => {
+      if (currentCourse) {
+        logger.debug('Refreshing course', { courseId: currentCourse.id });
+        // Clear caches for refresh
+        coursesCache.invalidate(`course_${currentCourse.id}`);
+        questionsCache.invalidate();
+        optimizedLoadCourse(currentCourse.id);
+      }
+    }, 1000),
+    [currentCourse, optimizedLoadCourse, coursesCache, questionsCache, throttle]
+  );
 
   const addQuestion = useCallback(async (topicId: string, questionData: Omit<Question, 'id'>) => {
     try {
@@ -226,6 +285,10 @@ export const OptimizedCourseProvider = React.memo(function OptimizedCourseProvid
       questionsCache.invalidate();
       coursesCache.invalidate();
       clearError();
+      // Reset refs
+      firstCourseLoaded.current = false;
+      firstTopicSet.current = false;
+      loadCourseCount.current = 0;
       logger.info('User logged out, context cleared');
     } catch (error) {
       logger.error('Error during logout', { error });

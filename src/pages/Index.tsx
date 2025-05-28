@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { CourseLayout } from '@/components/CourseLayout';
+import { OptimizedCourseLayout } from '@/components/OptimizedCourseLayout';
 
 const Index = () => {
-  return <CourseLayout />;
+  return <OptimizedCourseLayout />;
 };
 
 export default Index;

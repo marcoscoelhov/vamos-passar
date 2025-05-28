@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useCourse } from '@/contexts/CourseContext';
+import { useOptimizedCourse } from '@/contexts/OptimizedCourseContext';
 import { useDownload } from '@/hooks/useDownload';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -19,7 +19,7 @@ export function CourseContent() {
     isLoadingQuestions, 
     error, 
     retryOperation 
-  } = useCourse();
+  } = useOptimizedCourse();
   const { generateTopicsAsPDF, isDownloading } = useDownload();
   const { isBookmarked, toggleBookmark } = useBookmarks(user?.id);
   
