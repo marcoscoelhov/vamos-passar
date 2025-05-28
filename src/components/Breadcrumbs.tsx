@@ -1,55 +1,38 @@
 
 import React, { useMemo } from 'react';
-import { Home } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import {
-  Breadcrumb,
-  BreadcrumbEllipsis,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
+import { ChevronRight, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useCourse } from '@/contexts/CourseContext';
 import { Topic } from '@/types/course';
-import { logger } from '@/utils/logger';
+import { cn } from '@/lib/utils';
 
-interface BreadcrumbData {
+interface BreadcrumbItem {
   id: string;
   title: string;
   topic?: Topic;
   isLast: boolean;
-  url?: string;
 }
 
 export const Breadcrumbs = React.memo(function Breadcrumbs() {
   const { currentCourse, currentTopic, setCurrentTopic } = useCourse();
 
   const breadcrumbItems = useMemo(() => {
-    if (!currentCourse || !currentTopic) {
-      logger.debug('Breadcrumbs: Missing course or topic data', {
-        hasCourse: !!currentCourse,
-        hasTopic: !!currentTopic
-      });
-      return [];
-    }
+    if (!currentCourse || !currentTopic) return [];
 
-    const items: BreadcrumbData[] = [];
+    const items: BreadcrumbItem[] = [];
     
     // Add course as root
     items.push({
       id: 'course',
       title: currentCourse.title,
       isLast: false,
-      url: '/',
     });
 
     // Build topic hierarchy path
     const buildPath = (topic: Topic, allTopics: Topic[]): Topic[] => {
       const path: Topic[] = [];
       
-      // Find parent topic recursively
+      // Find parent topic
       const findParent = (topics: Topic[], targetId: string): Topic | null => {
         for (const t of topics) {
           if (t.children?.some(child => child.id === targetId)) {
@@ -78,98 +61,58 @@ export const Breadcrumbs = React.memo(function Breadcrumbs() {
       return path;
     };
 
-    try {
-      const topicPath = buildPath(currentTopic, currentCourse.topics);
-      
-      topicPath.forEach((topic, index) => {
-        items.push({
-          id: topic.id,
-          title: topic.title,
-          topic,
-          isLast: index === topicPath.length - 1,
-        });
+    const topicPath = buildPath(currentTopic, currentCourse.topics);
+    
+    topicPath.forEach((topic, index) => {
+      items.push({
+        id: topic.id,
+        title: topic.title,
+        topic,
+        isLast: index === topicPath.length - 1,
       });
-
-      logger.debug('Breadcrumbs: Built path successfully', {
-        courseTitle: currentCourse.title,
-        topicPath: topicPath.map(t => t.title),
-        totalItems: items.length
-      });
-    } catch (error) {
-      logger.error('Breadcrumbs: Error building path', {
-        error,
-        courseId: currentCourse.id,
-        topicId: currentTopic.id
-      });
-      return [items[0]]; // Return only course item on error
-    }
+    });
 
     return items;
   }, [currentCourse, currentTopic]);
 
-  const handleBreadcrumbClick = async (item: BreadcrumbData) => {
+  const handleBreadcrumbClick = async (item: BreadcrumbItem) => {
     if (item.topic && item.topic.id !== currentTopic?.id) {
-      try {
-        logger.debug('Breadcrumbs: Navigating to topic', {
-          fromTopic: currentTopic?.id,
-          toTopic: item.topic.id,
-          topicTitle: item.topic.title
-        });
-        await setCurrentTopic(item.topic);
-      } catch (error) {
-        logger.error('Breadcrumbs: Error navigating to topic', {
-          error,
-          topicId: item.topic.id
-        });
-      }
+      await setCurrentTopic(item.topic);
     }
   };
 
-  if (breadcrumbItems.length <= 1) {
-    logger.debug('Breadcrumbs: Not enough items to display', {
-      itemCount: breadcrumbItems.length
-    });
-    return null;
-  }
+  if (breadcrumbItems.length <= 1) return null;
 
   return (
-    <Breadcrumb className="mb-4">
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <Home className="w-4 h-4" />
-        </BreadcrumbItem>
-        
-        {breadcrumbItems.map((item, index) => (
-          <React.Fragment key={item.id}>
-            <BreadcrumbSeparator />
-            
-            <BreadcrumbItem>
-              {item.isLast ? (
-                <BreadcrumbPage className="font-medium">
-                  {item.title}
-                </BreadcrumbPage>
-              ) : item.url ? (
-                <BreadcrumbLink asChild>
-                  <Link to={item.url} className="hover:text-foreground">
-                    {item.title}
-                  </Link>
-                </BreadcrumbLink>
-              ) : item.topic ? (
-                <BreadcrumbLink 
-                  className="cursor-pointer hover:text-foreground"
-                  onClick={() => handleBreadcrumbClick(item)}
-                >
-                  {item.title}
-                </BreadcrumbLink>
-              ) : (
-                <span className="text-muted-foreground">
-                  {item.title}
-                </span>
+    <nav className="flex items-center space-x-1 text-sm text-gray-600 mb-4">
+      <Home className="w-4 h-4" />
+      
+      {breadcrumbItems.map((item, index) => (
+        <React.Fragment key={item.id}>
+          {index > 0 && <ChevronRight className="w-4 h-4 text-gray-400" />}
+          
+          {item.topic ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-auto p-1 text-sm font-normal",
+                item.isLast 
+                  ? "text-gray-900 font-medium cursor-default" 
+                  : "text-gray-600 hover:text-gray-900"
               )}
-            </BreadcrumbItem>
-          </React.Fragment>
-        ))}
-      </BreadcrumbList>
-    </Breadcrumb>
+              onClick={() => !item.isLast && handleBreadcrumbClick(item)}
+              disabled={item.isLast}
+            >
+              {item.title}
+            </Button>
+          ) : (
+            <span className="text-gray-600 px-1">
+              {item.title}
+            </span>
+          )}
+        </React.Fragment>
+      ))}
+    </nav>
   );
 });

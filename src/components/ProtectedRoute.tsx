@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useOptimizedCourse } from '@/contexts/OptimizedCourseContext';
+import { useCourse } from '@/contexts/CourseContext';
 import { LoadingSpinner } from './LoadingSpinner';
 
 interface ProtectedRouteProps {
@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { user, profile, isAuthenticated, isLoading } = useOptimizedCourse();
+  const { user, profile, isAuthenticated, isLoading } = useCourse();
 
   // Show loading while checking authentication
   if (isLoading) {

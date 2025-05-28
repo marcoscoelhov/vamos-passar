@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 interface LoadingSkeletonProps {
-  variant?: 'card' | 'text' | 'avatar' | 'button' | 'sidebar' | 'content' | 'page';
+  variant?: 'card' | 'text' | 'avatar' | 'button' | 'sidebar' | 'content';
   className?: string;
   lines?: number;
 }
@@ -69,25 +69,6 @@ export function LoadingSkeleton({ variant = 'text', className, lines = 3 }: Load
         <div className="space-y-2">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
-        </div>
-      </div>
-    ),
-    page: (
-      <div className={cn('space-y-8 p-8', className)}>
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-1/3" />
-          <Skeleton className="h-4 w-2/3" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="space-y-3 p-4 border rounded-lg">
-              <Skeleton className="h-6 w-3/4" />
-              <div className="space-y-2">
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-5/6" />
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     )

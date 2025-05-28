@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { logger } from '@/utils/logger';
 
 export interface AuditLog {
   id: string;
@@ -32,8 +31,6 @@ export function useAuditLogs() {
     try {
       const start = (page - 1) * ITEMS_PER_PAGE;
       const end = start + ITEMS_PER_PAGE - 1;
-
-      logger.debug('Fetching audit logs', { page, table, action });
 
       let query = supabase
         .from('admin_logs')
@@ -74,9 +71,8 @@ export function useAuditLogs() {
 
       setLogs(logsWithAdminNames);
       setTotalPages(Math.ceil((count || 0) / ITEMS_PER_PAGE));
-      logger.info('Audit logs fetched successfully', { count: logsWithAdminNames.length });
     } catch (error) {
-      logger.error('Error fetching audit logs', error);
+      console.error('Error fetching audit logs:', error);
       toast({
         title: 'Erro ao carregar logs',
         description: 'Não foi possível carregar os logs de auditoria.',

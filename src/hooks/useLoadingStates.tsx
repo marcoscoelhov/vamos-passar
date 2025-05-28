@@ -1,6 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
-import { logger } from '@/utils/logger';
+import { useState, useCallback } from 'react';
 
 interface LoadingStates {
   [key: string]: boolean;
@@ -10,27 +9,21 @@ export function useLoadingStates(initialStates: LoadingStates = {}) {
   const [loadingStates, setLoadingStates] = useState<LoadingStates>(initialStates);
 
   const setLoading = useCallback((key: string, isLoading: boolean) => {
-    logger.debug(`Setting loading state for ${key}`, { isLoading });
-    setLoadingStates(prev => {
-      // Evita re-render desnecessário se o estado não mudar
-      if (prev[key] === isLoading) return prev;
-      return {
-        ...prev,
-        [key]: isLoading
-      };
-    });
+    setLoadingStates(prev => ({
+      ...prev,
+      [key]: isLoading
+    }));
   }, []);
 
   const isLoading = useCallback((key: string): boolean => {
     return loadingStates[key] || false;
   }, [loadingStates]);
 
-  const isAnyLoading = useMemo((): boolean => {
+  const isAnyLoading = useCallback((): boolean => {
     return Object.values(loadingStates).some(Boolean);
   }, [loadingStates]);
 
   const resetAll = useCallback(() => {
-    logger.debug('Resetting all loading states');
     setLoadingStates({});
   }, []);
 
@@ -38,14 +31,11 @@ export function useLoadingStates(initialStates: LoadingStates = {}) {
     key: string, 
     asyncFn: () => Promise<T>
   ): Promise<T> => {
-    logger.debug(`Starting async operation with loading state for ${key}`);
     setLoading(key, true);
     try {
-      const result = await asyncFn();
-      return result;
+      return await asyncFn();
     } finally {
       setLoading(key, false);
-      logger.debug(`Completed async operation for ${key}`);
     }
   }, [setLoading]);
 

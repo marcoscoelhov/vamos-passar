@@ -1,6 +1,3 @@
-
-import { logger } from '@/utils/logger';
-
 export interface SuggestedTopic {
   title: string;
   content: string;
@@ -54,18 +51,14 @@ export const processWordDocument = async (file: File, updateStatus: StatusUpdate
     const result = await mammoth.convertToHtml(options);
     
     if (result.messages.length > 0) {
-      logger.warn('Avisos durante a conversão de documento Word', { 
-        fileName: file.name,
-        messageCount: result.messages.length,
-        messages: result.messages
-      });
+      console.warn('Avisos durante a conversão:', result.messages);
     }
     
     updateStatus('processing', 75, 'Processamento concluído');
     
     return result.value;
   } catch (error) {
-    logger.error('Erro ao processar documento Word', { fileName: file.name, error });
+    console.error('Erro ao processar documento Word:', error);
     throw new Error('Erro ao processar documento Word. Verifique se o arquivo não está corrompido.');
   }
 };
@@ -98,15 +91,9 @@ export const processPDFDocument = async (file: File, updateStatus: StatusUpdateC
       }
     });
     
-    logger.info('PDF document processed successfully', { 
-      fileName: file.name,
-      pageCount: data.numpages,
-      textLength: data.text.length
-    });
-    
     return htmlContent;
   } catch (error) {
-    logger.error('Erro ao processar PDF', { fileName: file.name, error });
+    console.error('Erro ao processar PDF:', error);
     throw new Error('Erro ao processar PDF. Verifique se o arquivo não está corrompido ou protegido por senha.');
   }
 };
@@ -154,12 +141,6 @@ export const extractTopicsFromContent = (content: string, updateStatus: StatusUp
       level: 0
     });
   }
-  
-  logger.info('Topics extracted from content', { 
-    fileName,
-    headingCount: headings.length,
-    topicsExtracted: topics.length
-  });
   
   return topics;
 };

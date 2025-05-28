@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { logger } from '@/utils/logger';
 
 interface Bookmark {
   id: string;
@@ -26,7 +25,7 @@ export function useBookmarks(userId?: string) {
           setBookmarks(JSON.parse(stored));
         }
       } catch (error) {
-        logger.error('Error loading bookmarks', { userId, error });
+        console.error('Error loading bookmarks:', error);
       }
     };
 
@@ -40,7 +39,7 @@ export function useBookmarks(userId?: string) {
       localStorage.setItem(`bookmarks_${userId}`, JSON.stringify(newBookmarks));
       setBookmarks(newBookmarks);
     } catch (error) {
-      logger.error('Error saving bookmarks', { userId, error });
+      console.error('Error saving bookmarks:', error);
       toast({
         title: 'Erro',
         description: 'Não foi possível salvar o marcador.',

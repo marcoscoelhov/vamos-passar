@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,6 @@ import { Plus, Loader2, FileText } from 'lucide-react';
 import { useTopics } from '@/hooks/useTopics';
 import { Course, Topic } from '@/types/course';
 import { RichTextEditor } from './RichTextEditor';
-import { logger } from '@/utils/logger';
 
 interface ManualTopicFormProps {
   course: Course;
@@ -47,7 +47,7 @@ export function ManualTopicForm({ course, isAdmin, onTopicAdded }: ManualTopicFo
       setShowConfirmDialog(false);
       onTopicAdded();
     } catch (error) {
-      logger.error('Error in confirmAddTopic', { courseId: course.id, title, error });
+      console.error('Error in confirmAddTopic:', error);
       setShowConfirmDialog(false);
     }
   };

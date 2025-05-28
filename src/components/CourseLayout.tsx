@@ -1,14 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { Header } from '@/components/Header';
 import { CourseSidebar } from '@/components/CourseSidebar';
 import { CourseContent } from '@/components/CourseContent';
-import { logger } from '@/utils/logger';
+import { Header } from '@/components/Header';
 
 export function CourseLayout() {
-  logger.debug('CourseLayout rendering');
-  
   return (
     <div className="min-h-screen bg-background">
       <Header />

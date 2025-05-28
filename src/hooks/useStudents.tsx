@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { logger } from '@/utils/logger';
 
 export interface Student {
   id: string;
@@ -82,7 +81,7 @@ export function useStudents() {
       setStudents(studentsWithProgress);
       setTotalPages(Math.ceil((count || 0) / ITEMS_PER_PAGE));
     } catch (error) {
-      logger.error('Error fetching students', { page, search, error });
+      console.error('Error fetching students:', error);
       toast({
         title: 'Erro ao carregar estudantes',
         description: 'Não foi possível carregar a lista de estudantes.',
@@ -109,7 +108,7 @@ export function useStudents() {
 
       fetchStudents(currentPage, searchTerm);
     } catch (error) {
-      logger.error('Error updating admin status', { userId, currentStatus, error });
+      console.error('Error updating admin status:', error);
       toast({
         title: 'Erro ao atualizar permissões',
         description: 'Não foi possível atualizar as permissões do usuário.',

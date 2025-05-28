@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { logger } from '@/utils/logger';
 
 export interface AnalyticsData {
   totalStudents: number;
@@ -37,8 +36,6 @@ export function useAnalytics() {
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      logger.debug('Fetching analytics data...');
-      
       // Buscar dados básicos
       const [
         { data: students, count: totalStudents },
@@ -167,15 +164,8 @@ export function useAnalytics() {
         recentActivity,
       });
 
-      logger.info('Analytics data fetched successfully', {
-        totalStudents: totalStudents || 0,
-        totalTopics: totalTopics || 0,
-        totalQuestions: totalQuestions || 0,
-        activeStudents
-      });
-
     } catch (error) {
-      logger.error('Error fetching analytics', error);
+      console.error('Error fetching analytics:', error);
       toast({
         title: 'Erro ao carregar analytics',
         description: 'Não foi possível carregar os dados analíticos.',

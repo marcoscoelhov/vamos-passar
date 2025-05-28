@@ -3,7 +3,6 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DbQuestion, DbTopic } from '@/types/course';
 import { useCacheManager } from './useCacheManager';
-import { logger } from '@/utils/logger';
 
 interface Course {
   id: string;
@@ -29,7 +28,6 @@ export function useCourseData() {
   const fetchCourses = useCallback(async () => {
     try {
       setLoadingStates(prev => ({ ...prev, courses: true }));
-      logger.debug('Fetching courses...');
       
       const { data, error } = await supabase
         .from('courses')
@@ -41,9 +39,8 @@ export function useCourseData() {
       }
 
       setCourses(data || []);
-      logger.info('Courses fetched successfully', { count: data?.length || 0 });
     } catch (error) {
-      logger.error('Error fetching courses', error);
+      console.error('Error fetching courses:', error);
       throw error;
     } finally {
       setLoadingStates(prev => ({ ...prev, courses: false }));
@@ -58,11 +55,8 @@ export function useCourseData() {
       const cachedTopics = topicsCache.getCacheEntry(courseId);
       if (cachedTopics) {
         setTopics(cachedTopics);
-        logger.debug('Topics loaded from cache', { courseId, count: cachedTopics.length });
         return cachedTopics;
       }
-
-      logger.debug('Fetching topics from database', { courseId });
 
       const { data, error } = await supabase
         .from('topics')
@@ -81,10 +75,9 @@ export function useCourseData() {
       topicsCache.setCacheEntry(courseId, topicsData);
       
       setTopics(topicsData);
-      logger.info('Topics fetched successfully', { courseId, count: topicsData.length });
       return topicsData;
     } catch (error) {
-      logger.error('Error fetching topics', error);
+      console.error('Error fetching topics:', error);
       throw error;
     } finally {
       setLoadingStates(prev => ({ ...prev, topics: false }));
@@ -99,11 +92,8 @@ export function useCourseData() {
       const cachedQuestions = questionsCache.getCacheEntry(topicId);
       if (cachedQuestions) {
         setQuestions(cachedQuestions);
-        logger.debug('Questions loaded from cache', { topicId, count: cachedQuestions.length });
         return cachedQuestions;
       }
-
-      logger.debug('Fetching questions from database', { topicId });
 
       const { data, error } = await supabase
         .from('questions')
@@ -121,10 +111,9 @@ export function useCourseData() {
       questionsCache.setCacheEntry(topicId, questionsData);
       
       setQuestions(questionsData);
-      logger.info('Questions fetched successfully', { topicId, count: questionsData.length });
       return questionsData;
     } catch (error) {
-      logger.error('Error fetching questions', error);
+      console.error('Error fetching questions:', error);
       throw error;
     } finally {
       setLoadingStates(prev => ({ ...prev, questions: false }));
@@ -134,10 +123,8 @@ export function useCourseData() {
   const invalidateCache = useCallback((type: 'topics' | 'questions', id?: string) => {
     if (type === 'topics') {
       topicsCache.invalidateCache(id);
-      logger.debug('Topics cache invalidated', { id });
     } else if (type === 'questions') {
       questionsCache.invalidateCache(id);
-      logger.debug('Questions cache invalidated', { id });
     }
   }, [topicsCache, questionsCache]);
 

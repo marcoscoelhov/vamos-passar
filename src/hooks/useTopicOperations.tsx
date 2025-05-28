@@ -2,53 +2,32 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from '@/utils/logger';
 
 export function useTopicOperations() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const updateTopicTitle = useCallback(async (topicId: string, newTitle: string) => {
-    if (!topicId || !newTitle?.trim()) {
-      logger.warn('updateTopicTitle: ID ou título inválido', { topicId, newTitle });
-      return false;
-    }
-
-    const trimmedTitle = newTitle.trim();
-    if (trimmedTitle.length < 2) {
-      toast({
-        title: 'Título muito curto',
-        description: 'O título deve ter pelo menos 2 caracteres.',
-        variant: 'destructive',
-      });
-      return false;
-    }
-
     setIsLoading(true);
-    
     try {
       const { error } = await supabase
         .from('topics')
-        .update({ title: trimmedTitle })
+        .update({ title: newTitle.trim() })
         .eq('id', topicId);
 
-      if (error) {
-        logger.error('Erro do Supabase ao atualizar tópico', { topicId, error });
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: 'Tópico atualizado',
         description: 'O título do tópico foi atualizado com sucesso.',
       });
 
-      logger.info('Tópico atualizado com sucesso', { topicId, newTitle: trimmedTitle });
       return true;
     } catch (error) {
-      logger.error('Erro ao atualizar tópico', { topicId, error });
+      console.error('Erro ao atualizar tópico:', error);
       toast({
         title: 'Erro ao atualizar',
-        description: error instanceof Error ? error.message : 'Não foi possível atualizar o título do tópico.',
+        description: 'Não foi possível atualizar o título do tópico.',
         variant: 'destructive',
       });
       return false;
@@ -58,19 +37,13 @@ export function useTopicOperations() {
   }, [toast]);
 
   const deleteTopic = useCallback(async (topicId: string) => {
-    if (!topicId) {
-      logger.warn('deleteTopic: ID inválido', { topicId });
-      return false;
-    }
-
     setIsLoading(true);
     try {
-      // Verificar se o tópico tem subtópicos
+      // Primeiro, verificar se o tópico tem subtópicos
       const { data: children, error: childrenError } = await supabase
         .from('topics')
         .select('id')
-        .eq('parent_topic_id', topicId)
-        .limit(1);
+        .eq('parent_topic_id', topicId);
 
       if (childrenError) throw childrenError;
 
@@ -104,13 +77,12 @@ export function useTopicOperations() {
         description: 'O tópico foi excluído com sucesso.',
       });
 
-      logger.info('Tópico excluído com sucesso', { topicId });
       return true;
     } catch (error) {
-      logger.error('Erro ao excluir tópico', { topicId, error });
+      console.error('Erro ao excluir tópico:', error);
       toast({
         title: 'Erro ao excluir',
-        description: error instanceof Error ? error.message : 'Não foi possível excluir o tópico.',
+        description: 'Não foi possível excluir o tópico.',
         variant: 'destructive',
       });
       return false;

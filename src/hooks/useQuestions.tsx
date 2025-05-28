@@ -4,7 +4,6 @@ import { useCourses } from './useCourses';
 import { Question, DbQuestion } from '@/types/course';
 import { mapDbQuestionToQuestion } from '@/utils/dataMappers';
 import { useToast } from '@/hooks/use-toast';
-import { logger } from '@/utils/logger';
 
 export function useQuestions() {
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +37,7 @@ export function useQuestions() {
 
       return true;
     } catch (error) {
-      logger.error('Error adding question', { topicId, questionData: questionData.question, error });
+      console.error('Error adding question:', error);
       toast({
         title: 'Erro ao adicionar questão',
         description: 'Não foi possível adicionar a questão.',
@@ -55,7 +54,7 @@ export function useQuestions() {
       const dbQuestions: DbQuestion[] = await fetchQuestions(topicId);
       return dbQuestions.map(mapDbQuestionToQuestion);
     } catch (error) {
-      logger.error('Error loading questions', { topicId, error });
+      console.error('Error loading questions:', error);
       return [];
     }
   };

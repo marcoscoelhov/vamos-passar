@@ -10,30 +10,20 @@ interface EmptyStateProps {
   action?: {
     label: string;
     onClick: () => void;
-    variant?: 'default' | 'outline' | 'ghost' | 'link';
   };
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
 }
-
-const sizeClasses = {
-  sm: 'p-4 space-y-2',
-  md: 'p-8 space-y-4', 
-  lg: 'p-12 space-y-6'
-};
 
 export const EmptyState = React.memo(function EmptyState({
   title,
   description,
   icon,
   action,
-  className,
-  size = 'md'
+  className
 }: EmptyStateProps) {
   return (
     <div className={cn(
-      "flex flex-col items-center justify-center text-center",
-      sizeClasses[size],
+      "flex flex-col items-center justify-center p-8 text-center space-y-4",
       className
     )}>
       {icon && (
@@ -52,11 +42,7 @@ export const EmptyState = React.memo(function EmptyState({
       </div>
       
       {action && (
-        <Button 
-          onClick={action.onClick}
-          variant={action.variant || 'default'}
-          className="mt-4"
-        >
+        <Button onClick={action.onClick} className="mt-4">
           {action.label}
         </Button>
       )}

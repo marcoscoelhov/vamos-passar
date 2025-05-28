@@ -19,9 +19,8 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
-      logger.info('User initiating logout');
+      logger.info('User logging out');
       await logout();
-      logger.info('User logged out successfully');
     } catch (error) {
       logger.error('Logout error', error);
     }

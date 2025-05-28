@@ -4,7 +4,6 @@ import { Topic } from '@/types/course';
 import { useToast } from '@/hooks/use-toast';
 import { generatePDFFromTopics } from '@/utils/pdfFormatter';
 import { generateTopicHTML, generateTopicsBundle } from '@/utils/htmlFormatter';
-import { logger } from '@/utils/logger';
 
 export function useDownload() {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -39,7 +38,7 @@ export function useDownload() {
 
       showSuccessToast('PDF gerado com sucesso', 'O material completo foi baixado em PDF.');
     } catch (error) {
-      logger.error('Error generating PDF', { courseName, topicsCount: topics.length, error });
+      console.error('Error generating PDF:', error);
       showErrorToast('Erro ao gerar PDF', 'Não foi possível gerar o arquivo PDF.');
     } finally {
       setIsDownloading(false);
@@ -66,7 +65,7 @@ export function useDownload() {
 
       showSuccessToast('Download concluído', 'O arquivo foi baixado com sucesso. Você pode imprimir ou estudar offline.');
     } catch (error) {
-      logger.error('Error downloading topic', { topicId: topic.id, topicTitle: topic.title, error });
+      console.error('Error downloading topic:', error);
       showErrorToast('Erro no download', 'Não foi possível baixar o conteúdo.');
     } finally {
       setIsDownloading(false);
@@ -93,7 +92,7 @@ export function useDownload() {
 
       showSuccessToast('Download concluído', 'O material completo foi baixado com sucesso.');
     } catch (error) {
-      logger.error('Error downloading bundle', { courseName, topicsCount: topics.length, error });
+      console.error('Error downloading bundle:', error);
       showErrorToast('Erro no download', 'Não foi possível baixar o material completo.');
     } finally {
       setIsDownloading(false);
