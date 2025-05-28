@@ -8,15 +8,22 @@ export function useTopicOperations() {
   const { toast } = useToast();
 
   const updateTopicTitle = useCallback(async (topicId: string, newTitle: string) => {
+    console.log('Hook updateTopicTitle chamado:', { topicId, newTitle });
     setIsLoading(true);
+    
     try {
+      console.log('Fazendo update no Supabase...');
       const { error } = await supabase
         .from('topics')
         .update({ title: newTitle.trim() })
         .eq('id', topicId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro do Supabase:', error);
+        throw error;
+      }
 
+      console.log('Update realizado com sucesso');
       toast({
         title: 'Tópico atualizado',
         description: 'O título do tópico foi atualizado com sucesso.',
@@ -32,6 +39,7 @@ export function useTopicOperations() {
       });
       return false;
     } finally {
+      console.log('Finalizando updateTopicTitle, resetando loading');
       setIsLoading(false);
     }
   }, [toast]);

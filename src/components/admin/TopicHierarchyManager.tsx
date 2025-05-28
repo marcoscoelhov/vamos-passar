@@ -369,31 +369,57 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
   }, []);
 
   const startEdit = useCallback((topicId: string, title: string) => {
+    console.log('Iniciando edição do tópico:', { topicId, title });
     setEditingTopic(topicId);
     setEditTitle(title);
   }, []);
 
   const saveEdit = useCallback(async (topicId: string, newTitle: string) => {
-    if (!newTitle.trim() || newTitle.trim() === editTitle) {
+    console.log('Tentando salvar edição:', { topicId, newTitle, editTitle });
+    
+    const trimmedNewTitle = newTitle.trim();
+    const currentTopic = course.topics.find(t => t.id === topicId);
+    const currentTitle = currentTopic?.title?.trim() || '';
+    
+    console.log('Comparando títulos:', { 
+      currentTitle, 
+      trimmedNewTitle, 
+      isEqual: currentTitle === trimmedNewTitle 
+    });
+
+    // Se o título não mudou ou está vazio, apenas cancela a edição
+    if (!trimmedNewTitle || currentTitle === trimmedNewTitle) {
+      console.log('Título não mudou ou está vazio, cancelando edição');
       setEditingTopic(null);
       setEditTitle('');
       return;
     }
 
     setIsSavingEdit(true);
+    console.log('Iniciando atualização do título...');
+    
     try {
-      const success = await updateTopicTitle(topicId, newTitle.trim());
+      const success = await updateTopicTitle(topicId, trimmedNewTitle);
+      console.log('Resultado da atualização:', success);
+      
       if (success) {
+        console.log('Título atualizado com sucesso');
         onTopicUpdated();
         setEditingTopic(null);
         setEditTitle('');
+      } else {
+        console.error('Falha ao atualizar título');
       }
+    } catch (error) {
+      console.error('Erro durante a atualização:', error);
     } finally {
       setIsSavingEdit(false);
+      console.log('Estado de loading resetado');
     }
-  }, [updateTopicTitle, onTopicUpdated, editTitle]);
+  }, [updateTopicTitle, onTopicUpdated, course.topics]);
 
   const cancelEdit = useCallback(() => {
+    console.log('Cancelando edição');
     setEditingTopic(null);
     setEditTitle('');
     setIsSavingEdit(false);
