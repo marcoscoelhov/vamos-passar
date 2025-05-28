@@ -114,6 +114,13 @@ export function useCourseState() {
 
   const refreshCurrentTopic = useCallback(async () => {
     if (currentTopic) {
+      // Clear cache for current topic to force fresh data
+      setQuestionsCache(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(currentTopic.id);
+        return newMap;
+      });
+      
       // Reload the current topic with fresh data
       await handleSetCurrentTopic(currentTopic);
     }
@@ -124,6 +131,22 @@ export function useCourseState() {
       loadCourse(currentCourse.id);
     }
   }, [currentCourse, loadCourse]);
+
+  // Wrapper functions to match expected return types
+  const wrappedMarkTopicCompleted = useCallback(async (topicId: string, completed: boolean) => {
+    const result = await markTopicCompleted(topicId, completed);
+    return result;
+  }, [markTopicCompleted]);
+
+  const wrappedAddQuestionHook = useCallback(async (topicId: string, questionData: Omit<Question, 'id'>, isAdmin: boolean) => {
+    const result = await addQuestionHook(topicId, questionData, isAdmin);
+    return result;
+  }, [addQuestionHook]);
+
+  const wrappedAddTopicHook = useCallback(async (courseId: string, topicData: { title: string; content: string }, isAdmin: boolean, parentTopicId?: string) => {
+    const result = await addTopicHook(courseId, topicData, isAdmin, parentTopicId);
+    return result;
+  }, [addTopicHook]);
 
   return {
     // State
@@ -144,10 +167,10 @@ export function useCourseState() {
     refreshCourse,
     refreshCurrentTopic,
     
-    // Hooks
-    markTopicCompleted,
-    addQuestionHook,
-    addTopicHook,
+    // Hooks with proper return types
+    markTopicCompleted: wrappedMarkTopicCompleted,
+    addQuestionHook: wrappedAddQuestionHook,
+    addTopicHook: wrappedAddTopicHook,
     signIn,
     signOut,
   };
