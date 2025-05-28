@@ -7,7 +7,7 @@ import { Topic } from '@/types/course';
 
 interface UseDragAndDropProps {
   topics: Topic[];
-  onReorder: (topics: Topic[]) => Promise<boolean>;
+  onReorder: (topicIds: string[]) => Promise<boolean>;
   onMoveToParent: (topicId: string, newParentId: string | null, newLevel: number) => Promise<boolean>;
 }
 
@@ -64,6 +64,18 @@ export function useDragAndDrop({ topics, onReorder, onMoveToParent }: UseDragAnd
         return null;
       };
 
+      // Função para achatar a lista de tópicos mantendo ordem hierárquica
+      const flattenTopics = (topics: Topic[]): string[] => {
+        const result: string[] = [];
+        topics.forEach(topic => {
+          result.push(topic.id);
+          if (topic.children) {
+            result.push(...flattenTopics(topic.children));
+          }
+        });
+        return result;
+      };
+
       const activeTopic = findTopic(topics, activeId);
       const overTopic = findTopic(topics, overId);
 
@@ -83,24 +95,13 @@ export function useDragAndDrop({ topics, onReorder, onMoveToParent }: UseDragAnd
 
         if (activeParent?.id === overParent?.id) {
           // Mesmo nível - apenas reordenar
-          const flattenTopics = (topics: Topic[]): Topic[] => {
-            const result: Topic[] = [];
-            topics.forEach(topic => {
-              result.push(topic);
-              if (topic.children) {
-                result.push(...flattenTopics(topic.children));
-              }
-            });
-            return result;
-          };
-
-          const flatTopics = flattenTopics(topics);
-          const oldIndex = flatTopics.findIndex(t => t.id === activeId);
-          const newIndex = flatTopics.findIndex(t => t.id === overId);
+          const flatTopicIds = flattenTopics(topics);
+          const oldIndex = flatTopicIds.findIndex(id => id === activeId);
+          const newIndex = flatTopicIds.findIndex(id => id === overId);
 
           if (oldIndex !== -1 && newIndex !== -1) {
-            const reorderedTopics = arrayMove(flatTopics, oldIndex, newIndex);
-            await onReorder(reorderedTopics);
+            const reorderedTopicIds = arrayMove(flatTopicIds, oldIndex, newIndex);
+            await onReorder(reorderedTopicIds);
           }
         }
       }
