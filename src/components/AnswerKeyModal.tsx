@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Download, Key } from 'lucide-react';
 import { Topic } from '@/types/course';
 import { generateAnswerKeyPDF } from '@/utils/answerKeyFormatter';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 interface AnswerKeyModalProps {
   topic: Topic;
@@ -26,7 +26,7 @@ export function AnswerKeyModal({ topic, children }: AnswerKeyModalProps) {
         description: 'O gabarito foi baixado em PDF com sucesso.',
       });
     } catch (error) {
-      console.error('Error downloading answer key:', error);
+      logger.error('Error downloading answer key', { topicId: topic.id, error });
       toast({
         title: 'Erro no download',
         description: 'Não foi possível baixar o gabarito.',

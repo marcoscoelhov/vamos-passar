@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import { useQuestions } from '@/hooks/useQuestions';
 import { Topic } from '@/types/course';
+import { logger } from '@/utils/logger';
 
 interface QuestionFormProps {
   topics: Topic[];
@@ -67,7 +67,7 @@ export function QuestionForm({ topics, isAdmin, onQuestionAdded }: QuestionFormP
       setShowConfirmDialog(false);
       onQuestionAdded();
     } catch (error) {
-      console.error('Error in confirmAddQuestion:', error);
+      logger.error('Error in confirmAddQuestion', { selectedTopicId, question, error });
       setShowConfirmDialog(false);
     }
   };

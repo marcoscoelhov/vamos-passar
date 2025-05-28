@@ -1,7 +1,7 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getQuestionsForTopic } from '@/data/questionsData';
+import { logger } from '@/utils/logger';
 
 interface UseBulkContentProps {
   addTopic: (courseId: string, title: string, content: string, parentTopicId?: string) => Promise<any>;
@@ -414,7 +414,7 @@ Correspondência entre o ato e a previsão legal.
       });
 
     } catch (error) {
-      console.error('Error adding bulk content:', error);
+      logger.error('Error adding bulk content', { courseId, error });
       toast({
         title: 'Erro',
         description: 'Erro ao adicionar conteúdo.',

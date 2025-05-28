@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,6 +13,7 @@ import {
   type SuggestedTopic,
   type ProcessingStatus as ProcessingStatusType 
 } from '@/utils/documentProcessing';
+import { logger } from '@/utils/logger';
 
 interface DocumentImporterProps {
   onContentExtracted: (content: string, suggestedTopics?: SuggestedTopic[]) => void;
@@ -85,7 +85,7 @@ export function DocumentImporter({ onContentExtracted }: DocumentImporterProps) 
       }, 1000);
       
     } catch (error) {
-      console.error('Erro ao processar documento:', error);
+      logger.error('Erro ao processar documento', { fileName: uploadedFile.name, error });
       toast({
         title: 'Erro ao processar documento',
         description: error instanceof Error ? error.message : 'Erro desconhecido ao processar o documento',

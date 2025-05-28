@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, Plus } from 'lucide-react';
 import { useCourses } from '@/hooks/useCourses';
 import { Course } from '@/types/course';
+import { logger } from '@/utils/logger';
 
 interface BulkContentButtonProps {
   course: Course;
@@ -18,7 +19,7 @@ export function BulkContentButton({ course, onContentAdded }: BulkContentButtonP
       await addBulkContent(course.id);
       onContentAdded();
     } catch (error) {
-      console.error('Error adding bulk content:', error);
+      logger.error('Error adding bulk content', { courseId: course.id, error });
     }
   };
 

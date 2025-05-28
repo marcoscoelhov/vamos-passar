@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useCourses } from './useCourses';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 export function useTopics() {
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +30,7 @@ export function useTopics() {
 
       return true;
     } catch (error) {
-      console.error('Error adding topic:', error);
+      logger.error('Error adding topic', { courseId, topicTitle: topicData.title, parentTopicId, error });
       toast({
         title: 'Erro ao adicionar tópico',
         description: 'Não foi possível adicionar o tópico.',
