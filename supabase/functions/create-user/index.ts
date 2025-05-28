@@ -10,13 +10,11 @@ const corsHeaders = {
 serve(async (req) => {
   console.log('Function invoked:', req.method, req.url);
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     console.log('Auth header present:', !!authHeader);
     
@@ -34,21 +32,15 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase client with service role for admin operations
-    const supabaseServiceRole = createClient(
+    // Create Supabase client with service role for all operations
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Create regular client to verify the requesting user
-    const supabaseAuth = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
-
-    // Verify the requesting user is authenticated
+    // Verify the requesting user
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
       console.error('Auth verification failed:', authError?.message || 'No user found');
@@ -66,12 +58,14 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    // Check if user is admin using service role client
-    const { data: profile, error: profileError } = await supabaseServiceRole
+    // Check if user is admin using service role client with better error handling
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('is_admin, name')
       .eq('id', user.id)
       .maybeSingle();
+
+    console.log('Profile query result:', { profile, profileError });
 
     if (profileError) {
       console.error('Error fetching profile:', profileError);
@@ -87,8 +81,22 @@ serve(async (req) => {
       );
     }
 
-    if (!profile || !profile.is_admin) {
-      console.error('User is not admin:', user.id);
+    if (!profile) {
+      console.error('Profile not found for user:', user.id);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Perfil do usuário não encontrado' 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404,
+        }
+      );
+    }
+
+    if (!profile.is_admin) {
+      console.error('User is not admin:', user.id, 'is_admin:', profile.is_admin);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -106,6 +114,8 @@ serve(async (req) => {
     // Parse request body
     const body = await req.json();
     const { email, name, role } = body;
+
+    console.log('Request body:', { email, name: name || 'Not provided', role: role || 'student' });
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       console.error('Invalid email provided:', email);
@@ -135,10 +145,10 @@ serve(async (req) => {
       );
     }
 
-    console.log('Creating user:', { email, name: name || 'Not provided', role: role || 'student' });
+    console.log('Creating user with data:', { email, name: name || 'Not provided', role: role || 'student' });
 
-    // Create user with service role permissions
-    const { data: authData, error: createError } = await supabaseServiceRole.auth.admin.createUser({
+    // Create user
+    const { data: authData, error: createError } = await supabase.auth.admin.createUser({
       email,
       password: '12345',
       email_confirm: true,
@@ -189,7 +199,7 @@ serve(async (req) => {
 
     console.log('User created successfully:', authData.user.id);
 
-    // Update profile with additional information using service role
+    // Update profile with additional information
     const profileUpdate = {
       name: name || null,
       role: role || 'student',
@@ -197,7 +207,9 @@ serve(async (req) => {
       first_login: true,
     };
 
-    const { error: profileUpdateError } = await supabaseServiceRole
+    console.log('Updating profile with:', profileUpdate);
+
+    const { error: profileUpdateError } = await supabase
       .from('profiles')
       .update(profileUpdate)
       .eq('id', authData.user.id);
@@ -234,7 +246,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: 'Erro interno do servidor' 
+        error: 'Erro interno do servidor: ' + error.message 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
