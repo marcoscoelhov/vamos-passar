@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +39,7 @@ interface SortableTopicItemProps {
   children?: React.ReactNode;
 }
 
-export const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
+export const SortableTopicItem = memo<SortableTopicItemProps>(({
   topic,
   level,
   isExpanded,
@@ -79,19 +79,27 @@ export const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
   const contentValidation = validateHtmlContent(topic.content);
   const hasContentIssues = !contentValidation.isValid;
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && editTitle.trim()) {
       onSaveEdit(topic.id, editTitle);
     } else if (e.key === 'Escape') {
       onCancelEdit();
     }
-  };
+  }, [editTitle, onSaveEdit, onCancelEdit, topic.id]);
 
-  const handleConfirmEdit = () => {
+  const handleConfirmEdit = useCallback(() => {
     if (editTitle.trim()) {
       onSaveEdit(topic.id, editTitle.trim());
     }
-  };
+  }, [editTitle, onSaveEdit, topic.id]);
+
+  const handleToggleExpand = useCallback(() => {
+    onToggleExpand(topic.id);
+  }, [onToggleExpand, topic.id]);
+
+  const handleStartEdit = useCallback(() => {
+    onStartEdit(topic.id, topic.title);
+  }, [onStartEdit, topic.id, topic.title]);
 
   return (
     <div
@@ -127,8 +135,9 @@ export const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
         {/* Expand/Collapse */}
         {hasChildren && !isEditing && (
           <button
-            onClick={() => onToggleExpand(topic.id)}
+            onClick={handleToggleExpand}
             className="text-gray-400 hover:text-gray-600 transition-colors"
+            type="button"
           >
             {isExpanded ? (
               <ChevronDown className="w-4 h-4" />
@@ -158,6 +167,7 @@ export const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
                 autoFocus
                 disabled={isSaving}
                 placeholder="Digite o título do tópico..."
+                maxLength={200}
               />
               <Button
                 variant="ghost"
@@ -166,6 +176,7 @@ export const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
                 disabled={isSaving || !editTitle.trim()}
                 className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                 title="Confirmar alteração"
+                type="button"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -180,18 +191,20 @@ export const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
                 disabled={isSaving}
                 className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                 title="Cancelar edição"
+                type="button"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <span 
-                className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors truncate"
-                onClick={() => onStartEdit(topic.id, topic.title)}
+              <button 
+                className="font-medium text-gray-900 hover:text-blue-600 transition-colors truncate text-left"
+                onClick={handleStartEdit}
+                type="button"
               >
                 {topic.title}
-              </span>
+              </button>
               <Badge variant="secondary" className="text-xs">
                 Nível {topic.level}
               </Badge>
@@ -232,4 +245,6 @@ export const SortableTopicItem: React.FC<SortableTopicItemProps> = ({
       )}
     </div>
   );
-};
+});
+
+SortableTopicItem.displayName = 'SortableTopicItem';

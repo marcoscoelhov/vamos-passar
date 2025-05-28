@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
@@ -36,14 +36,19 @@ interface TopicHierarchyManagerProps {
 }
 
 export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: TopicHierarchyManagerProps) {
+  // Estados para UI
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
   const [editingTopic, setEditingTopic] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [deleteTopicId, setDeleteTopicId] = useState<string | null>(null);
   const [previewTopic, setPreviewTopic] = useState<Topic | null>(null);
+  
+  // Estados para novo tópico
   const [showNewTopicForm, setShowNewTopicForm] = useState(false);
   const [newTopicTitle, setNewTopicTitle] = useState('');
   const [newTopicParent, setNewTopicParent] = useState<string | null>(null);
+  
+  // Estados de loading
   const [isFixingContent, setIsFixingContent] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
@@ -74,6 +79,19 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
     onMoveToParent: moveTopicToParent,
   });
 
+  // Função para encontrar um tópico recursivamente (memoizada)
+  const findTopicRecursive = useCallback((topics: Topic[], id: string): Topic | null => {
+    for (const topic of topics) {
+      if (topic.id === id) return topic;
+      if (topic.children) {
+        const found = findTopicRecursive(topic.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  }, []);
+
+  // Funções de controle de expansão
   const toggleExpanded = useCallback((topicId: string) => {
     setExpandedTopics(prev => {
       const newSet = new Set(prev);
@@ -86,76 +104,69 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
     });
   }, []);
 
+  const expandAll = useCallback(() => {
+    const getAllTopicIds = (topics: Topic[]): string[] => {
+      return topics.reduce((acc, topic) => {
+        acc.push(topic.id);
+        if (topic.children) {
+          acc.push(...getAllTopicIds(topic.children));
+        }
+        return acc;
+      }, [] as string[]);
+    };
+    setExpandedTopics(new Set(getAllTopicIds(course.topics)));
+  }, [course.topics]);
+
+  const collapseAll = useCallback(() => {
+    setExpandedTopics(new Set());
+  }, []);
+
+  // Funções de edição
   const startEdit = useCallback((topicId: string, title: string) => {
-    console.log('Iniciando edição do tópico:', { topicId, title });
     setEditingTopic(topicId);
     setEditTitle(title);
   }, []);
 
   const saveEdit = useCallback(async (topicId: string, newTitle: string) => {
-    console.log('Tentando salvar edição:', { topicId, newTitle, editTitle });
-    
-    const trimmedNewTitle = newTitle.trim();
-    
-    // Função para encontrar um tópico recursivamente
-    const findTopicRecursive = (topics: Topic[], id: string): Topic | null => {
-      for (const topic of topics) {
-        if (topic.id === id) return topic;
-        if (topic.children) {
-          const found = findTopicRecursive(topic.children, id);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
+    if (!newTitle?.trim()) {
+      return;
+    }
 
+    const trimmedNewTitle = newTitle.trim();
     const currentTopic = findTopicRecursive(course.topics, topicId);
     const currentTitle = currentTopic?.title?.trim() || '';
     
-    console.log('Comparando títulos:', { 
-      currentTitle, 
-      trimmedNewTitle, 
-      isEqual: currentTitle === trimmedNewTitle 
-    });
-
-    // Se o título não mudou ou está vazio, apenas cancela a edição
-    if (!trimmedNewTitle || currentTitle === trimmedNewTitle) {
-      console.log('Título não mudou ou está vazio, cancelando edição');
+    // Se o título não mudou, apenas cancela a edição
+    if (currentTitle === trimmedNewTitle) {
       setEditingTopic(null);
       setEditTitle('');
       return;
     }
 
     setIsSavingEdit(true);
-    console.log('Iniciando atualização do título...');
     
     try {
       const success = await updateTopicTitle(topicId, trimmedNewTitle);
-      console.log('Resultado da atualização:', success);
       
       if (success) {
-        console.log('Título atualizado com sucesso');
         onTopicUpdated();
         setEditingTopic(null);
         setEditTitle('');
-      } else {
-        console.error('Falha ao atualizar título');
       }
     } catch (error) {
       console.error('Erro durante a atualização:', error);
     } finally {
       setIsSavingEdit(false);
-      console.log('Estado de loading resetado');
     }
-  }, [updateTopicTitle, onTopicUpdated, course.topics, editTitle]);
+  }, [updateTopicTitle, onTopicUpdated, course.topics, findTopicRecursive]);
 
   const cancelEdit = useCallback(() => {
-    console.log('Cancelando edição');
     setEditingTopic(null);
     setEditTitle('');
     setIsSavingEdit(false);
   }, []);
 
+  // Funções de gerenciamento de tópicos
   const handleDeleteTopic = useCallback((topicId: string) => {
     setDeleteTopicId(topicId);
   }, []);
@@ -176,21 +187,23 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
   }, []);
 
   const handleCreateNewTopic = useCallback(async () => {
-    if (newTopicTitle.trim()) {
-      try {
-        await addTopic(
-          course.id,
-          { title: newTopicTitle.trim(), content: '<p>Conteúdo do novo tópico...</p>' },
-          isAdmin,
-          newTopicParent || undefined
-        );
-        setNewTopicTitle('');
-        setNewTopicParent(null);
-        setShowNewTopicForm(false);
-        onTopicUpdated();
-      } catch (error) {
-        console.error('Erro ao criar tópico:', error);
-      }
+    if (!newTopicTitle.trim()) {
+      return;
+    }
+
+    try {
+      await addTopic(
+        course.id,
+        { title: newTopicTitle.trim(), content: '<p>Conteúdo do novo tópico...</p>' },
+        isAdmin,
+        newTopicParent || undefined
+      );
+      setNewTopicTitle('');
+      setNewTopicParent(null);
+      setShowNewTopicForm(false);
+      onTopicUpdated();
+    } catch (error) {
+      console.error('Erro ao criar tópico:', error);
     }
   }, [newTopicTitle, newTopicParent, addTopic, course.id, isAdmin, onTopicUpdated]);
 
@@ -206,9 +219,7 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
     try {
       const sanitizedContent = sanitizeHtmlContent(topic.content);
       
-      // Aqui você implementaria a atualização do conteúdo no banco
-      // Por exemplo: await updateTopicContent(topic.id, sanitizedContent);
-      
+      // TODO: Implementar atualização do conteúdo no banco
       console.log('Conteúdo original:', topic.content);
       console.log('Conteúdo corrigido:', sanitizedContent);
       
@@ -226,6 +237,12 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
     setNewTopicParent(null);
   }, []);
 
+  // Cálculo de loading otimizado
+  const isLoading = useMemo(() => 
+    addingTopic || hierarchyLoading || isFixingContent
+  , [addingTopic, hierarchyLoading, isFixingContent]);
+
+  // Verificação de admin
   if (!isAdmin) {
     return (
       <>
@@ -240,8 +257,6 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
       </>
     );
   }
-
-  const isLoading = addingTopic || hierarchyLoading || isFixingContent;
 
   return (
     <>
@@ -259,16 +274,18 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setExpandedTopics(new Set(course.topics.map(t => t.id)))}
+                onClick={expandAll}
                 disabled={isLoading}
+                type="button"
               >
                 Expandir Todos
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setExpandedTopics(new Set())}
+                onClick={collapseAll}
                 disabled={isLoading}
+                type="button"
               >
                 Recolher Todos
               </Button>
@@ -276,6 +293,7 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
                 onClick={() => setShowNewTopicForm(true)}
                 size="sm"
                 disabled={isLoading}
+                type="button"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Novo Tópico
@@ -328,6 +346,7 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
                   <Button 
                     onClick={() => setShowNewTopicForm(true)}
                     disabled={isLoading}
+                    type="button"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Criar Primeiro Tópico
