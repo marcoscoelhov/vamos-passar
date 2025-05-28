@@ -7,6 +7,7 @@ import { useQuestions } from '@/hooks/useQuestions';
 import { useTopics } from '@/hooks/useTopics';
 import { Question, Topic, Course, DbQuestion, DbTopic, Profile } from '@/types/course';
 import { mapDbQuestionToQuestion, mapDbTopicToTopic, buildTopicHierarchy } from '@/utils/dataMappers';
+import { logger } from '@/utils/logger';
 
 interface CourseContextType {
   currentCourse: Course | null;
@@ -115,13 +116,20 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
       if (!currentTopic && hierarchicalTopics.length > 0) {
         setCurrentTopic(hierarchicalTopics[0]);
       }
+
+      logger.info('Course loaded successfully', { 
+        courseId, 
+        topicsCount: topicsWithQuestions.length,
+        progress: progress.toFixed(1)
+      });
     } catch (error) {
-      console.error('Error loading course:', error);
+      logger.error('Error loading course', { courseId, error });
     }
   }, [courses, fetchTopics, fetchQuestions, questionsCache, user, isTopicCompleted, currentTopic]);
 
   const refreshCourse = useCallback(() => {
     if (currentCourse) {
+      logger.debug('Refreshing course', { courseId: currentCourse.id });
       loadCourse(currentCourse.id);
     }
   }, [currentCourse, loadCourse]);
@@ -137,8 +145,10 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
         
         // Update cache
         setQuestionsCache(prev => new Map(prev).set(topic.id, mappedQuestions));
+        
+        logger.debug('Questions loaded for topic', { topicId: topic.id, questionCount: mappedQuestions.length });
       } catch (error) {
-        console.error('Error loading questions:', error);
+        logger.error('Error loading questions for topic', { topicId: topic.id, error });
       } finally {
         setIsLoadingQuestions(false);
       }
@@ -148,6 +158,7 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     }
     
     setCurrentTopic(topic);
+    logger.debug('Current topic set', { topicId: topic.id, title: topic.title });
   }, [fetchQuestions, questionsCache]);
 
   const updateTopicProgress = useCallback(async (topicId: string, completed: boolean) => {
@@ -205,8 +216,10 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
           setCurrentTopic(prev => prev ? { ...prev, completed } : null);
         }
       }
+      
+      logger.info('Topic progress updated', { topicId, completed, userId: user.id });
     } catch (error) {
-      console.error('Error updating topic progress:', error);
+      logger.error('Error updating topic progress', { topicId, completed, userId: user.id, error });
     }
   }, [user, markTopicCompleted, currentCourse, currentTopic]);
 
@@ -239,7 +252,7 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
       const result = await signIn(email, password);
       return result.success;
     } catch (error) {
-      console.error('Login error in context:', error);
+      logger.error('Login error in context', { email, error });
       return false;
     }
   }, [signIn]);
@@ -249,6 +262,7 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     setCurrentCourse(null);
     setCurrentTopic(null);
     setQuestionsCache(new Map());
+    logger.info('User logged out, context cleared');
   }, [signOut]);
 
   const contextValue = useMemo(() => ({

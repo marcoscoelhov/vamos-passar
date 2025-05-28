@@ -4,6 +4,7 @@ import { DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useToast } from '@/hooks/use-toast';
 import { Topic } from '@/types/course';
+import { logger } from '@/utils/logger';
 
 interface UseDragAndDropProps {
   topics: Topic[];
@@ -22,7 +23,7 @@ export function useDragAndDrop({ topics, onReorder, onMoveToParent }: UseDragAnd
   }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
-    console.log('Drag over:', event);
+    logger.debug('Drag over event', { activeId: event.active.id, overId: event.over?.id });
   }, []);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
@@ -74,6 +75,12 @@ export function useDragAndDrop({ topics, onReorder, onMoveToParent }: UseDragAnd
         const newParent = newParentId === 'root' ? null : findTopic(topics, newParentId);
         const newLevel = newParent ? newParent.level + 1 : 0;
 
+        logger.debug('Moving topic to new parent', { 
+          activeTopicId: activeId, 
+          newParentId: newParentId === 'root' ? null : newParentId,
+          newLevel 
+        });
+
         await onMoveToParent(activeId, newParentId === 'root' ? null : newParentId, newLevel);
       } else {
         // Reordenação dentro do mesmo nível
@@ -99,6 +106,11 @@ export function useDragAndDrop({ topics, onReorder, onMoveToParent }: UseDragAnd
 
           if (oldIndex !== -1 && newIndex !== -1) {
             const reorderedTopics = arrayMove(flatTopics, oldIndex, newIndex);
+            logger.debug('Reordering topics within same level', { 
+              activeTopicId: activeId, 
+              oldIndex, 
+              newIndex 
+            });
             await onReorder(reorderedTopics);
           }
         }
@@ -110,7 +122,7 @@ export function useDragAndDrop({ topics, onReorder, onMoveToParent }: UseDragAnd
       });
 
     } catch (error) {
-      console.error('Erro ao mover tópico:', error);
+      logger.error('Erro ao mover tópico', { activeId: active.id, overId: over?.id, error });
       toast({
         title: 'Erro',
         description: 'Não foi possível mover o tópico.',

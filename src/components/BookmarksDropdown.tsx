@@ -12,6 +12,7 @@ import {
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { logger } from '@/utils/logger';
 
 export const BookmarksDropdown = React.memo(function BookmarksDropdown() {
   const { user, setCurrentTopic } = useCourse();
@@ -21,7 +22,7 @@ export const BookmarksDropdown = React.memo(function BookmarksDropdown() {
   const handleBookmarkClick = async (topicId: string) => {
     // Find the topic and navigate to it
     // This is a simplified version - in a real app you might need to search through the course structure
-    console.log('Navigate to topic:', topicId);
+    logger.debug('Navigate to topic', { topicId });
     setOpen(false);
   };
 

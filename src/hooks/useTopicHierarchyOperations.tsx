@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Topic } from '@/types/course';
+import { logger } from '@/utils/logger';
 
 export function useTopicHierarchyOperations() {
   const [isLoading, setIsLoading] = useState(false);
@@ -47,9 +48,10 @@ export function useTopicHierarchyOperations() {
         description: 'A hierarquia do tópico foi atualizada com sucesso.',
       });
 
+      logger.info('Topic moved to new parent successfully', { topicId, newParentId, newLevel });
       return true;
     } catch (error) {
-      console.error('Erro ao mover tópico:', error);
+      logger.error('Erro ao mover tópico', { topicId, newParentId, newLevel, error });
       toast({
         title: 'Erro ao mover',
         description: 'Não foi possível mover o tópico.',
@@ -83,9 +85,10 @@ export function useTopicHierarchyOperations() {
         description: 'A ordem dos tópicos foi atualizada com sucesso.',
       });
 
+      logger.info('Topics reordered successfully', { count: updates.length });
       return true;
     } catch (error) {
-      console.error('Erro ao reordenar tópicos:', error);
+      logger.error('Erro ao reordenar tópicos', { topicsCount: topics.length, error });
       toast({
         title: 'Erro ao reordenar',
         description: 'Não foi possível reordenar os tópicos.',
@@ -141,9 +144,10 @@ export function useTopicHierarchyOperations() {
         description: 'O tópico foi duplicado com sucesso.',
       });
 
+      logger.info('Topic duplicated successfully', { originalTopicId: originalTopic.id, newTopicId: newTopic.id });
       return newTopic;
     } catch (error) {
-      console.error('Erro ao duplicar tópico:', error);
+      logger.error('Erro ao duplicar tópico', { originalTopicId: originalTopic.id, courseId, error });
       toast({
         title: 'Erro ao duplicar',
         description: 'Não foi possível duplicar o tópico.',

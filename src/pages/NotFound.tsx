@@ -1,15 +1,18 @@
+
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { logger } from "@/utils/logger";
 
 const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
-  }, [location.pathname]);
+    logger.warn('404 Error: User attempted to access non-existent route', { 
+      pathname: location.pathname,
+      search: location.search,
+      hash: location.hash
+    });
+  }, [location]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
