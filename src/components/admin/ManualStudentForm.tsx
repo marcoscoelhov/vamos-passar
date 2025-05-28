@@ -24,10 +24,10 @@ export function ManualStudentForm({ onStudentAdded }: ManualStudentFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email) {
+    if (!email || !email.includes('@')) {
       toast({
-        title: 'Email obrigatório',
-        description: 'Por favor, preencha o email.',
+        title: 'Email inválido',
+        description: 'Por favor, preencha um email válido.',
         variant: 'destructive',
       });
       return;
@@ -35,40 +35,43 @@ export function ManualStudentForm({ onStudentAdded }: ManualStudentFormProps) {
 
     setIsLoading(true);
     try {
-      console.log('Calling create-user function...');
+      console.log('Chamando função create-user...', { email, name: name.trim() || null, role });
       
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
-          email,
+          email: email.trim(),
           name: name.trim() || null,
           role,
         },
       });
 
+      console.log('Resposta da função:', { data, error });
+
       if (error) {
-        console.error('Function invoke error:', error);
-        throw new Error(error.message || 'Erro ao chamar função');
+        console.error('Erro ao invocar função:', error);
+        throw new Error(error.message || 'Erro ao chamar função de criação de usuário');
       }
 
       if (!data?.success) {
-        console.error('Function returned error:', data);
-        throw new Error(data?.error || 'Erro desconhecido');
+        console.error('Função retornou erro:', data);
+        throw new Error(data?.error || 'Erro desconhecido na criação do usuário');
       }
 
       toast({
         title: 'Usuário criado com sucesso',
-        description: `${role === 'professor' ? 'Professor' : 'Aluno'} ${name || email} foi adicionado ao sistema. Senha padrão: 12345`,
+        description: data.message || `${role === 'professor' ? 'Professor' : 'Aluno'} ${name || email} foi adicionado ao sistema.`,
       });
 
+      // Reset form
       setEmail('');
       setName('');
       setRole('student');
       onStudentAdded?.();
     } catch (error: any) {
-      console.error('Error creating user:', error);
+      console.error('Erro na criação do usuário:', error);
       toast({
         title: 'Erro ao criar usuário',
-        description: error.message || 'Não foi possível criar o usuário.',
+        description: error.message || 'Não foi possível criar o usuário. Verifique os logs para mais detalhes.',
         variant: 'destructive',
       });
     } finally {
@@ -109,7 +112,7 @@ export function ManualStudentForm({ onStudentAdded }: ManualStudentFormProps) {
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nome do usuário (preencherá no primeiro login)"
+              placeholder="Nome do usuário"
             />
           </div>
         </div>
@@ -133,16 +136,15 @@ export function ManualStudentForm({ onStudentAdded }: ManualStudentFormProps) {
         <div className="bg-blue-50 p-3 rounded-md">
           <p className="text-sm text-blue-800">
             <strong>Senha padrão:</strong> 12345<br />
-            {!name.trim() && (
-              <>O usuário será solicitado a informar o nome e alterar a senha no primeiro acesso.<br /></>
-            )}
-            {name.trim() && (
-              <>O usuário será solicitado a alterar a senha no primeiro acesso.<br /></>
+            {!name.trim() ? (
+              <>O usuário será solicitado a informar o nome e alterar a senha no primeiro acesso.</>
+            ) : (
+              <>O usuário será solicitado a alterar a senha no primeiro acesso.</>
             )}
           </p>
         </div>
 
-        <Button type="submit" disabled={isLoading} className="w-full">
+        <Button type="submit" disabled={isLoading || !email.trim()} className="w-full">
           {isLoading ? (
             <>
               <LoadingSpinner size="sm" className="mr-2" />

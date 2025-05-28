@@ -16,7 +16,6 @@ interface FirstLoginFlowProps {
 
 export function FirstLoginFlow({ user, onComplete }: FirstLoginFlowProps) {
   const [step, setStep] = useState<'password' | 'profile'>('password');
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
@@ -39,6 +38,8 @@ export function FirstLoginFlow({ user, onComplete }: FirstLoginFlowProps) {
         }
       } catch (error) {
         console.error('Error checking profile:', error);
+        // If we can't check, assume we need profile update
+        setNeedsProfileUpdate(true);
       }
     };
 
@@ -198,18 +199,6 @@ export function FirstLoginFlow({ user, onComplete }: FirstLoginFlowProps) {
                   Por favor, escolha uma nova senha segura.
                 </p>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Senha Atual</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Digite 12345"
-                required
-              />
             </div>
 
             <div className="space-y-2">
