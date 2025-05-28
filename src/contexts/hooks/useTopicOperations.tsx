@@ -7,7 +7,7 @@ import { logger } from '@/utils/logger';
 interface UseTopicOperationsProps {
   fetchQuestions: (topicId: string) => Promise<DbQuestion[]>;
   questionsCache: Map<string, Question[]>;
-  setQuestionsCache: (cache: Map<string, Question[]>) => void;
+  setQuestionsCache: (cache: Map<string, Question[]> | ((prev: Map<string, Question[]>) => Map<string, Question[]>)) => void;
   setIsLoadingQuestions: (loading: boolean) => void;
   setCurrentTopic: (topic: Topic | null) => void;
   setError: (message: string) => void;

@@ -7,9 +7,9 @@ interface UseProgressOperationsProps {
   user: any;
   markTopicCompleted: (topicId: string, completed: boolean) => Promise<void>;
   currentCourse: Course | null;
-  setCurrentCourse: (course: Course | null) => void;
+  setCurrentCourse: (course: Course | null | ((prev: Course | null) => Course | null)) => void;
   currentTopic: Topic | null;
-  setCurrentTopic: (topic: Topic | null) => void;
+  setCurrentTopic: (topic: Topic | null | ((prev: Topic | null) => Topic | null)) => void;
   setError: (message: string) => void;
   clearError: () => void;
 }

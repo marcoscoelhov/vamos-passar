@@ -9,7 +9,7 @@ interface UseCourseLoaderProps {
   fetchTopics: (courseId: string) => Promise<DbTopic[]>;
   fetchQuestions: (topicId: string) => Promise<DbQuestion[]>;
   questionsCache: Map<string, Question[]>;
-  setQuestionsCache: (cache: Map<string, Question[]>) => void;
+  setQuestionsCache: (cache: Map<string, Question[]> | ((prev: Map<string, Question[]>) => Map<string, Question[]>)) => void;
   user: any;
   isTopicCompleted: (topicId: string) => boolean;
   setCurrentCourse: (course: Course | null) => void;
