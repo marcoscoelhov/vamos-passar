@@ -2,13 +2,11 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
-import { PlusCircle, Target, Users, BarChart3, FileText, TreePine } from 'lucide-react';
+import { Target, Users, BarChart3, FileText, TreePine } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
 import { AdminOverview } from './admin/AdminOverview';
-import { TopicForm } from './admin/TopicForm';
-import { TopicHierarchyManager } from './admin/TopicHierarchyManager';
+import { TopicManagement } from './admin/TopicManagement';
 import { QuestionForm } from './admin/QuestionForm';
-import { BulkContentButton } from './admin/BulkContentButton';
 import { StudentsManagement } from './admin/StudentsManagement';
 import { AnalyticsDashboard } from './admin/AnalyticsDashboard';
 import { AuditLogs } from './admin/AuditLogs';
@@ -41,10 +39,9 @@ export function AdminPanel() {
           </div>
 
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="hierarchy">Hierarquia</TabsTrigger>
               <TabsTrigger value="topics">Tópicos</TabsTrigger>
               <TabsTrigger value="questions">Questões</TabsTrigger>
               <TabsTrigger value="students">Alunos</TabsTrigger>
@@ -63,35 +60,11 @@ export function AdminPanel() {
               <AnalyticsDashboard />
             </TabsContent>
 
-            <TabsContent value="hierarchy">
-              <div className="flex items-center gap-2 mb-6">
-                <TreePine className="w-5 h-5" />
-                <h2 className="text-xl font-semibold">Gerenciar Hierarquia de Tópicos</h2>
-              </div>
-              <TopicHierarchyManager 
-                course={currentCourse} 
-                isAdmin={isAdmin}
-                onTopicUpdated={handleContentAdded}
-              />
-            </TabsContent>
-
             <TabsContent value="topics">
-              <div className="flex items-center gap-2 mb-6">
-                <PlusCircle className="w-5 h-5" />
-                <h2 className="text-xl font-semibold">Gerenciar Tópicos</h2>
-              </div>
-              
-              {isAdmin && (
-                <BulkContentButton 
-                  course={currentCourse} 
-                  onContentAdded={handleContentAdded}
-                />
-              )}
-              
-              <TopicForm 
+              <TopicManagement 
                 course={currentCourse} 
                 isAdmin={isAdmin}
-                onTopicAdded={handleContentAdded}
+                onContentAdded={handleContentAdded}
               />
             </TabsContent>
 
