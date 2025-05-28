@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Highlight, DbHighlight } from '@/types/course';
+import { logger } from '@/utils/logger';
 
 export function useHighlights(topicId?: string, userId?: string) {
   const [highlights, setHighlights] = useState<Highlight[]>([]);
@@ -39,8 +40,9 @@ export function useHighlights(topicId?: string, userId?: string) {
 
       const mappedHighlights = (data || []).map(mapDbHighlightToHighlight);
       setHighlights(mappedHighlights);
+      logger.debug('Highlights carregados com sucesso', { topicId, userId, count: mappedHighlights.length });
     } catch (error) {
-      console.error('Error fetching highlights:', error);
+      logger.error('Erro ao carregar highlights', { topicId, userId, error });
       toast({
         title: 'Erro',
         description: 'Não foi possível carregar os destaques.',
@@ -89,9 +91,10 @@ export function useHighlights(topicId?: string, userId?: string) {
         description: 'Seu destaque foi salvo com sucesso.',
       });
 
+      logger.info('Highlight adicionado com sucesso', { topicId, userId, highlightId: newHighlight.id });
       return newHighlight;
     } catch (error) {
-      console.error('Error adding highlight:', error);
+      logger.error('Erro ao adicionar highlight', { topicId, userId, error });
       toast({
         title: 'Erro',
         description: 'Não foi possível salvar o destaque.',
@@ -124,9 +127,10 @@ export function useHighlights(topicId?: string, userId?: string) {
         description: 'Sua nota foi salva com sucesso.',
       });
 
+      logger.info('Highlight atualizado com sucesso', { highlightId, userId });
       return updatedHighlight;
     } catch (error) {
-      console.error('Error updating highlight:', error);
+      logger.error('Erro ao atualizar highlight', { highlightId, userId, error });
       toast({
         title: 'Erro',
         description: 'Não foi possível atualizar o destaque.',
@@ -153,8 +157,10 @@ export function useHighlights(topicId?: string, userId?: string) {
         title: 'Destaque removido',
         description: 'O destaque foi removido com sucesso.',
       });
+
+      logger.info('Highlight removido com sucesso', { highlightId, userId });
     } catch (error) {
-      console.error('Error deleting highlight:', error);
+      logger.error('Erro ao remover highlight', { highlightId, userId, error });
       toast({
         title: 'Erro',
         description: 'Não foi possível remover o destaque.',

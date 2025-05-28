@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from './LoadingSpinner';
+import { logger } from '@/utils/logger';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -41,18 +42,18 @@ export function LoginForm() {
     setIsLoading(true);
     
     try {
-      console.log('Tentando login com:', { email });
+      logger.debug('Tentando login', { email });
       const result = await signIn(email.trim(), password);
       
       if (result.success) {
-        console.log('Login bem-sucedido');
+        logger.info('Login bem-sucedido', { email });
         toast({
           title: 'Login realizado!',
           description: 'Bem-vindo ao VamosPassar.',
         });
         navigate('/');
       } else {
-        console.error('Erro no login:', result.error);
+        logger.warn('Erro no login', { email, error: result.error });
         toast({
           title: 'Erro no login',
           description: 'Email ou senha incorretos. Verifique suas credenciais.',
@@ -60,7 +61,7 @@ export function LoginForm() {
         });
       }
     } catch (error: any) {
-      console.error('Erro durante login:', error);
+      logger.error('Erro durante login', { email, error });
       toast({
         title: 'Erro no login',
         description: 'Erro ao conectar com o servidor. Tente novamente.',
@@ -95,11 +96,11 @@ export function LoginForm() {
     setIsLoading(true);
     
     try {
-      console.log('Tentando cadastro com:', { email, name });
+      logger.debug('Tentando cadastro', { email, name });
       const result = await signUp(email.trim(), password, name.trim());
       
       if (result.success) {
-        console.log('Cadastro bem-sucedido');
+        logger.info('Cadastro bem-sucedido', { email, name });
         toast({
           title: 'Conta criada!',
           description: 'Sua conta foi criada com sucesso. Você já pode fazer login.',
@@ -109,7 +110,7 @@ export function LoginForm() {
         setPassword('');
         setName('');
       } else {
-        console.error('Erro no cadastro:', result.error);
+        logger.warn('Erro no cadastro', { email, name, error: result.error });
         toast({
           title: 'Erro no cadastro',
           description: result.error?.message || 'Erro ao criar conta. Tente novamente.',
@@ -117,7 +118,7 @@ export function LoginForm() {
         });
       }
     } catch (error: any) {
-      console.error('Erro durante cadastro:', error);
+      logger.error('Erro durante cadastro', { email, name, error });
       toast({
         title: 'Erro no cadastro',
         description: 'Erro ao conectar com o servidor. Tente novamente.',

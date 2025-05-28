@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 export function useTopicOperations() {
   const [isLoading, setIsLoading] = useState(false);
@@ -9,7 +10,7 @@ export function useTopicOperations() {
 
   const updateTopicTitle = useCallback(async (topicId: string, newTitle: string) => {
     if (!topicId || !newTitle?.trim()) {
-      console.warn('updateTopicTitle: ID ou título inválido', { topicId, newTitle });
+      logger.warn('updateTopicTitle: ID ou título inválido', { topicId, newTitle });
       return false;
     }
 
@@ -32,7 +33,7 @@ export function useTopicOperations() {
         .eq('id', topicId);
 
       if (error) {
-        console.error('Erro do Supabase ao atualizar tópico:', error);
+        logger.error('Erro do Supabase ao atualizar tópico', { topicId, error });
         throw error;
       }
 
@@ -41,9 +42,10 @@ export function useTopicOperations() {
         description: 'O título do tópico foi atualizado com sucesso.',
       });
 
+      logger.info('Tópico atualizado com sucesso', { topicId, newTitle: trimmedTitle });
       return true;
     } catch (error) {
-      console.error('Erro ao atualizar tópico:', error);
+      logger.error('Erro ao atualizar tópico', { topicId, error });
       toast({
         title: 'Erro ao atualizar',
         description: error instanceof Error ? error.message : 'Não foi possível atualizar o título do tópico.',
@@ -57,7 +59,7 @@ export function useTopicOperations() {
 
   const deleteTopic = useCallback(async (topicId: string) => {
     if (!topicId) {
-      console.warn('deleteTopic: ID inválido', { topicId });
+      logger.warn('deleteTopic: ID inválido', { topicId });
       return false;
     }
 
@@ -102,9 +104,10 @@ export function useTopicOperations() {
         description: 'O tópico foi excluído com sucesso.',
       });
 
+      logger.info('Tópico excluído com sucesso', { topicId });
       return true;
     } catch (error) {
-      console.error('Erro ao excluir tópico:', error);
+      logger.error('Erro ao excluir tópico', { topicId, error });
       toast({
         title: 'Erro ao excluir',
         description: error instanceof Error ? error.message : 'Não foi possível excluir o tópico.',
