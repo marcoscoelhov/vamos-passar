@@ -1,5 +1,6 @@
 
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
+import { waitFor } from '@testing-library/dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useOptimizedHighlights } from '../useOptimizedHighlights';
 import { supabase } from '@/integrations/supabase/client';

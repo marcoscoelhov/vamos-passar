@@ -1,5 +1,6 @@
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/dom';
 import { vi, describe, it, expect } from 'vitest';
 import { OptimizedEmptyState } from '../OptimizedEmptyState';
 import { FileText } from 'lucide-react';
