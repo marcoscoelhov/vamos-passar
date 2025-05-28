@@ -1,4 +1,3 @@
-
 import { useCallback, useRef } from 'react';
 import { logger } from '@/utils/logger';
 
@@ -46,16 +45,23 @@ export function useOptimizedOperations() {
     key: string,
     func: T,
     delay: number = 100
-  ) => {
-    return (...args: Parameters<T>) => {
+  ): T => {
+    return ((...args: Parameters<T>) => {
       const now = Date.now();
       const lastCall = throttleLastCall.current.get(key) || 0;
 
       if (now - lastCall >= delay) {
         throttleLastCall.current.set(key, now);
-        func(...args);
+        return func(...args);
       }
-    };
+      
+      // For async functions, return a resolved promise when throttled
+      if (func.constructor.name === 'AsyncFunction') {
+        return Promise.resolve();
+      }
+      
+      return undefined;
+    }) as T;
   }, []);
 
   const batchOperation = useCallback((
