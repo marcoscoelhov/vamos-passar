@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,7 +30,7 @@ export const HighlightableContent = React.memo(function HighlightableContent({
   const [error, setError] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   
-  const { highlights, addHighlight, updateHighlight, deleteHighlight, isLoading, error: highlightsError } = useHighlights(topicId, userId);
+  const { highlights, addHighlight, updateHighlight, deleteHighlight, isLoading } = useHighlights(topicId, userId);
 
   const formatContent = useCallback((content: string) => {
     try {
@@ -201,21 +200,6 @@ export const HighlightableContent = React.memo(function HighlightableContent({
   }, [deleteHighlight, isProcessing]);
 
   const formattedContent = useMemo(() => formatContent(content), [content, formatContent]);
-
-  // Show error state if there's a critical error
-  if (highlightsError) {
-    return (
-      <Card className="p-6 border-red-100">
-        <div className="flex items-center gap-3 text-red-600">
-          <AlertTriangle className="w-5 h-5" />
-          <div>
-            <h3 className="font-medium">Erro ao carregar destaques</h3>
-            <p className="text-sm text-red-500">{highlightsError}</p>
-          </div>
-        </div>
-      </Card>
-    );
-  }
 
   return (
     <SectionErrorBoundary sectionName="Conteúdo destacável">
