@@ -126,13 +126,6 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     }
   }, [currentCourse, loadCourse]);
 
-  const refreshCurrentTopic = useCallback(async () => {
-    if (currentTopic) {
-      // Reload the current topic with fresh data
-      await handleSetCurrentTopic(currentTopic);
-    }
-  }, [currentTopic, handleSetCurrentTopic]);
-
   const handleSetCurrentTopic = useCallback(async (topic: Topic) => {
     // Load questions for this topic if not already loaded or cached
     if ((!topic.questions || topic.questions.length === 0) && !questionsCache.has(topic.id)) {
@@ -156,6 +149,13 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     
     setCurrentTopic(topic);
   }, [fetchQuestions, questionsCache]);
+
+  const refreshCurrentTopic = useCallback(async () => {
+    if (currentTopic) {
+      // Reload the current topic with fresh data
+      await handleSetCurrentTopic(currentTopic);
+    }
+  }, [currentTopic, handleSetCurrentTopic]);
 
   const updateTopicProgress = useCallback(async (topicId: string, completed: boolean) => {
     if (!user) return;
