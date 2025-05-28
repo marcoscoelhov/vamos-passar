@@ -21,7 +21,29 @@ export function FirstLoginFlow({ user, onComplete }: FirstLoginFlowProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [needsProfileUpdate, setNeedsProfileUpdate] = useState(false);
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    // Check if user has a name set
+    const checkProfile = async () => {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', user.id)
+          .single();
+        
+        if (!profile?.name) {
+          setNeedsProfileUpdate(true);
+        }
+      } catch (error) {
+        console.error('Error checking profile:', error);
+      }
+    };
+
+    checkProfile();
+  }, [user.id]);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +79,13 @@ export function FirstLoginFlow({ user, onComplete }: FirstLoginFlowProps) {
         description: 'Sua senha foi alterada com sucesso.',
       });
 
-      setStep('profile');
+      // Check if we need to update profile
+      if (needsProfileUpdate) {
+        setStep('profile');
+      } else {
+        // Complete the flow
+        await completeFlow();
+      }
     } catch (error: any) {
       console.error('Error updating password:', error);
       toast({
@@ -110,6 +138,29 @@ export function FirstLoginFlow({ user, onComplete }: FirstLoginFlowProps) {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const completeFlow = async () => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_login: false,
+          must_change_password: false,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      onComplete();
+    } catch (error: any) {
+      console.error('Error completing flow:', error);
+      toast({
+        title: 'Erro ao finalizar',
+        description: 'Houve um problema ao finalizar o processo.',
+        variant: 'destructive',
+      });
     }
   };
 

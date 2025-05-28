@@ -24,10 +24,10 @@ export function ManualStudentForm({ onStudentAdded }: ManualStudentFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !name) {
+    if (!email) {
       toast({
-        title: 'Campos obrigatórios',
-        description: 'Por favor, preencha email e nome.',
+        title: 'Email obrigatório',
+        description: 'Por favor, preencha o email.',
         variant: 'destructive',
       });
       return;
@@ -35,44 +35,29 @@ export function ManualStudentForm({ onStudentAdded }: ManualStudentFormProps) {
 
     setIsLoading(true);
     try {
-      // Criar usuário com senha padrão
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email,
-        password: '12345',
-        email_confirm: true,
-        user_metadata: {
-          name,
+      console.log('Calling create-user function...');
+      
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email,
+          name: name.trim() || null,
+          role,
         },
       });
 
-      if (authError) {
-        if (authError.message.includes('already registered')) {
-          toast({
-            title: 'Email já cadastrado',
-            description: 'Este email já está registrado no sistema.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        throw authError;
+      if (error) {
+        console.error('Function invoke error:', error);
+        throw new Error(error.message || 'Erro ao chamar função');
       }
 
-      // Atualizar perfil com informações específicas
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          name,
-          role,
-          must_change_password: true,
-          first_login: true,
-        })
-        .eq('id', authData.user.id);
-
-      if (profileError) throw profileError;
+      if (!data?.success) {
+        console.error('Function returned error:', data);
+        throw new Error(data?.error || 'Erro desconhecido');
+      }
 
       toast({
         title: 'Usuário criado com sucesso',
-        description: `${role === 'professor' ? 'Professor' : 'Aluno'} ${name} foi adicionado ao sistema. Senha padrão: 12345`,
+        description: `${role === 'professor' ? 'Professor' : 'Aluno'} ${name || email} foi adicionado ao sistema. Senha padrão: 12345`,
       });
 
       setEmail('');
@@ -103,7 +88,7 @@ export function ManualStudentForm({ onStudentAdded }: ManualStudentFormProps) {
           <div className="space-y-2">
             <Label htmlFor="email" className="flex items-center gap-2">
               <Mail className="w-4 h-4" />
-              Email
+              Email *
             </Label>
             <Input
               id="email"
@@ -118,14 +103,13 @@ export function ManualStudentForm({ onStudentAdded }: ManualStudentFormProps) {
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center gap-2">
               <User className="w-4 h-4" />
-              Nome Completo
+              Nome Completo (opcional)
             </Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nome do usuário"
-              required
+              placeholder="Nome do usuário (preencherá no primeiro login)"
             />
           </div>
         </div>
@@ -149,7 +133,12 @@ export function ManualStudentForm({ onStudentAdded }: ManualStudentFormProps) {
         <div className="bg-blue-50 p-3 rounded-md">
           <p className="text-sm text-blue-800">
             <strong>Senha padrão:</strong> 12345<br />
-            O usuário será solicitado a alterar a senha no primeiro acesso.
+            {!name.trim() && (
+              <>O usuário será solicitado a informar o nome e alterar a senha no primeiro acesso.<br /></>
+            )}
+            {name.trim() && (
+              <>O usuário será solicitado a alterar a senha no primeiro acesso.<br /></>
+            )}
           </p>
         </div>
 
