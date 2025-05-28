@@ -25,6 +25,8 @@ interface CourseContextType {
   refreshCourse: () => void;
   questionsCache: Map<string, Question[]>;
   isLoadingQuestions: boolean;
+  error: string | null;
+  retryOperation: () => void;
 }
 
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
@@ -52,6 +54,8 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
   const [questionsCache, setQuestionsCache] = useState<Map<string, Question[]>>(new Map());
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const isLoading = authLoading || coursesLoading;
 
@@ -70,28 +74,48 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
 
   const loadCourse = useCallback(async (courseId: string) => {
     try {
+      setError(null);
       const course = courses.find(c => c.id === courseId);
-      if (!course) return;
+      if (!course) {
+        throw new Error('Curso não encontrado');
+      }
 
       const courseTopics: DbTopic[] = await fetchTopics(courseId);
+      
+      if (!courseTopics || courseTopics.length === 0) {
+        logger.warn('No topics found for course', { courseId });
+        setCurrentCourse({
+          ...course,
+          topics: [],
+          progress: 0,
+        });
+        return;
+      }
       
       // Load questions for each topic and check completion status
       const topicsWithQuestions = await Promise.all(
         courseTopics.map(async (dbTopic) => {
-          // Check cache first for questions
-          let mappedQuestions: Question[] = [];
-          if (questionsCache.has(dbTopic.id)) {
-            mappedQuestions = questionsCache.get(dbTopic.id)!;
-          } else {
-            const dbQuestions: DbQuestion[] = await fetchQuestions(dbTopic.id);
-            mappedQuestions = dbQuestions.map(mapDbQuestionToQuestion);
+          try {
+            // Check cache first for questions
+            let mappedQuestions: Question[] = [];
+            if (questionsCache.has(dbTopic.id)) {
+              mappedQuestions = questionsCache.get(dbTopic.id)!;
+            } else {
+              const dbQuestions: DbQuestion[] = await fetchQuestions(dbTopic.id);
+              mappedQuestions = dbQuestions ? dbQuestions.map(mapDbQuestionToQuestion) : [];
+              
+              // Update cache
+              setQuestionsCache(prev => new Map(prev).set(dbTopic.id, mappedQuestions));
+            }
             
-            // Update cache
-            setQuestionsCache(prev => new Map(prev).set(dbTopic.id, mappedQuestions));
+            const completed = user ? isTopicCompleted(dbTopic.id) : false;
+            return mapDbTopicToTopic(dbTopic, mappedQuestions, completed);
+          } catch (error) {
+            logger.error('Error loading topic data', { topicId: dbTopic.id, error });
+            // Return topic without questions if there's an error
+            const completed = user ? isTopicCompleted(dbTopic.id) : false;
+            return mapDbTopicToTopic(dbTopic, [], completed);
           }
-          
-          const completed = user ? isTopicCompleted(dbTopic.id) : false;
-          return mapDbTopicToTopic(dbTopic, mappedQuestions, completed);
         })
       );
 
@@ -124,6 +148,7 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
       });
     } catch (error) {
       logger.error('Error loading course', { courseId, error });
+      setError(`Erro ao carregar curso: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   }, [courses, fetchTopics, fetchQuestions, questionsCache, user, isTopicCompleted, currentTopic]);
 
@@ -134,37 +159,54 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     }
   }, [currentCourse, loadCourse]);
 
-  const handleSetCurrentTopic = useCallback(async (topic: Topic) => {
-    // Load questions for this topic if not already loaded or cached
-    if ((!topic.questions || topic.questions.length === 0) && !questionsCache.has(topic.id)) {
-      setIsLoadingQuestions(true);
-      try {
-        const dbQuestions: DbQuestion[] = await fetchQuestions(topic.id);
-        const mappedQuestions = dbQuestions.map(mapDbQuestionToQuestion);
-        topic.questions = mappedQuestions;
-        
-        // Update cache
-        setQuestionsCache(prev => new Map(prev).set(topic.id, mappedQuestions));
-        
-        logger.debug('Questions loaded for topic', { topicId: topic.id, questionCount: mappedQuestions.length });
-      } catch (error) {
-        logger.error('Error loading questions for topic', { topicId: topic.id, error });
-      } finally {
-        setIsLoadingQuestions(false);
-      }
-    } else if (questionsCache.has(topic.id)) {
-      // Use cached questions
-      topic.questions = questionsCache.get(topic.id)!;
+  const retryOperation = useCallback(() => {
+    setRetryCount(prev => prev + 1);
+    setError(null);
+    if (currentCourse) {
+      loadCourse(currentCourse.id);
     }
-    
-    setCurrentTopic(topic);
-    logger.debug('Current topic set', { topicId: topic.id, title: topic.title });
+  }, [currentCourse, loadCourse]);
+
+  const handleSetCurrentTopic = useCallback(async (topic: Topic) => {
+    try {
+      setError(null);
+      // Load questions for this topic if not already loaded or cached
+      if ((!topic.questions || topic.questions.length === 0) && !questionsCache.has(topic.id)) {
+        setIsLoadingQuestions(true);
+        try {
+          const dbQuestions: DbQuestion[] = await fetchQuestions(topic.id);
+          const mappedQuestions = dbQuestions ? dbQuestions.map(mapDbQuestionToQuestion) : [];
+          topic.questions = mappedQuestions;
+          
+          // Update cache
+          setQuestionsCache(prev => new Map(prev).set(topic.id, mappedQuestions));
+          
+          logger.debug('Questions loaded for topic', { topicId: topic.id, questionCount: mappedQuestions.length });
+        } catch (error) {
+          logger.error('Error loading questions for topic', { topicId: topic.id, error });
+          // Continue with empty questions array
+          topic.questions = [];
+        } finally {
+          setIsLoadingQuestions(false);
+        }
+      } else if (questionsCache.has(topic.id)) {
+        // Use cached questions
+        topic.questions = questionsCache.get(topic.id)!;
+      }
+      
+      setCurrentTopic(topic);
+      logger.debug('Current topic set', { topicId: topic.id, title: topic.title });
+    } catch (error) {
+      logger.error('Error setting current topic', { topicId: topic.id, error });
+      setError('Erro ao carregar tópico');
+    }
   }, [fetchQuestions, questionsCache]);
 
   const updateTopicProgress = useCallback(async (topicId: string, completed: boolean) => {
     if (!user) return;
 
     try {
+      setError(null);
       await markTopicCompleted(topicId, completed);
       
       // Update current course state recursively
@@ -220,21 +262,29 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
       logger.info('Topic progress updated', { topicId, completed, userId: user.id });
     } catch (error) {
       logger.error('Error updating topic progress', { topicId, completed, userId: user.id, error });
+      setError('Erro ao atualizar progresso do tópico');
     }
   }, [user, markTopicCompleted, currentCourse, currentTopic]);
 
   const addQuestion = useCallback(async (topicId: string, questionData: Omit<Question, 'id'>) => {
-    const isAdmin = profile?.is_admin || false;
-    await addQuestionHook(topicId, questionData, isAdmin);
-    
-    // Clear cache for this topic to force reload
-    setQuestionsCache(prev => {
-      const newCache = new Map(prev);
-      newCache.delete(topicId);
-      return newCache;
-    });
-    
-    refreshCourse();
+    try {
+      setError(null);
+      const isAdmin = profile?.is_admin || false;
+      await addQuestionHook(topicId, questionData, isAdmin);
+      
+      // Clear cache for this topic to force reload
+      setQuestionsCache(prev => {
+        const newCache = new Map(prev);
+        newCache.delete(topicId);
+        return newCache;
+      });
+      
+      refreshCourse();
+    } catch (error) {
+      logger.error('Error adding question', { topicId, error });
+      setError('Erro ao adicionar questão');
+      throw error;
+    }
   }, [profile?.is_admin, addQuestionHook, refreshCourse]);
 
   const addTopic = useCallback(async (
@@ -242,27 +292,42 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     topicData: { title: string; content: string }, 
     parentTopicId?: string
   ) => {
-    const isAdmin = profile?.is_admin || false;
-    await addTopicHook(courseId, topicData, isAdmin, parentTopicId);
-    refreshCourse();
+    try {
+      setError(null);
+      const isAdmin = profile?.is_admin || false;
+      await addTopicHook(courseId, topicData, isAdmin, parentTopicId);
+      refreshCourse();
+    } catch (error) {
+      logger.error('Error adding topic', { courseId, error });
+      setError('Erro ao adicionar tópico');
+      throw error;
+    }
   }, [profile?.is_admin, addTopicHook, refreshCourse]);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
+      setError(null);
       const result = await signIn(email, password);
       return result.success;
     } catch (error) {
       logger.error('Login error in context', { email, error });
+      setError('Erro ao fazer login');
       return false;
     }
   }, [signIn]);
 
   const logout = useCallback(() => {
-    signOut();
-    setCurrentCourse(null);
-    setCurrentTopic(null);
-    setQuestionsCache(new Map());
-    logger.info('User logged out, context cleared');
+    try {
+      signOut();
+      setCurrentCourse(null);
+      setCurrentTopic(null);
+      setQuestionsCache(new Map());
+      setError(null);
+      logger.info('User logged out, context cleared');
+    } catch (error) {
+      logger.error('Error during logout', { error });
+      setError('Erro ao fazer logout');
+    }
   }, [signOut]);
 
   const contextValue = useMemo(() => ({
@@ -281,6 +346,8 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     refreshCourse,
     questionsCache,
     isLoadingQuestions,
+    error,
+    retryOperation,
   }), [
     currentCourse,
     currentTopic,
@@ -297,6 +364,8 @@ export const CourseProvider = React.memo(function CourseProvider({ children }: C
     refreshCourse,
     questionsCache,
     isLoadingQuestions,
+    error,
+    retryOperation,
   ]);
 
   return (

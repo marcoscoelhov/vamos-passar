@@ -8,10 +8,18 @@ import { CourseContentHeader } from '@/components/course-content/CourseContentHe
 import { TopicHeader } from '@/components/course-content/TopicHeader';
 import { TopicContentSection } from '@/components/course-content/TopicContentSection';
 import { QuestionsSection } from '@/components/course-content/QuestionsSection';
+import { SectionErrorBoundary } from '@/components/SectionErrorBoundary';
 import { logger } from '@/utils/logger';
 
 export function CourseContent() {
-  const { currentTopic, currentCourse, user, isLoadingQuestions } = useCourse();
+  const { 
+    currentTopic, 
+    currentCourse, 
+    user, 
+    isLoadingQuestions, 
+    error, 
+    retryOperation 
+  } = useCourse();
   const { generateTopicsAsPDF, isDownloading } = useDownload();
   const { isBookmarked, toggleBookmark } = useBookmarks(user?.id);
   
@@ -20,16 +28,18 @@ export function CourseContent() {
 
   if (!currentTopic) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Selecione um tópico
-          </h2>
-          <p className="text-gray-600">
-            Escolha um tópico na barra lateral para começar a estudar
-          </p>
+      <SectionErrorBoundary sectionName="Seleção de tópico">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Selecione um tópico
+            </h2>
+            <p className="text-gray-600">
+              Escolha um tópico na barra lateral para começar a estudar
+            </p>
+          </div>
         </div>
-      </div>
+      </SectionErrorBoundary>
     );
   }
 
@@ -68,6 +78,8 @@ export function CourseContent() {
         isDownloading={isDownloading}
         onDownloadTopicPDF={handleDownloadTopicPDF}
         onScrollToQuestions={scrollToQuestions}
+        error={error}
+        onRetry={retryOperation}
       />
 
       <TopicHeader
