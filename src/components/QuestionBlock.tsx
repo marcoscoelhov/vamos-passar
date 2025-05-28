@@ -37,10 +37,10 @@ export function QuestionBlock({ question, questionNumber }: QuestionBlockProps) 
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'bg-green-100 text-green-700 border-green-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'hard': return 'bg-red-100 text-red-700 border-red-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'easy': return 'bg-green-50 text-green-700 border-green-200';
+      case 'medium': return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'hard': return 'bg-red-50 text-red-700 border-red-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
@@ -59,20 +59,20 @@ export function QuestionBlock({ question, questionNumber }: QuestionBlockProps) 
   };
 
   return (
-    <Card className="p-8 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow animate-fade-in">
-      <div className="flex justify-between items-start mb-6">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-600 text-white rounded-lg px-3 py-1 text-sm font-semibold">
+    <Card className="p-8 bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
+      <div className="flex justify-between items-start mb-8">
+        <div className="flex items-center gap-4">
+          <div className="bg-gray-900 text-white rounded-lg px-3 py-1.5 text-sm font-medium">
             Questão {questionNumber}
           </div>
-          <Badge className={`${getDifficultyColor(question.difficulty)} border`}>
+          <Badge className={`${getDifficultyColor(question.difficulty)} border text-xs font-medium`}>
             {getDifficultyLabel(question.difficulty)}
           </Badge>
         </div>
       </div>
 
       <div className="mb-8">
-        <p className="text-gray-800 leading-relaxed text-lg font-medium">
+        <p className="text-gray-800 leading-relaxed text-lg font-serif">
           {question.question}
         </p>
       </div>
@@ -84,29 +84,29 @@ export function QuestionBlock({ question, questionNumber }: QuestionBlockProps) 
             onClick={() => handleAnswerSelect(index)}
             disabled={showResult}
             className={cn(
-              "w-full p-5 text-left rounded-xl border-2 transition-all duration-200",
-              "hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+              "w-full p-5 text-left rounded-lg border transition-all duration-200",
+              "hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-2",
               "disabled:cursor-default",
-              selectedAnswer === index && !showResult && "bg-blue-50 border-blue-300 shadow-sm",
-              showResult && selectedAnswer === index && isCorrect && "bg-green-50 border-green-300 shadow-sm",
-              showResult && selectedAnswer === index && !isCorrect && "bg-red-50 border-red-300 shadow-sm",
-              showResult && index === question.correctAnswer && "bg-green-50 border-green-300 shadow-sm",
-              showResult && index !== question.correctAnswer && index !== selectedAnswer && "bg-gray-50 border-gray-200"
+              selectedAnswer === index && !showResult && "bg-blue-50 border-blue-200",
+              showResult && selectedAnswer === index && isCorrect && "bg-green-50 border-green-200",
+              showResult && selectedAnswer === index && !isCorrect && "bg-red-50 border-red-200",
+              showResult && index === question.correctAnswer && "bg-green-50 border-green-200",
+              showResult && index !== question.correctAnswer && index !== selectedAnswer && "bg-gray-50 border-gray-100"
             )}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-full border-2 font-semibold text-sm",
+                  "flex items-center justify-center w-8 h-8 rounded-full border font-medium text-sm",
                   selectedAnswer === index && !showResult && "bg-blue-600 text-white border-blue-600",
                   showResult && index === question.correctAnswer && "bg-green-600 text-white border-green-600",
                   showResult && selectedAnswer === index && !isCorrect && "bg-red-600 text-white border-red-600",
-                  !showResult && selectedAnswer !== index && "border-gray-300 text-gray-600",
-                  showResult && index !== question.correctAnswer && index !== selectedAnswer && "border-gray-300 text-gray-400"
+                  !showResult && selectedAnswer !== index && "border-gray-300 text-gray-600 bg-white",
+                  showResult && index !== question.correctAnswer && index !== selectedAnswer && "border-gray-200 text-gray-400 bg-gray-50"
                 )}>
                   {getOptionLabel(index)}
                 </div>
-                <span className="text-gray-800 text-base leading-relaxed">
+                <span className="text-gray-800 leading-relaxed font-serif">
                   {option}
                 </span>
               </div>
@@ -114,10 +114,10 @@ export function QuestionBlock({ question, questionNumber }: QuestionBlockProps) 
               {showResult && (
                 <div className="flex items-center">
                   {index === question.correctAnswer && (
-                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
                   )}
                   {selectedAnswer === index && selectedAnswer !== question.correctAnswer && (
-                    <XCircle className="w-6 h-6 text-red-600" />
+                    <XCircle className="w-5 h-5 text-red-600" />
                   )}
                 </div>
               )}
@@ -130,7 +130,7 @@ export function QuestionBlock({ question, questionNumber }: QuestionBlockProps) 
         <Button
           onClick={handleSubmit}
           disabled={selectedAnswer === null}
-          className="w-full py-3 text-base font-semibold"
+          className="w-full py-3 text-base font-medium bg-gray-900 hover:bg-gray-800"
           size="lg"
         >
           Confirmar Resposta
@@ -138,7 +138,7 @@ export function QuestionBlock({ question, questionNumber }: QuestionBlockProps) 
       ) : (
         <div className="space-y-6">
           <div className={cn(
-            "p-5 rounded-xl flex items-center gap-4 border-2",
+            "p-5 rounded-lg flex items-center gap-4 border",
             isCorrect ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
           )}>
             {isCorrect ? (
@@ -147,7 +147,7 @@ export function QuestionBlock({ question, questionNumber }: QuestionBlockProps) 
               <XCircle className="w-6 h-6 text-red-600" />
             )}
             <span className={cn(
-              "font-semibold text-base",
+              "font-medium",
               isCorrect ? "text-green-800" : "text-red-800"
             )}>
               {isCorrect ? 'Parabéns! Resposta correta!' : 'Resposta incorreta. Continue estudando!'}
@@ -155,14 +155,14 @@ export function QuestionBlock({ question, questionNumber }: QuestionBlockProps) 
           </div>
 
           {question.explanation && (
-            <div className="p-6 bg-blue-50 border-2 border-blue-200 rounded-xl">
+            <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start gap-4">
                 <div className="bg-blue-600 rounded-lg p-2 mt-1">
                   <Info className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-blue-900 mb-3 text-lg">Explicação:</h4>
-                  <p className="text-blue-800 leading-relaxed text-base">
+                  <h4 className="font-semibold text-blue-900 mb-3">Explicação:</h4>
+                  <p className="text-blue-800 leading-relaxed font-serif">
                     {question.explanation}
                   </p>
                 </div>
@@ -173,7 +173,7 @@ export function QuestionBlock({ question, questionNumber }: QuestionBlockProps) 
           <Button
             onClick={handleReset}
             variant="outline"
-            className="w-full py-3 text-base font-semibold flex items-center gap-2"
+            className="w-full py-3 font-medium flex items-center gap-2 border-gray-200 hover:bg-gray-50"
             size="lg"
           >
             <RotateCcw className="w-4 h-4" />

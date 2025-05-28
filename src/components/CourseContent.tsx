@@ -1,5 +1,5 @@
+
 import React from 'react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, HelpCircle, Bookmark, BookmarkCheck, Key } from 'lucide-react';
@@ -12,7 +12,6 @@ import { HighlightableContent } from './HighlightableContent';
 import { Breadcrumbs } from './Breadcrumbs';
 import { GlobalSearch } from './GlobalSearch';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
-import { TopicContentSkeleton } from './TopicContentSkeleton';
 import { AnswerKeyModal } from './AnswerKeyModal';
 
 export function CourseContent() {
@@ -67,138 +66,141 @@ export function CourseContent() {
   const topicIsBookmarked = isBookmarked(currentTopic.id);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Barra superior com busca e atalhos */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <GlobalSearch />
-          <KeyboardShortcuts />
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Botão para questões */}
-          {currentTopic.questions && currentTopic.questions.length > 0 && (
-            <Button
-              onClick={scrollToQuestions}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <HelpCircle className="w-4 h-4" />
-              Questões
-            </Button>
-          )}
+    <div className="min-h-screen bg-white">
+      {/* Subtle top bar */}
+      <div className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <GlobalSearch />
+              <KeyboardShortcuts />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Minimalist action buttons */}
+              {currentTopic.questions && currentTopic.questions.length > 0 && (
+                <Button
+                  onClick={scrollToQuestions}
+                  variant="ghost"
+                  size="sm"
+                  className="btn-minimal text-xs font-medium"
+                >
+                  <HelpCircle className="w-3.5 h-3.5 mr-1.5" />
+                  Questões
+                </Button>
+              )}
 
-          {/* Botão de download do tópico atual em PDF */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadTopicPDF}
-            disabled={isDownloading}
-            className="flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            {isDownloading ? 'Baixando...' : 'PDF'}
-          </Button>
-
-          {/* Botão de gabarito */}
-          {currentTopic.questions && currentTopic.questions.length > 0 && (
-            <AnswerKeyModal topic={currentTopic}>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="flex items-center gap-2"
+                onClick={handleDownloadTopicPDF}
+                disabled={isDownloading}
+                className="btn-minimal text-xs font-medium"
               >
-                <Key className="w-4 h-4" />
-                Gabarito
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                {isDownloading ? 'Baixando...' : 'PDF'}
               </Button>
-            </AnswerKeyModal>
-          )}
-        </div>
-      </div>
 
-      {/* Breadcrumbs */}
-      <Breadcrumbs />
+              {currentTopic.questions && currentTopic.questions.length > 0 && (
+                <AnswerKeyModal topic={currentTopic}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="btn-minimal text-xs font-medium"
+                  >
+                    <Key className="w-3.5 h-3.5 mr-1.5" />
+                    Gabarito
+                  </Button>
+                </AnswerKeyModal>
+              )}
 
-      {/* Cabeçalho do tópico */}
-      <div className="mb-8">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900">
-                {currentTopic.title}
-              </h1>
-              
-              {/* Botão de marcador */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleToggleBookmark}
-                className="text-gray-400 hover:text-yellow-500"
+                className="btn-minimal p-2"
               >
                 {topicIsBookmarked ? (
-                  <BookmarkCheck className="w-5 h-5 text-yellow-500" />
+                  <BookmarkCheck className="w-4 h-4 text-amber-600" />
                 ) : (
-                  <Bookmark className="w-5 h-5" />
+                  <Bookmark className="w-4 h-4" />
                 )}
               </Button>
-              
-              {currentTopic.completed && (
-                <Badge className="bg-green-100 text-green-800">
-                  Concluído
-                </Badge>
-              )}
             </div>
-            {currentTopic.level > 0 && (
-              <div className="text-sm text-gray-500">
-                Subtópico • Nível {currentTopic.level}
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Conteúdo do tópico com highlights e editor inline para admins */}
-      <Card className="p-8 mb-8">
-        <HighlightableContent 
-          content={currentTopic.content}
-          topicId={currentTopic.id}
-          userId={user?.id}
-          isAdmin={isAdmin}
-          onContentUpdated={handleContentUpdated}
-        />
-      </Card>
-
-      {/* Seção de questões */}
-      {isLoadingQuestions ? (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Carregando questões...
-          </h2>
-          {/* Skeleton loading for questions could go here */}
+      {/* Main content area */}
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        {/* Subtle breadcrumbs */}
+        <div className="mb-8">
+          <Breadcrumbs />
         </div>
-      ) : (
-        currentTopic.questions && currentTopic.questions.length > 0 && (
-          <div id="questions-section" className="space-y-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Questões de Fixação
-              </h2>
-              <Badge variant="outline" className="text-sm">
-                {currentTopic.questions.length} questão(ões)
-              </Badge>
-            </div>
+
+        {/* Article-style header */}
+        <article className="mb-16">
+          <header className="mb-12 text-center">
+            <h1 className="font-serif text-4xl font-semibold text-gray-900 mb-4 leading-tight">
+              {currentTopic.title}
+            </h1>
             
-            {currentTopic.questions.map((question, index) => (
-              <QuestionBlock
-                key={question.id}
-                question={question}
-                questionNumber={index + 1}
-              />
-            ))}
+            <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
+              {currentTopic.level > 0 && (
+                <span>Subtópico • Nível {currentTopic.level}</span>
+              )}
+              {currentTopic.completed && (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Concluído
+                </Badge>
+              )}
+            </div>
+          </header>
+
+          {/* Clean content without card wrapper */}
+          <div className="content-prose">
+            <HighlightableContent 
+              content={currentTopic.content}
+              topicId={currentTopic.id}
+              userId={user?.id}
+              isAdmin={isAdmin}
+              onContentUpdated={handleContentUpdated}
+            />
           </div>
-        )
-      )}
+        </article>
+
+        {/* Questions section with subtle separation */}
+        {isLoadingQuestions ? (
+          <div className="pt-16 border-t border-gray-100">
+            <div className="text-center text-gray-500 mb-8">
+              Carregando questões...
+            </div>
+          </div>
+        ) : (
+          currentTopic.questions && currentTopic.questions.length > 0 && (
+            <section id="questions-section" className="pt-16 border-t border-gray-100">
+              <div className="text-center mb-12">
+                <h2 className="font-serif text-3xl font-semibold text-gray-900 mb-3">
+                  Questões de Fixação
+                </h2>
+                <p className="text-gray-500 text-sm">
+                  {currentTopic.questions.length} questão{currentTopic.questions.length > 1 ? 'ões' : ''}
+                </p>
+              </div>
+              
+              <div className="space-y-8">
+                {currentTopic.questions.map((question, index) => (
+                  <QuestionBlock
+                    key={question.id}
+                    question={question}
+                    questionNumber={index + 1}
+                  />
+                ))}
+              </div>
+            </section>
+          )
+        )}
+      </div>
     </div>
   );
 }
