@@ -1,15 +1,12 @@
 
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollToTop } from '@/components/ui/scroll-to-top';
-import { TrendingUp, BookOpen, FileText } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
-import { OverviewAndAnalytics } from './admin/OverviewAndAnalytics';
-import { ContentManagement } from './admin/ContentManagement';
-import { AuditLogs } from './admin/AuditLogs';
+import { AdminSidebar } from './admin/AdminSidebar';
+import { AdminContentArea } from './admin/AdminContentArea';
 
 export function AdminPanel() {
   const { currentCourse, profile } = useCourse();
+  const [activeSection, setActiveSection] = useState('overview');
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleContentAdded = () => {
@@ -18,8 +15,15 @@ export function AdminPanel() {
 
   if (!currentCourse) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Nenhum curso selecionado</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-xl font-serif font-semibold text-gray-900 mb-2">
+            Nenhum curso selecionado
+          </h2>
+          <p className="text-gray-600">
+            Selecione um curso para acessar o painel administrativo
+          </p>
+        </div>
       </div>
     );
   }
@@ -27,57 +31,22 @@ export function AdminPanel() {
   const isAdmin = profile?.is_admin || false;
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Administrativo</h1>
-            <p className="text-gray-600">Gerencie conteúdo, monitore desempenho e administre usuários</p>
-          </div>
-
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview" className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Visão Geral
-              </TabsTrigger>
-              <TabsTrigger value="content" className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4" />
-                Conteúdo
-              </TabsTrigger>
-              <TabsTrigger value="logs" className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Logs
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview">
-              <OverviewAndAnalytics 
-                key={refreshKey}
-                course={currentCourse} 
-              />
-            </TabsContent>
-
-            <TabsContent value="content">
-              <ContentManagement 
-                course={currentCourse} 
-                isAdmin={isAdmin}
-                onContentAdded={handleContentAdded}
-              />
-            </TabsContent>
-
-            <TabsContent value="logs">
-              <div className="flex items-center gap-2 mb-6">
-                <FileText className="w-5 h-5" />
-                <h2 className="text-xl font-semibold">Logs de Auditoria</h2>
-              </div>
-              <AuditLogs />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
+    <div className="min-h-screen bg-white flex">
+      {/* Main Content Area */}
+      <AdminContentArea 
+        key={refreshKey}
+        activeSection={activeSection}
+        course={currentCourse}
+        isAdmin={isAdmin}
+        onContentAdded={handleContentAdded}
+      />
       
-      <ScrollToTop />
-    </>
+      {/* Administrative Sidebar */}
+      <AdminSidebar 
+        course={currentCourse}
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+      />
+    </div>
   );
 }
