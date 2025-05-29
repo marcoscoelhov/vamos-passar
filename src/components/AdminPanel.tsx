@@ -31,21 +31,21 @@ export function AdminPanel() {
   const isAdmin = profile?.is_admin || false;
 
   return (
-    <div className="min-h-screen bg-white flex">
-      {/* Main Content Area */}
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Administrative Sidebar - Left */}
+      <AdminSidebar 
+        course={currentCourse}
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+      />
+      
+      {/* Main Content Area - Right */}
       <AdminContentArea 
         key={refreshKey}
         activeSection={activeSection}
         course={currentCourse}
         isAdmin={isAdmin}
         onContentAdded={handleContentAdded}
-      />
-      
-      {/* Administrative Sidebar */}
-      <AdminSidebar 
-        course={currentCourse}
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
       />
     </div>
   );

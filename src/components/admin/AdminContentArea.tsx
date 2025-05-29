@@ -79,9 +79,12 @@ export function AdminContentArea({
   };
 
   return (
-    <div className="flex-1 p-8">
-      <div className="max-w-4xl">
-        {renderContent()}
+    <div className="flex-1 bg-white">
+      {/* Content Header */}
+      <div className="bg-white border-b border-gray-200 px-8 py-6">
+        <div className="max-w-6xl">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );
