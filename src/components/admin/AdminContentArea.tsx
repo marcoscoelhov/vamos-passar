@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Course } from '@/types/course';
 import { AdminOverview } from './AdminOverview';
@@ -11,6 +10,7 @@ import { ProfessorPermissionsManager } from './ProfessorPermissionsManager';
 import { AuditLogs } from './AuditLogs';
 import { CourseReportsSection } from './CourseReportsSection';
 import { ExportToolsSection } from './ExportToolsSection';
+import { IntegratedHelpSystem } from './IntegratedHelpSystem';
 
 interface AdminContentAreaProps {
   activeSection: string;
@@ -65,10 +65,13 @@ export function AdminContentArea({
   };
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="flex-1 overflow-auto relative">
       <div className="p-8">
         {renderContent()}
       </div>
+      
+      {/* Sistema de ajuda integrado */}
+      <IntegratedHelpSystem />
     </div>
   );
 }
