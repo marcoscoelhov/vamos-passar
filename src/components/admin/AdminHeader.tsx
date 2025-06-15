@@ -1,7 +1,9 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
 import { 
   TrendingUp, 
   BarChart3, 
@@ -11,7 +13,8 @@ import {
   Activity,
   Crown,
   Zap,
-  GraduationCap
+  GraduationCap,
+  Home
 } from 'lucide-react';
 
 interface AdminHeaderProps {
@@ -141,16 +144,29 @@ export function AdminHeader({ activeSection, courseName }: AdminHeaderProps) {
             </div>
           </div>
           
-          <div className="text-right">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-4 h-4 text-emerald-500" />
-              <span className="text-sm font-medium text-slate-600">Sistema Ativo</span>
-            </div>
-            <div className="bg-white rounded-lg px-4 py-2 shadow-sm border border-slate-200">
-              <p className="text-xs text-slate-500 mb-1">Plataforma</p>
-              <p className="font-semibold text-slate-900 text-sm">
-                {courseName}
-              </p>
+          <div className="flex items-center gap-4">
+            {/* Botão Home */}
+            <Link to="/">
+              <Button 
+                variant="outline" 
+                className="bg-white border-slate-200 hover:bg-slate-50 shadow-sm"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                Voltar ao Curso
+              </Button>
+            </Link>
+            
+            <div className="text-right">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="w-4 h-4 text-emerald-500" />
+                <span className="text-sm font-medium text-slate-600">Sistema Ativo</span>
+              </div>
+              <div className="bg-white rounded-lg px-4 py-2 shadow-sm border border-slate-200">
+                <p className="text-xs text-slate-500 mb-1">Plataforma</p>
+                <p className="font-semibold text-slate-900 text-sm">
+                  {courseName}
+                </p>
+              </div>
             </div>
           </div>
         </div>
