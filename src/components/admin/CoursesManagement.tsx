@@ -4,31 +4,26 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
   Search, 
-  Filter, 
   MoreVertical, 
   Edit, 
-  Trash2, 
   Eye, 
   Users, 
-  DollarSign,
   Clock,
-  Star,
-  TrendingUp,
-  Calendar
+  Star
 } from 'lucide-react';
-import { CourseCategory, Course, CourseEnrollment } from '@/types/course';
+import { CourseCategory, CourseListItem, CourseEnrollment } from '@/types/course';
 import { CourseFormDialog } from './CourseFormDialog';
 import { CourseStatsCards } from './CourseStatsCards';
 
 export function CoursesManagement() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<CourseListItem[]>([]);
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [enrollments, setEnrollments] = useState<CourseEnrollment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,6 +121,13 @@ export function CoursesManagement() {
     setIsCreateDialogOpen(false);
   };
 
+  // Converter CourseListItem para Course para as estatísticas
+  const coursesForStats = courses.map(course => ({
+    ...course,
+    topics: [],
+    progress: 0
+  }));
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -137,7 +139,7 @@ export function CoursesManagement() {
   return (
     <div className="space-y-6">
       {/* Cards de Estatísticas */}
-      <CourseStatsCards courses={courses} enrollments={enrollments} />
+      <CourseStatsCards courses={coursesForStats} enrollments={enrollments} />
       
       {/* Header com filtros */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">

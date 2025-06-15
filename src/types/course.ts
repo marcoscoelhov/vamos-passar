@@ -44,6 +44,35 @@ export interface Course {
   updated_at?: string;
 }
 
+// Interface específica para o sistema de múltiplos cursos
+export interface CourseListItem {
+  id: string;
+  title: string;
+  description?: string;
+  category_id?: string;
+  course_type?: 'online' | 'presencial' | 'hibrido';
+  status?: 'rascunho' | 'ativo' | 'pausado' | 'encerrado';
+  duration_hours?: number;
+  target_audience?: string;
+  prerequisites?: string;
+  instructor_id?: string;
+  certificate_available?: boolean;
+  thumbnail_url?: string;
+  price?: number;
+  discount_price?: number;
+  max_installments?: number;
+  created_at: string;
+  updated_at: string;
+  // Dados relacionados do Supabase
+  course_categories?: {
+    name: string;
+    color?: string;
+  };
+  profiles?: {
+    name: string;
+  };
+}
+
 export interface CourseCategory {
   id: string;
   name: string;
