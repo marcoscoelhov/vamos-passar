@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
+import CourseDetails from "./pages/CourseDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -51,6 +51,14 @@ const AppContent = () => {
           element={
             <ProtectedRoute requireAdmin={true}>
               <Admin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/courses/:id"
+          element={
+            <ProtectedRoute requireAdmin={true}>
+              <CourseDetails />
             </ProtectedRoute>
           }
         />

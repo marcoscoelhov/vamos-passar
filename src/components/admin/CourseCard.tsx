@@ -1,71 +1,59 @@
 
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  MoreVertical, 
-  Edit, 
-  Eye, 
-  Users, 
-  Clock,
-  Star,
-  Trash2
-} from 'lucide-react';
-import { CourseListItem } from '@/types/course';
-import { ConfirmationDialog } from './ConfirmationDialog';
-import { CourseFormDialog } from './CourseFormDialog';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { CourseListItem, CourseCategory } from '@/types/course';
+import { Eye, Edit, Trash2, Users, Clock, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useLoadingStates } from '@/hooks/useLoadingStates';
+import { Dialog } from '@/components/ui/dialog';
+import { CourseFormDialog } from './CourseFormDialog';
+import { ConfirmationDialog } from './ConfirmationDialog';
 
 interface CourseCardProps {
   course: CourseListItem;
   enrollmentCount: number;
-  categories: any[];
+  categories: CourseCategory[];
   onCourseUpdated: () => void;
 }
 
 export function CourseCard({ course, enrollmentCount, categories, onCourseUpdated }: CourseCardProps) {
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const { isLoading, setLoading } = useLoadingStates();
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const getStatusBadge = (status?: string) => {
-    const statusConfig = {
-      rascunho: { label: 'Rascunho', variant: 'secondary' as const },
-      ativo: { label: 'Ativo', variant: 'default' as const },
-      pausado: { label: 'Pausado', variant: 'outline' as const },
-      encerrado: { label: 'Encerrado', variant: 'destructive' as const },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.rascunho;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ativo': return 'bg-green-100 text-green-800';
+      case 'rascunho': return 'bg-gray-100 text-gray-800';
+      case 'pausado': return 'bg-yellow-100 text-yellow-800';
+      case 'encerrado': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const formatPrice = (price?: number) => {
-    if (!price) return 'Gratuito';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(price);
+  const getCategoryColor = () => {
+    if (course.course_categories?.color) {
+      return course.course_categories.color;
+    }
+    return '#3B82F6';
   };
 
   const handleView = () => {
-    // Navegar para visualizar o curso (implementar depois)
-    toast({
-      title: 'Visualizar Curso',
-      description: 'Funcionalidade será implementada em breve.',
-    });
+    navigate(`/admin/courses/${course.id}`);
+  };
+
+  const handleEdit = () => {
+    setShowEditDialog(true);
   };
 
   const handleDelete = async () => {
+    setIsDeleting(true);
     try {
-      setLoading('delete', true);
-      
       const { error } = await supabase
         .from('courses')
         .delete()
@@ -75,11 +63,10 @@ export function CourseCard({ course, enrollmentCount, categories, onCourseUpdate
 
       toast({
         title: 'Curso excluído',
-        description: 'O curso foi excluído com sucesso.',
+        description: 'O curso foi removido com sucesso.',
       });
 
       onCourseUpdated();
-      setShowDeleteDialog(false);
     } catch (error) {
       console.error('Error deleting course:', error);
       toast({
@@ -88,20 +75,18 @@ export function CourseCard({ course, enrollmentCount, categories, onCourseUpdate
         variant: 'destructive',
       });
     } finally {
-      setLoading('delete', false);
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
-  const handleEditSuccess = () => {
-    onCourseUpdated();
-    setShowEditDialog(false);
-  };
+  const displayPrice = course.discount_price || course.price || 0;
 
   return (
     <>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-        {/* Thumbnail */}
-        <div className="h-48 bg-gradient-to-br from-slate-100 to-slate-200 relative">
+      <Card className="group hover:shadow-lg transition-all duration-200 border border-slate-200 hover:border-slate-300">
+        {/* Course Image */}
+        <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
           {course.thumbnail_url ? (
             <img 
               src={course.thumbnail_url} 
@@ -109,144 +94,132 @@ export function CourseCard({ course, enrollmentCount, categories, onCourseUpdate
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-slate-400 text-6xl">📚</div>
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-slate-400 text-center">
+                <div className="w-12 h-12 mx-auto mb-2 bg-slate-300 rounded-lg flex items-center justify-center">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <p className="text-sm">Sem imagem</p>
+              </div>
             </div>
           )}
-          <div className="absolute top-3 right-3">
-            {getStatusBadge(course.status)}
-          </div>
+          
+          {/* Category badge */}
+          {course.course_categories && (
+            <div className="absolute top-3 left-3">
+              <Badge 
+                className="text-white"
+                style={{ backgroundColor: getCategoryColor() }}
+              >
+                {course.course_categories.name}
+              </Badge>
+            </div>
+          )}
         </div>
 
-        {/* Conteúdo */}
-        <div className="p-6">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-slate-900 mb-1 line-clamp-2">
-                {course.title}
-              </h3>
-              <p className="text-sm text-slate-600 line-clamp-2">
-                {course.description}
-              </p>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="ml-2">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleView}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Visualizar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Excluir
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between">
+            <CardTitle className="text-lg line-clamp-2 group-hover:text-blue-600 transition-colors">
+              {course.title}
+            </CardTitle>
+            <Badge className={getStatusColor(course.status || 'rascunho')}>
+              {course.status?.toUpperCase() || 'RASCUNHO'}
+            </Badge>
           </div>
+          
+          {course.description && (
+            <p className="text-slate-600 text-sm line-clamp-2 mt-2">
+              {course.description}
+            </p>
+          )}
+        </CardHeader>
 
-          {/* Preço */}
-          <div className="mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-slate-900">
-                {formatPrice(course.discount_price || course.price)}
-              </span>
-              {course.discount_price && course.price && (
-                <span className="text-sm text-slate-500 line-through">
-                  {formatPrice(course.price)}
-                </span>
-              )}
-            </div>
-            {course.max_installments && course.max_installments > 1 && (
-              <p className="text-xs text-slate-600">
-                ou {course.max_installments}x de {formatPrice((course.discount_price || course.price || 0) / course.max_installments)}
-              </p>
-            )}
-          </div>
-
-          {/* Estatísticas */}
-          <div className="grid grid-cols-3 gap-3 mb-4 text-center">
-            <div>
-              <div className="flex items-center justify-center text-slate-600 mb-1">
+        <CardContent className="pt-0">
+          {/* Course Stats */}
+          <div className="grid grid-cols-3 gap-4 mb-4 p-3 bg-slate-50 rounded-lg">
+            <div className="text-center">
+              <div className="flex items-center justify-center text-blue-600 mb-1">
                 <Users className="w-4 h-4" />
               </div>
-              <div className="text-sm font-medium text-slate-900">
-                {enrollmentCount}
-              </div>
-              <div className="text-xs text-slate-600">Alunos</div>
+              <p className="text-xs text-slate-600">Alunos</p>
+              <p className="font-semibold text-sm">{enrollmentCount}</p>
             </div>
-            <div>
-              <div className="flex items-center justify-center text-slate-600 mb-1">
+            
+            <div className="text-center">
+              <div className="flex items-center justify-center text-green-600 mb-1">
                 <Clock className="w-4 h-4" />
               </div>
-              <div className="text-sm font-medium text-slate-900">
-                {course.duration_hours || 0}h
-              </div>
-              <div className="text-xs text-slate-600">Duração</div>
+              <p className="text-xs text-slate-600">Duração</p>
+              <p className="font-semibold text-sm">{course.duration_hours || 0}h</p>
             </div>
-            <div>
-              <div className="flex items-center justify-center text-slate-600 mb-1">
-                <Star className="w-4 h-4" />
+            
+            <div className="text-center">
+              <div className="flex items-center justify-center text-purple-600 mb-1">
+                <DollarSign className="w-4 h-4" />
               </div>
-              <div className="text-sm font-medium text-slate-900">4.8</div>
-              <div className="text-xs text-slate-600">Avaliação</div>
+              <p className="text-xs text-slate-600">Preço</p>
+              <p className="font-semibold text-sm">
+                R$ {displayPrice.toFixed(2)}
+              </p>
             </div>
           </div>
 
-          {/* Ações */}
+          {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleView}
+              className="flex-1 flex items-center gap-2"
             >
-              <Eye className="w-4 h-4 mr-2" />
+              <Eye className="w-4 h-4" />
               Visualizar
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
-              onClick={() => setShowEditDialog(true)}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEdit}
+              className="flex items-center gap-2"
             >
-              <Edit className="w-4 h-4 mr-2" />
-              Editar
+              <Edit className="w-4 h-4" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
             </Button>
           </div>
-        </div>
+        </CardContent>
       </Card>
 
-      {/* Dialog de Confirmação para Exclusão */}
-      <ConfirmationDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirm={handleDelete}
-        title="Excluir Curso"
-        description={`Tem certeza que deseja excluir o curso "${course.title}"? Esta ação não pode ser desfeita.`}
-        confirmText={isLoading('delete') ? 'Excluindo...' : 'Excluir'}
-        variant="destructive"
-      />
-
-      {/* Dialog de Edição */}
+      {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <CourseFormDialog
           categories={categories}
           course={course}
-          onSuccess={handleEditSuccess}
+          onSuccess={() => {
+            setShowEditDialog(false);
+            onCourseUpdated();
+          }}
           onCancel={() => setShowEditDialog(false)}
         />
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Excluir Curso"
+        description={`Tem certeza que deseja excluir o curso "${course.title}"? Esta ação não pode ser desfeita.`}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+        variant="destructive"
+      />
     </>
   );
 }
