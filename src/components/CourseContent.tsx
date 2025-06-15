@@ -83,19 +83,19 @@ export function CourseContent({ onOpenSidebar, isSidebarOpen }: CourseContentPro
         isSidebarOpen={isSidebarOpen}
       />
 
-      {/* Main content area */}
-      <div className="max-w-content mx-auto px-6 py-12">
+      {/* Main content area - improved for better readability */}
+      <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8 lg:py-12">
         {/* Breadcrumbs */}
-        <div className="mb-12">
+        <div className="mb-8 lg:mb-12">
           <Breadcrumbs />
         </div>
 
         {/* Article */}
-        <article className="mb-20">
+        <article className="mb-16 lg:mb-24">
           <ArticleHeader topic={currentTopic} />
 
-          {/* Content */}
-          <div className="content-prose">
+          {/* Content with improved typography and spacing */}
+          <div className="content-prose max-w-none">
             <HighlightableContent 
               content={currentTopic.content}
               topicId={currentTopic.id}

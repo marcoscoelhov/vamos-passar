@@ -46,7 +46,7 @@
   
   body {
     @apply bg-background text-foreground font-reading;
-    line-height: 1.58;
+    line-height: 1.7;
     font-size: 18px;
     color: #1a1a1a;
     letter-spacing: -0.003em;
@@ -54,82 +54,113 @@
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
-    line-height: 1.15;
+    line-height: 1.2;
     letter-spacing: -0.022em;
   }
 }
 
 @layer components {
-  /* Medium-inspired typography */
+  /* Medium-inspired typography - improved for better readability */
   .medium-title {
-    @apply text-5xl md:text-6xl font-bold font-display text-gray-900 leading-none;
-    letter-spacing: -0.022em;
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold font-display text-gray-900 leading-tight;
+    letter-spacing: -0.025em;
   }
   
   .medium-subtitle {
-    @apply text-2xl md:text-3xl font-normal font-display text-gray-700 leading-tight;
+    @apply text-xl md:text-2xl lg:text-3xl font-normal font-display text-gray-700 leading-relaxed;
     letter-spacing: -0.015em;
   }
   
   .medium-heading {
-    @apply text-3xl md:text-4xl font-bold font-display text-gray-900 leading-tight;
-    letter-spacing: -0.018em;
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold font-display text-gray-900 leading-tight;
+    letter-spacing: -0.020em;
   }
   
   .medium-subheading {
-    @apply text-xl md:text-2xl font-semibold font-display text-gray-800 leading-snug;
+    @apply text-lg md:text-xl lg:text-2xl font-semibold font-display text-gray-800 leading-relaxed;
     letter-spacing: -0.012em;
   }
   
   .medium-body {
-    @apply text-lg md:text-xl font-reading text-gray-800 leading-relaxed;
-    line-height: 1.58;
+    @apply text-lg md:text-xl lg:text-xl font-reading text-gray-800;
+    line-height: 1.7;
   }
   
   .medium-caption {
-    @apply text-sm font-reading text-gray-600 leading-normal;
+    @apply text-sm md:text-base font-reading text-gray-600 leading-relaxed;
   }
   
-  /* Content prose styling */
+  /* Content prose styling - enhanced for better readability */
   .content-prose {
-    @apply font-reading text-lg md:text-xl text-gray-800;
-    line-height: 1.58;
+    @apply font-reading text-lg md:text-xl lg:text-xl text-gray-800;
+    line-height: 1.75;
     letter-spacing: -0.003em;
+    max-width: none;
   }
   
   .content-prose h1 {
-    @apply medium-heading mb-8 mt-16 first:mt-0;
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold font-display text-gray-900 mb-8 mt-16 first:mt-0 leading-tight;
+    letter-spacing: -0.025em;
   }
   
   .content-prose h2 {
-    @apply medium-subheading mb-6 mt-12 first:mt-0;
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold font-display text-gray-900 mb-6 mt-12 first:mt-0 leading-tight;
+    letter-spacing: -0.020em;
   }
   
   .content-prose h3 {
-    @apply text-xl font-semibold font-display text-gray-800 mb-4 mt-8 leading-snug;
+    @apply text-xl md:text-2xl lg:text-3xl font-semibold font-display text-gray-800 mb-4 mt-8 leading-snug;
+    letter-spacing: -0.015em;
+  }
+  
+  .content-prose h4 {
+    @apply text-lg md:text-xl lg:text-2xl font-semibold font-display text-gray-800 mb-4 mt-6 leading-snug;
+    letter-spacing: -0.012em;
   }
   
   .content-prose p {
-    @apply mb-6 last:mb-0;
+    @apply mb-6 lg:mb-8 last:mb-0 text-lg md:text-xl lg:text-xl;
+    line-height: 1.75;
   }
   
   .content-prose blockquote {
-    @apply border-l-4 border-gray-200 pl-6 my-8 italic text-gray-700 text-xl;
-    line-height: 1.48;
+    @apply border-l-4 border-gray-200 pl-6 lg:pl-8 my-8 lg:my-12 italic text-gray-700 text-xl lg:text-2xl;
+    line-height: 1.6;
   }
   
   .content-prose ul, .content-prose ol {
-    @apply mb-6 pl-0;
+    @apply mb-6 lg:mb-8 pl-0;
   }
   
   .content-prose li {
-    @apply mb-3 ml-6 text-lg leading-relaxed;
+    @apply mb-3 lg:mb-4 ml-6 lg:ml-8 text-lg md:text-xl lg:text-xl;
+    line-height: 1.75;
   }
   
   .content-prose a {
     @apply text-green-700 underline underline-offset-2 hover:text-green-800 transition-colors;
   }
   
+  .content-prose strong {
+    @apply font-semibold text-gray-900;
+  }
+  
+  .content-prose em {
+    @apply italic;
+  }
+  
+  .content-prose code {
+    @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono;
+  }
+  
+  .content-prose pre {
+    @apply bg-gray-100 p-4 lg:p-6 rounded-lg overflow-x-auto my-6 lg:my-8;
+  }
+  
+  .content-prose pre code {
+    @apply bg-transparent p-0;
+  }
+
   /* Medium-style buttons */
   .btn-medium {
     @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium;
@@ -210,5 +241,32 @@
   
   .font-ui {
     font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Custom utilities for better readability */
+  .reading-width {
+    max-width: 65ch;
+  }
+  
+  .reading-width-wide {
+    max-width: 80ch;
+  }
+  
+  .text-justify {
+    text-align: justify;
+  }
+}
+
+/* Responsive improvements */
+@media (min-width: 1024px) {
+  .content-prose {
+    font-size: 21px;
+    line-height: 1.8;
+  }
+}
+
+@media (min-width: 1280px) {
+  .content-prose {
+    font-size: 22px;
   }
 }

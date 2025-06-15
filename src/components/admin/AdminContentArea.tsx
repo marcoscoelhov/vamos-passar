@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Course } from '@/types/course';
 import { AdminOverview } from './AdminOverview';
@@ -52,7 +51,7 @@ export function AdminContentArea({
       case 'analytics':
         return <AnalyticsDashboard course={course} isAdmin={isAdmin} />;
       case 'reports':
-        return <CourseReportsSection />;
+        return <CourseReportsSection course={course} isAdmin={isAdmin} />;
       case 'export':
         return <ExportToolsSection />;
       case 'permissions':
