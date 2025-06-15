@@ -1,10 +1,5 @@
 
 import React, { useMemo, useCallback } from 'react';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-} from '@/components/ui/sidebar';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Menu, ChevronDown, ChevronRight as ChevronRightIcon, X } from 'lucide-react';
@@ -186,8 +181,10 @@ export const CourseSidebar = React.memo(function CourseSidebar({ isMobile = fals
 
   return (
     <>
-      <Sidebar className="border-r border-gray-200 bg-white">
-        <SidebarHeader className="p-4 border-b border-gray-200">
+      {/* Custom Sidebar */}
+      <div className="w-80 h-screen bg-white border-r border-gray-200 flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-gray-900 truncate">
               {currentCourse.title}
@@ -220,9 +217,10 @@ export const CourseSidebar = React.memo(function CourseSidebar({ isMobile = fals
             </div>
             <Progress value={currentCourse.progress} className="h-2" />
           </div>
-        </SidebarHeader>
+        </div>
 
-        <SidebarContent className="p-4">
+        {/* Content */}
+        <div className="p-4 flex-1 overflow-auto">
           <div className="space-y-2">
             {currentCourse.topics.map((topic, index) => 
               <TopicItem
@@ -268,8 +266,8 @@ export const CourseSidebar = React.memo(function CourseSidebar({ isMobile = fals
               </div>
             )}
           </div>
-        </SidebarContent>
-      </Sidebar>
+        </div>
+      </div>
 
       {/* Botão flutuante para mostrar sidebar quando ela está oculta */}
       {isCollapsed && !isMobile && (
@@ -278,7 +276,7 @@ export const CourseSidebar = React.memo(function CourseSidebar({ isMobile = fals
           className="fixed top-20 left-4 z-50 bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
           size="sm"
         >
-          <Menu className="w-4 w-4" />
+          <Menu className="w-4 h-4" />
         </Button>
       )}
     </>
