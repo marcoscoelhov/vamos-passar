@@ -11,8 +11,8 @@ interface QuestionsSectionProps {
 export function QuestionsSection({ topic, isLoadingQuestions }: QuestionsSectionProps) {
   if (isLoadingQuestions) {
     return (
-      <div className="pt-16 border-t border-gray-100">
-        <div className="text-center text-gray-500 mb-8">
+      <div className="pt-20 border-t border-gray-100">
+        <div className="text-center text-gray-500 mb-12 font-ui">
           Carregando questões...
         </div>
       </div>
@@ -24,17 +24,18 @@ export function QuestionsSection({ topic, isLoadingQuestions }: QuestionsSection
   }
 
   return (
-    <section id="questions-section" className="pt-16 border-t border-gray-100">
-      <div className="text-center mb-12">
-        <h2 className="font-serif text-3xl font-semibold text-gray-900 mb-3">
+    <section id="questions-section" className="pt-20 border-t border-gray-100">
+      <div className="text-center mb-16">
+        <h2 className="medium-heading mb-4">
           Questões de Fixação
         </h2>
-        <p className="text-gray-500 text-sm">
-          {topic.questions.length} questão{topic.questions.length > 1 ? 'ões' : ''}
+        <p className="medium-caption">
+          {topic.questions.length} questão{topic.questions.length > 1 ? 'ões' : ''} • 
+          Teste seus conhecimentos sobre o conteúdo estudado
         </p>
       </div>
       
-      <div className="space-y-8">
+      <div className="space-y-12">
         {topic.questions.map((question, index) => (
           <QuestionBlock
             key={question.id}

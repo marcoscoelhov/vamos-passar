@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, HelpCircle, Bookmark, BookmarkCheck, Key } from 'lucide-react';
+import { Download, HelpCircle, Bookmark, BookmarkCheck, Key, Menu } from 'lucide-react';
 import { Topic } from '@/types/course';
 import { GlobalSearch } from './GlobalSearch';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
@@ -14,6 +14,8 @@ interface TopBarProps {
   onDownloadTopicPDF: () => void;
   onScrollToQuestions: () => void;
   onToggleBookmark: () => void;
+  onOpenSidebar: () => void;
+  isSidebarOpen: boolean;
 }
 
 export function TopBar({
@@ -23,14 +25,28 @@ export function TopBar({
   onDownloadTopicPDF,
   onScrollToQuestions,
   onToggleBookmark,
+  onOpenSidebar,
+  isSidebarOpen,
 }: TopBarProps) {
   return (
-    <div className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-      <div className="max-w-3xl mx-auto px-6 py-3">
+    <div className="border-b border-gray-100 bg-white/95 backdrop-blur-sm sticky top-0 z-30">
+      <div className="max-w-content mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <GlobalSearch />
-            <KeyboardShortcuts />
+          <div className="flex items-center gap-4">
+            {/* Mobile menu button */}
+            <Button
+              onClick={onOpenSidebar}
+              variant="ghost"
+              size="sm"
+              className="lg:hidden p-2 hover:bg-gray-100"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            
+            <div className="hidden md:flex items-center gap-3">
+              <GlobalSearch />
+              <KeyboardShortcuts />
+            </div>
           </div>
           
           <div className="flex items-center gap-2">
@@ -39,10 +55,10 @@ export function TopBar({
                 onClick={onScrollToQuestions}
                 variant="ghost"
                 size="sm"
-                className="btn-minimal text-xs font-medium"
+                className="btn-medium-ghost text-sm font-ui"
               >
-                <HelpCircle className="w-3.5 h-3.5 mr-1.5" />
-                Questões
+                <HelpCircle className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Questões</span>
               </Button>
             )}
 
@@ -51,10 +67,12 @@ export function TopBar({
               size="sm"
               onClick={onDownloadTopicPDF}
               disabled={isDownloading}
-              className="btn-minimal text-xs font-medium"
+              className="btn-medium-ghost text-sm font-ui"
             >
-              <Download className="w-3.5 h-3.5 mr-1.5" />
-              {isDownloading ? 'Baixando...' : 'PDF'}
+              <Download className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">
+                {isDownloading ? 'Baixando...' : 'PDF'}
+              </span>
             </Button>
 
             {currentTopic.questions && currentTopic.questions.length > 0 && (
@@ -62,10 +80,10 @@ export function TopBar({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="btn-minimal text-xs font-medium"
+                  className="btn-medium-ghost text-sm font-ui"
                 >
-                  <Key className="w-3.5 h-3.5 mr-1.5" />
-                  Gabarito
+                  <Key className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Gabarito</span>
                 </Button>
               </AnswerKeyModal>
             )}
@@ -74,12 +92,12 @@ export function TopBar({
               variant="ghost"
               size="sm"
               onClick={onToggleBookmark}
-              className="btn-minimal p-2"
+              className="btn-medium-ghost p-2"
             >
               {topicIsBookmarked ? (
-                <BookmarkCheck className="w-4 h-4 text-amber-600" />
+                <BookmarkCheck className="w-5 h-5 text-green-600" />
               ) : (
-                <Bookmark className="w-4 h-4" />
+                <Bookmark className="w-5 h-5" />
               )}
             </Button>
           </div>

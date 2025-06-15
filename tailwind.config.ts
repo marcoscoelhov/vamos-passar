@@ -26,7 +26,7 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: '#2563eb',
+					DEFAULT: '#1a8917',
 					foreground: '#ffffff'
 				},
 				secondary: {
@@ -62,11 +62,49 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				medium: {
+					green: '#1a8917',
+					'green-dark': '#156112',
+					gray: {
+						50: '#f7f7f7',
+						100: '#e1e1e1',
+						200: '#cfcfcf',
+						300: '#b1b1b1',
+						400: '#9e9e9e',
+						500: '#757575',
+						600: '#616161',
+						700: '#424242',
+						800: '#303030',
+						900: '#1a1a1a'
+					}
 				}
 			},
 			fontFamily: {
-				'serif': ['Crimson Text', 'Georgia', 'serif'],
-				'sans': ['Inter', 'system-ui', 'sans-serif'],
+				'display': ['Charter', 'Georgia', 'serif'],
+				'reading': ['Charter', 'Georgia', 'serif'],
+				'ui': ['Inter', 'system-ui', 'sans-serif'],
+			},
+			fontSize: {
+				'xs': ['12px', '16px'],
+				'sm': ['14px', '20px'],
+				'base': ['16px', '24px'],
+				'lg': ['18px', '28px'],
+				'xl': ['20px', '32px'],
+				'2xl': ['24px', '36px'],
+				'3xl': ['30px', '42px'],
+				'4xl': ['36px', '48px'],
+				'5xl': ['48px', '56px'],
+				'6xl': ['60px', '72px'],
+			},
+			spacing: {
+				'content': '680px',
+				'reading': '60ch',
+			},
+			maxWidth: {
+				'content': '680px',
+				'reading': '60ch',
+				'prose': '75ch',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -74,22 +112,6 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			keyframes: {
-				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
-				},
-				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
-				},
 				'fade-in': {
 					from: {
 						opacity: '0',
@@ -99,12 +121,28 @@ export default {
 						opacity: '1',
 						transform: 'translateY(0)'
 					}
+				},
+				'slide-in': {
+					from: {
+						transform: 'translateX(-100%)'
+					},
+					to: {
+						transform: 'translateX(0)'
+					}
+				},
+				'slide-out': {
+					from: {
+						transform: 'translateX(0)'
+					},
+					to: {
+						transform: 'translateX(-100%)'
+					}
 				}
 			},
 			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'fade-in': 'fade-in 0.3s ease-out'
+				'fade-in': 'fade-in 0.3s ease-out',
+				'slide-in': 'slide-in 0.3s ease-out',
+				'slide-out': 'slide-out 0.3s ease-out'
 			}
 		}
 	},

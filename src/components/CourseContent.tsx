@@ -10,7 +10,12 @@ import { TopBar } from './TopBar';
 import { ArticleHeader } from './ArticleHeader';
 import { QuestionsSection } from './QuestionsSection';
 
-export function CourseContent() {
+interface CourseContentProps {
+  onOpenSidebar: () => void;
+  isSidebarOpen: boolean;
+}
+
+export function CourseContent({ onOpenSidebar, isSidebarOpen }: CourseContentProps) {
   const { currentTopic, currentCourse, user, profile, isLoadingQuestions, refreshCurrentTopic } = useCourse();
   const { generateTopicsAsPDF, isDownloading } = useDownload();
   const { isBookmarked, toggleBookmark } = useBookmarks(user?.id);
@@ -18,19 +23,25 @@ export function CourseContent() {
   // Initialize keyboard shortcuts
   useKeyboardShortcuts();
 
-  // Check if user is admin - usar profile ao invés de user
+  // Check if user is admin
   const isAdmin = profile?.is_admin || false;
 
   if (!currentTopic) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center max-w-md mx-auto px-6">
+          <h2 className="medium-heading text-gray-900 mb-4">
             Selecione um tópico
           </h2>
-          <p className="text-gray-600">
+          <p className="medium-body text-gray-600 mb-8">
             Escolha um tópico na barra lateral para começar a estudar
           </p>
+          <button 
+            onClick={onOpenSidebar}
+            className="btn-medium-primary lg:hidden"
+          >
+            Abrir Menu
+          </button>
         </div>
       </div>
     );
@@ -54,8 +65,6 @@ export function CourseContent() {
   };
 
   const handleContentUpdated = (newContent: string) => {
-    // Content has been updated, we could refresh the topic context
-    // or handle other side effects here
     console.log('Content updated for topic:', currentTopic.id);
   };
 
@@ -70,20 +79,22 @@ export function CourseContent() {
         onDownloadTopicPDF={handleDownloadTopicPDF}
         onScrollToQuestions={scrollToQuestions}
         onToggleBookmark={handleToggleBookmark}
+        onOpenSidebar={onOpenSidebar}
+        isSidebarOpen={isSidebarOpen}
       />
 
       {/* Main content area */}
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        {/* Subtle breadcrumbs */}
-        <div className="mb-8">
+      <div className="max-w-content mx-auto px-6 py-12">
+        {/* Breadcrumbs */}
+        <div className="mb-12">
           <Breadcrumbs />
         </div>
 
-        {/* Article-style header */}
-        <article className="mb-16">
+        {/* Article */}
+        <article className="mb-20">
           <ArticleHeader topic={currentTopic} />
 
-          {/* Clean content without card wrapper */}
+          {/* Content */}
           <div className="content-prose">
             <HighlightableContent 
               content={currentTopic.content}
@@ -95,7 +106,7 @@ export function CourseContent() {
           </div>
         </article>
 
-        {/* Questions section with subtle separation */}
+        {/* Questions section */}
         <QuestionsSection 
           topic={currentTopic} 
           isLoadingQuestions={isLoadingQuestions} 
