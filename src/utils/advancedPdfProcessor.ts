@@ -1,4 +1,3 @@
-
 import { StatusUpdateCallback } from './documentProcessing';
 
 export interface PDFStructureElement {
@@ -57,15 +56,16 @@ export const processAdvancedPDF = async (
     
     // Extrair metadados
     const metadata = await pdf.getMetadata();
+    const metadataInfo = metadata.info as any;
     const processedMetadata = {
-      title: metadata.info?.Title || '',
-      author: metadata.info?.Author || '',
-      subject: metadata.info?.Subject || '',
-      keywords: metadata.info?.Keywords || '',
-      creator: metadata.info?.Creator || '',
-      producer: metadata.info?.Producer || '',
-      creationDate: metadata.info?.CreationDate || '',
-      modificationDate: metadata.info?.ModDate || '',
+      title: metadataInfo?.Title || '',
+      author: metadataInfo?.Author || '',
+      subject: metadataInfo?.Subject || '',
+      keywords: metadataInfo?.Keywords || '',
+      creator: metadataInfo?.Creator || '',
+      producer: metadataInfo?.Producer || '',
+      creationDate: metadataInfo?.CreationDate || '',
+      modificationDate: metadataInfo?.ModDate || '',
     };
     
     updateStatus('processing', 50, 'Processando páginas...');

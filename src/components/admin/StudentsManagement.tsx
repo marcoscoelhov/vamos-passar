@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,8 +12,14 @@ import { ManualStudentForm } from './ManualStudentForm';
 import { ProfessorPermissionsManager } from './ProfessorPermissionsManager';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Course } from '@/types/course';
 
-export function StudentsManagement() {
+interface StudentsManagementProps {
+  course: Course;
+  isAdmin: boolean;
+}
+
+export function StudentsManagement({ course, isAdmin }: StudentsManagementProps) {
   const {
     students,
     isLoading,
@@ -259,9 +264,8 @@ export function StudentsManagement() {
                 {professors.map((professor) => (
                   <ProfessorPermissionsManager
                     key={professor.id}
-                    professorId={professor.id}
-                    professorName={professor.name || professor.email || 'Professor'}
-                    currentUserId={""} // TODO: get from auth context
+                    course={course}
+                    isAdmin={isAdmin}
                   />
                 ))}
               </div>
@@ -281,9 +285,8 @@ export function StudentsManagement() {
             </div>
             <div className="p-4">
               <ProfessorPermissionsManager
-                professorId={selectedProfessor}
-                professorName={students.find(s => s.id === selectedProfessor)?.name || 'Professor'}
-                currentUserId={""} // TODO: get from auth context
+                course={course}
+                isAdmin={isAdmin}
               />
             </div>
           </div>

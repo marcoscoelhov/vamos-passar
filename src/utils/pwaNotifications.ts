@@ -6,7 +6,6 @@ export interface NotificationConfig {
   badge?: string;
   tag?: string;
   data?: any;
-  actions?: NotificationAction[];
   silent?: boolean;
   requireInteraction?: boolean;
 }
@@ -78,7 +77,6 @@ export class PWANotificationManager {
           badge: config.badge || '/favicon.ico',
           tag: config.tag,
           data: config.data,
-          actions: config.actions,
           silent: config.silent,
           requireInteraction: config.requireInteraction,
         });
@@ -108,10 +106,6 @@ export class PWANotificationManager {
       icon: '/favicon.ico',
       tag: 'new-content',
       data: { type: 'new-content', courseName, topicTitle },
-      actions: [
-        { action: 'view', title: 'Ver agora' },
-        { action: 'later', title: 'Ver depois' }
-      ],
       requireInteraction: true
     });
   }

@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DbQuestion, DbTopic } from '@/types/course';
-import { useCacheManager } from './useCacheManager';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Course {
   id: string;
@@ -10,6 +10,38 @@ interface Course {
   description: string;
   created_at: string;
   updated_at: string;
+}
+
+interface CacheManager<T> {
+  getCacheEntry: (key: string) => T | null;
+  setCacheEntry: (key: string, data: T) => void;
+  invalidateCache: (key?: string) => void;
+}
+
+function createCacheManager<T>(): CacheManager<T> {
+  const cache = new Map<string, { data: T; timestamp: number }>();
+  const TTL = 30 * 60 * 1000; // 30 minutes
+
+  return {
+    getCacheEntry: (key: string) => {
+      const entry = cache.get(key);
+      if (entry && (Date.now() - entry.timestamp) < TTL) {
+        return entry.data;
+      }
+      cache.delete(key);
+      return null;
+    },
+    setCacheEntry: (key: string, data: T) => {
+      cache.set(key, { data, timestamp: Date.now() });
+    },
+    invalidateCache: (key?: string) => {
+      if (key) {
+        cache.delete(key);
+      } else {
+        cache.clear();
+      }
+    }
+  };
 }
 
 export function useCourseData() {
@@ -22,8 +54,8 @@ export function useCourseData() {
     questions: false,
   });
   
-  const topicsCache = useCacheManager<DbTopic[]>();
-  const questionsCache = useCacheManager<DbQuestion[]>();
+  const topicsCache = createCacheManager<DbTopic[]>();
+  const questionsCache = createCacheManager<DbQuestion[]>();
 
   const fetchCourses = useCallback(async () => {
     try {
@@ -82,7 +114,7 @@ export function useCourseData() {
     } finally {
       setLoadingStates(prev => ({ ...prev, topics: false }));
     }
-  }, [topicsCache]);
+  }, []);
 
   const fetchQuestions = useCallback(async (topicId: string) => {
     try {
@@ -118,7 +150,7 @@ export function useCourseData() {
     } finally {
       setLoadingStates(prev => ({ ...prev, questions: false }));
     }
-  }, [questionsCache]);
+  }, []);
 
   const invalidateCache = useCallback((type: 'topics' | 'questions', id?: string) => {
     if (type === 'topics') {
@@ -126,7 +158,7 @@ export function useCourseData() {
     } else if (type === 'questions') {
       questionsCache.invalidateCache(id);
     }
-  }, [topicsCache, questionsCache]);
+  }, []);
 
   return {
     courses,
