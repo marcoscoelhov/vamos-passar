@@ -15,6 +15,9 @@ import { IntegratedHelpSystem } from './IntegratedHelpSystem';
 import { ContentVersioning } from './ContentVersioning';
 import { BackupSystem } from './BackupSystem';
 import { CourseTemplateSystem } from './CourseTemplateSystem';
+import { CollaborationSystem } from './CollaborationSystem';
+import { AdvancedNotifications } from './AdvancedNotifications';
+import { LMSIntegration } from './LMSIntegration';
 
 interface AdminContentAreaProps {
   activeSection: string;
@@ -75,6 +78,12 @@ export function AdminContentArea({
         return <BackupSystem />;
       case 'templates':
         return <CourseTemplateSystem />;
+      case 'collaboration':
+        return <CollaborationSystem />;
+      case 'notifications':
+        return <AdvancedNotifications />;
+      case 'integrations':
+        return <LMSIntegration />;
       default:
         return <AdminOverview course={course} isAdmin={isAdmin} />;
     }
