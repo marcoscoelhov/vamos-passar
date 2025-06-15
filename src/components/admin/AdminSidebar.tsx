@@ -4,16 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { 
-  BarChart3, 
-  Users, 
+  LayoutDashboard, 
   BookOpen, 
-  Target, 
-  Activity,
-  TrendingUp,
+  FileText, 
+  Users, 
+  BarChart3, 
   Settings,
   GraduationCap,
-  Crown,
-  Zap
+  FileSpreadsheet,
+  Download,
+  Shield,
+  FileCheck
 } from 'lucide-react';
 import { Course } from '@/types/course';
 
@@ -23,183 +24,149 @@ interface AdminSidebarProps {
   onSectionChange: (section: string) => void;
 }
 
-const menuItems = [
-  {
-    id: 'overview',
-    label: 'Dashboard',
-    icon: TrendingUp,
-    description: 'Visão geral do sistema',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200'
-  },
-  {
-    id: 'courses',
-    label: 'Gerenciar Cursos',
-    icon: GraduationCap,
-    description: 'Múltiplos cursos e preços',
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    badge: 'Novo'
-  },
-  {
-    id: 'analytics',
-    label: 'Analytics',
-    icon: BarChart3,
-    description: 'Métricas e relatórios',
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200'
-  },
-  {
-    id: 'students',
-    label: 'Estudantes',
-    icon: Users,
-    description: 'Gestão de usuários',
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200'
-  },
-  {
-    id: 'content',
-    label: 'Conteúdo',
-    icon: BookOpen,
-    description: 'Tópicos e materiais',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200'
-  },
-  {
-    id: 'questions',
-    label: 'Avaliações',
-    icon: Target,
-    description: 'Questões e testes',
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200'
-  },
-  {
-    id: 'logs',
-    label: 'Auditoria',
-    icon: Activity,
-    description: 'Logs do sistema',
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200'
-  }
-];
-
 export function AdminSidebar({ course, activeSection, onSectionChange }: AdminSidebarProps) {
-  return (
-    <div className="w-80 bg-white border-r border-slate-200 flex flex-col">
-      {/* Header */}
-      <div className="p-6 border-b border-slate-200">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-            <Settings className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-slate-900">
-              Painel Admin
-            </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 text-xs">
-                <Crown className="w-3 h-3 mr-1" />
-                Administrador
-              </Badge>
-            </div>
-          </div>
-        </div>
+  const menuItems = [
+    {
+      id: 'overview',
+      label: 'Visão Geral',
+      icon: LayoutDashboard,
+      category: 'main'
+    },
+    {
+      id: 'courses',
+      label: 'Gerenciar Cursos',
+      icon: GraduationCap,
+      category: 'main'
+    },
+    {
+      id: 'topics',
+      label: 'Tópicos',
+      icon: BookOpen,
+      badge: course.topics.length.toString(),
+      category: 'content'
+    },
+    {
+      id: 'content',
+      label: 'Conteúdo',
+      icon: FileText,
+      category: 'content'
+    },
+    {
+      id: 'students',
+      label: 'Estudantes',
+      icon: Users,
+      category: 'users'
+    },
+    {
+      id: 'analytics',
+      label: 'Analytics',
+      icon: BarChart3,
+      category: 'analytics'
+    },
+    {
+      id: 'reports',
+      label: 'Relatórios',
+      icon: FileSpreadsheet,
+      category: 'analytics'
+    },
+    {
+      id: 'export',
+      label: 'Exportar Dados',
+      icon: Download,
+      category: 'analytics'
+    },
+    {
+      id: 'permissions',
+      label: 'Permissões',
+      icon: Shield,
+      category: 'admin'
+    },
+    {
+      id: 'audit',
+      label: 'Logs de Auditoria',
+      icon: FileCheck,
+      category: 'admin'
+    }
+  ];
 
-        {/* Course Info */}
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-4 border border-slate-200">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-xs font-medium text-slate-600">Sistema Ativo</span>
+  const categories = {
+    main: 'Principal',
+    content: 'Conteúdo',
+    users: 'Usuários',
+    analytics: 'Análises',
+    admin: 'Administração'
+  };
+
+  const groupedItems = Object.entries(categories).map(([key, label]) => ({
+    category: key,
+    label,
+    items: menuItems.filter(item => item.category === key)
+  }));
+
+  return (
+    <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      {/* Header */}
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+            <GraduationCap className="w-5 h-5 text-white" />
           </div>
-          <h3 className="font-semibold text-slate-900 text-sm mb-1">
-            {course?.title || 'Plataforma EAD'}
-          </h3>
-          <p className="text-xs text-slate-600">
-            Ambiente de produção
-          </p>
+          <div className="flex-1">
+            <h2 className="font-bold text-gray-900 text-lg">Painel Admin</h2>
+            <p className="text-sm text-gray-600 truncate">{course.title}</p>
+          </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 p-4 space-y-2">
-        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">
-          Gestão Principal
-        </div>
-        
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.id;
-          
-          return (
-            <Button
-              key={item.id}
-              variant="ghost"
-              onClick={() => onSectionChange(item.id)}
-              className={`
-                w-full justify-start h-auto p-3 text-left transition-all duration-200
-                ${isActive 
-                  ? `${item.bgColor} ${item.color} ${item.borderColor} border shadow-sm` 
-                  : 'hover:bg-slate-50 text-slate-700 hover:text-slate-900'
-                }
-              `}
-            >
-              <div className="flex items-center gap-3 w-full">
-                <div className={`
-                  p-2 rounded-lg transition-colors duration-200
-                  ${isActive 
-                    ? `${item.bgColor} ${item.color}` 
-                    : 'bg-slate-100 text-slate-600'
-                  }
-                `}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm">
-                      {item.label}
-                    </span>
-                    {item.badge && (
-                      <Badge variant="secondary" className="text-xs">
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs opacity-75 mt-0.5">
-                    {item.description}
-                  </p>
-                </div>
+      <div className="flex-1 overflow-y-auto py-4">
+        <nav className="space-y-6">
+          {groupedItems.map(({ category, label, items }) => (
+            <div key={category} className="px-4">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                {label}
+              </h3>
+              <div className="space-y-1">
+                {items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeSection === item.id;
+                  
+                  return (
+                    <Button
+                      key={item.id}
+                      variant={isActive ? 'default' : 'ghost'}
+                      className={`
+                        w-full justify-start gap-3 h-10 px-3
+                        ${isActive 
+                          ? 'bg-blue-600 text-white shadow-sm' 
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                        }
+                      `}
+                      onClick={() => onSectionChange(item.id)}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="flex-1 text-left">{item.label}</span>
+                      {item.badge && (
+                        <Badge 
+                          variant={isActive ? 'secondary' : 'outline'}
+                          className={`text-xs ${isActive ? 'bg-white/20 text-white border-white/30' : ''}`}
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Button>
+                  );
+                })}
               </div>
-            </Button>
-          );
-        })}
+            </div>
+          ))}
+        </nav>
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-slate-200">
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200">
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-900">
-              Status do Sistema
-            </span>
-          </div>
-          <div className="space-y-1 text-xs text-blue-700">
-            <div className="flex justify-between">
-              <span>Uptime:</span>
-              <span className="font-medium">99.9%</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Usuários Online:</span>
-              <span className="font-medium">42</span>
-            </div>
-          </div>
+      <div className="p-4 border-t border-gray-200">
+        <div className="text-xs text-gray-500 text-center">
+          Sistema de Gestão Educacional
         </div>
       </div>
     </div>

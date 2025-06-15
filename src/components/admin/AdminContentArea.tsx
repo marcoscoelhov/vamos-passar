@@ -1,14 +1,16 @@
 
 import React from 'react';
 import { Course } from '@/types/course';
-import { AdminHeader } from './AdminHeader';
 import { AdminOverview } from './AdminOverview';
-import { AnalyticsDashboard } from './AnalyticsDashboard';
-import { StudentsManagement } from './StudentsManagement';
-import { QuestionForm } from './QuestionForm';
-import { AuditLogs } from './AuditLogs';
+import { TopicManagement } from './TopicManagement';
 import { ContentManagement } from './ContentManagement';
+import { StudentsManagement } from './StudentsManagement';
 import { CoursesManagement } from './CoursesManagement';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { ProfessorPermissionsManager } from './ProfessorPermissionsManager';
+import { AuditLogs } from './AuditLogs';
+import { CourseReportsSection } from './CourseReportsSection';
+import { ExportToolsSection } from './ExportToolsSection';
 
 interface AdminContentAreaProps {
   activeSection: string;
@@ -26,17 +28,17 @@ export function AdminContentArea({
   const renderContent = () => {
     switch (activeSection) {
       case 'overview':
-        return <AdminOverview course={course} />;
-      
-      case 'analytics':
-        return <AnalyticsDashboard />;
-      
-      case 'students':
-        return <StudentsManagement />;
-      
+        return <AdminOverview course={course} isAdmin={isAdmin} />;
       case 'courses':
         return <CoursesManagement />;
-      
+      case 'topics':
+        return (
+          <TopicManagement 
+            course={course} 
+            isAdmin={isAdmin}
+            onContentAdded={onContentAdded}
+          />
+        );
       case 'content':
         return (
           <ContentManagement 
@@ -45,37 +47,27 @@ export function AdminContentArea({
             onContentAdded={onContentAdded}
           />
         );
-      
-      case 'questions':
-        return (
-          <QuestionForm 
-            topics={course.topics}
-            isAdmin={isAdmin}
-            onQuestionAdded={onContentAdded}
-          />
-        );
-      
-      case 'logs':
+      case 'students':
+        return <StudentsManagement course={course} isAdmin={isAdmin} />;
+      case 'analytics':
+        return <AnalyticsDashboard course={course} isAdmin={isAdmin} />;
+      case 'reports':
+        return <CourseReportsSection />;
+      case 'export':
+        return <ExportToolsSection />;
+      case 'permissions':
+        return <ProfessorPermissionsManager />;
+      case 'audit':
         return <AuditLogs />;
-      
       default:
-        return <AdminOverview course={course} />;
+        return <AdminOverview course={course} isAdmin={isAdmin} />;
     }
   };
 
   return (
-    <div className="flex-1 bg-slate-50 min-h-screen">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <AdminHeader 
-          activeSection={activeSection}
-          courseName={course?.title || 'Sistema'}
-        />
-        
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-6">
-            {renderContent()}
-          </div>
-        </div>
+    <div className="flex-1 overflow-auto">
+      <div className="p-8">
+        {renderContent()}
       </div>
     </div>
   );

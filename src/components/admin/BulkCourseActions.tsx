@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,10 +27,18 @@ export function BulkCourseActions({
   const [bulkAction, setBulkAction] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const checkboxRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
 
   const allSelected = selectedCourses.length === courses.length && courses.length > 0;
   const someSelected = selectedCourses.length > 0 && selectedCourses.length < courses.length;
+
+  // Set indeterminate state using useEffect
+  React.useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.dataset.state = someSelected ? 'indeterminate' : allSelected ? 'checked' : 'unchecked';
+    }
+  }, [someSelected, allSelected]);
 
   const handleSelectAll = () => {
     if (allSelected) {
@@ -130,10 +138,8 @@ export function BulkCourseActions({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Checkbox
+                ref={checkboxRef}
                 checked={allSelected}
-                ref={(ref) => {
-                  if (ref) ref.indeterminate = someSelected;
-                }}
                 onCheckedChange={handleSelectAll}
               />
               <span className="text-sm font-medium">
