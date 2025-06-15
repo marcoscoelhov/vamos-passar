@@ -11,6 +11,8 @@ interface Notification {
   timestamp: Date;
   read: boolean;
   actionable?: boolean;
+  webhookLogId?: string;
+  eventType?: string;
 }
 
 export function useNotifications() {
@@ -88,6 +90,64 @@ export function useNotifications() {
             title: 'Novo tópico',
             description: 'Um novo tópico foi adicionado ao curso',
           });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'webhook_logs'
+        },
+        (payload) => {
+          console.log('Webhook log received:', payload);
+          const log = payload.new;
+          
+          let notificationType: 'success' | 'error' | 'warning' = 'success';
+          let title = 'Webhook processado';
+          let message = `Evento ${log.event_type} processado`;
+          
+          // Definir tipo e mensagem baseado no status
+          if (log.status_code && log.status_code >= 400) {
+            notificationType = 'error';
+            title = 'Erro no webhook';
+            message = `Falha ao processar ${log.event_type}: ${log.error_message || 'Erro desconhecido'}`;
+          } else if (log.event_type?.includes('kwify')) {
+            if (log.event_type === 'sale.completed') {
+              title = 'Nova venda Kwify';
+              message = 'Uma nova venda foi processada e a matrícula foi criada';
+            } else if (log.event_type === 'payment.approved') {
+              title = 'Pagamento aprovado';
+              message = 'Pagamento foi aprovado no Kwify';
+            } else if (log.event_type === 'sale.refunded') {
+              title = 'Reembolso processado';
+              message = 'Um reembolso foi processado no Kwify';
+              notificationType = 'warning';
+            }
+          }
+
+          const newNotification: Notification = {
+            id: `webhook-${log.id}`,
+            type: notificationType,
+            title,
+            message,
+            timestamp: new Date(log.created_at),
+            read: false,
+            actionable: true,
+            webhookLogId: log.id,
+            eventType: log.event_type
+          };
+          
+          setNotifications(prev => [newNotification, ...prev]);
+          
+          // Toast apenas para erros ou vendas importantes
+          if (notificationType === 'error' || log.event_type === 'sale.completed') {
+            toast({
+              title,
+              description: message,
+              variant: notificationType === 'error' ? 'destructive' : 'default',
+            });
+          }
         }
       )
       .subscribe();

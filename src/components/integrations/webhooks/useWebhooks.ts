@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +33,16 @@ export function useWebhooks() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setWebhooks(data || []);
+      
+      // Convert Json headers to Record<string, string>
+      const processedWebhooks = (data || []).map(webhook => ({
+        ...webhook,
+        headers: webhook.headers && typeof webhook.headers === 'object' 
+          ? webhook.headers as Record<string, string>
+          : {}
+      }));
+      
+      setWebhooks(processedWebhooks);
     } catch (error) {
       console.error('Error loading webhooks:', error);
       toast({

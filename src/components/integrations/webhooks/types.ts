@@ -8,7 +8,7 @@ export interface WebhookConfig {
   is_active: boolean;
   retry_count: number;
   timeout_seconds: number;
-  headers: Record<string, string>;
+  headers: Record<string, string> | null;
   created_at: string;
 }
 

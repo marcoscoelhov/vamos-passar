@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,78 +12,34 @@ import {
   BookOpen, 
   AlertCircle,
   Clock,
-  CheckCircle
+  CheckCircle,
+  Webhook,
+  ShoppingCart,
+  CreditCard,
+  RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-interface Notification {
-  id: string;
-  type: 'info' | 'warning' | 'success' | 'error';
-  title: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-  actionable?: boolean;
-}
+import { useNotifications } from '@/hooks/useNotifications';
 
 export function NotificationCenter() {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      type: 'info',
-      title: 'Novo estudante cadastrado',
-      message: 'Maria Silva se matriculou no curso de JavaScript',
-      timestamp: new Date(Date.now() - 5 * 60 * 1000),
-      read: false,
-      actionable: true
-    },
-    {
-      id: '2',
-      type: 'success',
-      title: 'Backup realizado',
-      message: 'Backup automático do sistema foi concluído com sucesso',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000),
-      read: false,
-      actionable: false
-    },
-    {
-      id: '3',
-      type: 'warning',
-      title: 'Tópico pendente',
-      message: 'O tópico "Funções Avançadas" precisa de revisão',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      read: true,
-      actionable: true
-    }
-  ]);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    removeNotification
+  } = useNotifications();
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
-    toast({
-      title: 'Notificações marcadas',
-      description: 'Todas as notificações foram marcadas como lidas.',
-    });
-  };
-
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
-  };
-
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (type: string, eventType?: string) => {
+    if (eventType?.includes('webhook') || eventType?.includes('kwify') || eventType?.includes('sale')) {
+      if (eventType === 'sale.completed') return <ShoppingCart className="w-4 h-4 text-green-500" />;
+      if (eventType === 'payment.approved') return <CreditCard className="w-4 h-4 text-blue-500" />;
+      if (eventType === 'sale.refunded') return <RefreshCw className="w-4 h-4 text-yellow-500" />;
+      return <Webhook className="w-4 h-4 text-purple-500" />;
+    }
+    
     switch (type) {
       case 'info': return <Users className="w-4 h-4 text-blue-500" />;
       case 'warning': return <AlertCircle className="w-4 h-4 text-yellow-500" />;
@@ -106,6 +62,23 @@ export function NotificationCenter() {
     } else {
       return timestamp.toLocaleDateString();
     }
+  };
+
+  const handleNotificationAction = (notification: any) => {
+    if (notification.webhookLogId) {
+      // Navegar para logs de webhook ou mostrar detalhes
+      toast({
+        title: 'Detalhes do Webhook',
+        description: `Log ID: ${notification.webhookLogId}`,
+      });
+    } else if (notification.eventType === 'enrollment') {
+      // Navegar para gestão de estudantes
+      toast({
+        title: 'Ver estudantes',
+        description: 'Redirecionando para gestão de estudantes...',
+      });
+    }
+    markAsRead(notification.id);
   };
 
   return (
@@ -171,7 +144,7 @@ export function NotificationCenter() {
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 mt-1">
-                          {getNotificationIcon(notification.type)}
+                          {getNotificationIcon(notification.type, notification.eventType)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -180,6 +153,11 @@ export function NotificationCenter() {
                             </p>
                             {!notification.read && (
                               <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                            )}
+                            {notification.eventType && (
+                              <Badge variant="outline" className="text-xs">
+                                {notification.eventType}
+                              </Badge>
                             )}
                           </div>
                           <p className="text-sm text-gray-600 mb-2">
@@ -191,6 +169,16 @@ export function NotificationCenter() {
                               {formatTimestamp(notification.timestamp)}
                             </span>
                             <div className="flex gap-1">
+                              {notification.actionable && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleNotificationAction(notification)}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  Ver detalhes
+                                </Button>
+                              )}
                               {!notification.read && (
                                 <Button
                                   variant="ghost"
