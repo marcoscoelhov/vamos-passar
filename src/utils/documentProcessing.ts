@@ -1,3 +1,6 @@
+
+import { processAdvancedPDF } from './advancedPdfProcessor';
+
 export interface SuggestedTopic {
   title: string;
   content: string;
@@ -64,13 +67,25 @@ export const processWordDocument = async (file: File, updateStatus: StatusUpdate
 };
 
 export const processPDFDocument = async (file: File, updateStatus: StatusUpdateCallback): Promise<string> => {
-  updateStatus('processing', 25, 'Carregando biblioteca PDF...');
+  updateStatus('processing', 25, 'Inicializando processamento avançado de PDF...');
   
   try {
+    // Tentar primeiro o processamento avançado
+    const advancedResult = await processAdvancedPDF(file, updateStatus);
+    
+    updateStatus('processing', 90, 'Processamento avançado concluído');
+    
+    // Se o processamento avançado retornou conteúdo, usar ele
+    if (advancedResult.htmlContent && advancedResult.htmlContent.trim().length > 100) {
+      console.log('PDF processado com análise estrutural avançada');
+      console.log('Metadados encontrados:', advancedResult.metadata);
+      return advancedResult.htmlContent;
+    }
+    
+    // Fallback para método simples se o avançado não funcionou bem
+    updateStatus('processing', 50, 'Usando método de extração alternativo...');
+    
     const pdfParse = await import('pdf-parse');
-    
-    updateStatus('processing', 50, 'Extraindo texto do PDF...');
-    
     const arrayBuffer = await file.arrayBuffer();
     const data = await pdfParse.default(arrayBuffer);
     
@@ -92,6 +107,7 @@ export const processPDFDocument = async (file: File, updateStatus: StatusUpdateC
     });
     
     return htmlContent;
+    
   } catch (error) {
     console.error('Erro ao processar PDF:', error);
     throw new Error('Erro ao processar PDF. Verifique se o arquivo não está corrompido ou protegido por senha.');
