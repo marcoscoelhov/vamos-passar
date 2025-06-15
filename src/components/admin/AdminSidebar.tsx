@@ -47,25 +47,11 @@ export function AdminSidebar({ course, activeSection, onSectionChange }: AdminSi
       description: 'Gerenciar usuários'
     },
     {
-      id: 'topics',
-      title: 'Tópicos',
+      id: 'content',
+      title: 'Conteúdo',
       icon: BookOpen,
       badge: analytics?.totalTopics || 0,
-      description: 'Gerenciar conteúdo'
-    },
-    {
-      id: 'hierarchy',
-      title: 'Hierarquia',
-      icon: TreePine,
-      badge: null,
-      description: 'Organizar estrutura'
-    },
-    {
-      id: 'create-topic',
-      title: 'Criar Tópico',
-      icon: PlusCircle,
-      badge: null,
-      description: 'Adicionar conteúdo'
+      description: 'Gerenciar tópicos'
     },
     {
       id: 'questions',
