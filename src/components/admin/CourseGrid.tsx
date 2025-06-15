@@ -1,14 +1,16 @@
 
 import React from 'react';
-import { CourseListItem, CourseEnrollment } from '@/types/course';
+import { CourseListItem, CourseEnrollment, CourseCategory } from '@/types/course';
 import { CourseCard } from './CourseCard';
 
 interface CourseGridProps {
   courses: CourseListItem[];
   enrollments: CourseEnrollment[];
+  categories: CourseCategory[];
+  onCourseUpdated: () => void;
 }
 
-export function CourseGrid({ courses, enrollments }: CourseGridProps) {
+export function CourseGrid({ courses, enrollments, categories, onCourseUpdated }: CourseGridProps) {
   const getCourseEnrollmentCount = (courseId: string) => {
     return enrollments.filter(e => e.course_id === courseId && e.enrollment_status === 'ativo').length;
   };
@@ -20,6 +22,8 @@ export function CourseGrid({ courses, enrollments }: CourseGridProps) {
           key={course.id} 
           course={course}
           enrollmentCount={getCourseEnrollmentCount(course.id)}
+          categories={categories}
+          onCourseUpdated={onCourseUpdated}
         />
       ))}
     </div>

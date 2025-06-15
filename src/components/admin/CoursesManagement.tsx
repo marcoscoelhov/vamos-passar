@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
@@ -10,6 +11,7 @@ import { CourseStatsCards } from './CourseStatsCards';
 import { CourseFilters } from './CourseFilters';
 import { CourseGrid } from './CourseGrid';
 import { EmptyCourseState } from './EmptyCourseState';
+import { CourseCardSkeleton } from './CourseCardSkeleton';
 
 export function CoursesManagement() {
   const [courses, setCourses] = useState<CourseListItem[]>([]);
@@ -96,18 +98,27 @@ export function CoursesManagement() {
     progress: 0
   }));
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Cards de Estatísticas */}
-      <CourseStatsCards courses={coursesForStats} enrollments={enrollments} />
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white rounded-lg p-6 border">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-6 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <CourseStatsCards courses={coursesForStats} enrollments={enrollments} />
+      )}
       
       {/* Header com filtros */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -145,13 +156,24 @@ export function CoursesManagement() {
       />
 
       {/* Grid de Cursos ou Estado Vazio */}
-      {filteredCourses.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <CourseCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : filteredCourses.length === 0 ? (
         <EmptyCourseState 
           hasFilters={hasFilters}
           onCreateCourse={() => setIsCreateDialogOpen(true)}
         />
       ) : (
-        <CourseGrid courses={filteredCourses} enrollments={enrollments} />
+        <CourseGrid 
+          courses={filteredCourses} 
+          enrollments={enrollments}
+          categories={categories}
+          onCourseUpdated={fetchData}
+        />
       )}
     </div>
   );
