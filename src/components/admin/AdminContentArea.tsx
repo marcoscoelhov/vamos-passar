@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { Course } from '@/types/course';
 import { AdminOverview } from './AdminOverview';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { StudentsManagement } from './StudentsManagement';
-import { TopicForm } from './TopicForm';
 import { TopicHierarchyManager } from './TopicHierarchyManager';
 import { QuestionForm } from './QuestionForm';
 import { AuditLogs } from './AuditLogs';
@@ -49,15 +47,6 @@ export function AdminContentArea({
             course={course} 
             isAdmin={isAdmin}
             onTopicUpdated={onContentAdded}
-          />
-        );
-      
-      case 'create-topic':
-        return (
-          <TopicForm 
-            course={course} 
-            isAdmin={isAdmin}
-            onTopicAdded={onContentAdded}
           />
         );
       
