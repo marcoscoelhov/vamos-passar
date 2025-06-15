@@ -73,7 +73,14 @@ export function WebhooksManager() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setWebhooks(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData: WebhookConfig[] = (data || []).map(item => ({
+        ...item,
+        headers: typeof item.headers === 'object' && item.headers !== null ? item.headers as Record<string, string> : {}
+      }));
+      
+      setWebhooks(transformedData);
     } catch (error) {
       console.error('Error loading webhooks:', error);
       toast({
@@ -199,29 +206,20 @@ export function WebhooksManager() {
         }
       };
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/webhook-sender`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('webhook-sender', {
+        body: {
           event_type: 'test.webhook',
           data: testPayload.data,
           webhook_configs: [webhook]
-        })
+        }
       });
 
-      const result = await response.json();
+      if (error) throw error;
       
-      if (response.ok) {
-        toast({
-          title: "Teste enviado!",
-          description: "Verifique o endpoint para confirmar o recebimento"
-        });
-      } else {
-        throw new Error(result.error || 'Erro no teste');
-      }
+      toast({
+        title: "Teste enviado!",
+        description: "Verifique o endpoint para confirmar o recebimento"
+      });
     } catch (error: any) {
       console.error('Error testing webhook:', error);
       toast({

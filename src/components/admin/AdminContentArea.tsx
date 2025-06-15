@@ -26,26 +26,27 @@ export function AdminContentArea({
   const renderContent = () => {
     switch (activeSection) {
       case 'overview':
-        return <AdminOverview course={course} />;
+        return <AdminOverview course={course} isAdmin={isAdmin} />;
       case 'content':
         return (
           <SimplifiedContentManagement 
             course={course} 
+            isAdmin={isAdmin}
             onContentAdded={onContentAdded} 
           />
         );
       case 'courses':
         return <CoursesManagement />;
       case 'students':
-        return <ImprovedStudentsManagement />;
+        return <ImprovedStudentsManagement course={course} isAdmin={isAdmin} />;
       case 'analytics':
         return <EnhancedAnalyticsDashboard />;
       case 'permissions':
-        return isAdmin ? <ProfessorPermissionsManager /> : <UserFriendlyDashboard />;
+        return isAdmin ? <ProfessorPermissionsManager course={course} isAdmin={isAdmin} /> : <UserFriendlyDashboard course={course} isAdmin={isAdmin} />;
       case 'integrations':
         return <IntegrationsHub />;
       default:
-        return <AdminOverview course={course} />;
+        return <AdminOverview course={course} isAdmin={isAdmin} />;
     }
   };
 

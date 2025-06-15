@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,7 +67,14 @@ export function APIKeysManager() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setApiKeys(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData: APIKey[] = (data || []).map(item => ({
+        ...item,
+        permissions: Array.isArray(item.permissions) ? item.permissions as string[] : []
+      }));
+      
+      setApiKeys(transformedData);
     } catch (error) {
       console.error('Error loading API keys:', error);
       toast({
