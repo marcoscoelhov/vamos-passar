@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Course } from '@/types/course';
+import { AdminHeader } from './AdminHeader';
 import { AdminOverview } from './AdminOverview';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { StudentsManagement } from './StudentsManagement';
@@ -59,10 +60,17 @@ export function AdminContentArea({
   };
 
   return (
-    <div className="flex-1 bg-white">
-      <div className="bg-white border-b border-gray-200 px-8 py-6">
-        <div className="max-w-6xl">
-          {renderContent()}
+    <div className="flex-1 bg-slate-50 min-h-screen">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <AdminHeader 
+          activeSection={activeSection}
+          courseName={course.title}
+        />
+        
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-6">
+            {renderContent()}
+          </div>
         </div>
       </div>
     </div>
