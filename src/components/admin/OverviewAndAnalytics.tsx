@@ -6,9 +6,10 @@ import { BarChart3, TrendingUp, Award } from 'lucide-react';
 
 interface OverviewAndAnalyticsProps {
   course: Course;
+  isAdmin: boolean;
 }
 
-export function OverviewAndAnalytics({ course }: OverviewAndAnalyticsProps) {
+export function OverviewAndAnalytics({ course, isAdmin }: OverviewAndAnalyticsProps) {
   return (
     <div className="space-y-8">
       {/* Header Aprimorado */}
@@ -52,7 +53,7 @@ export function OverviewAndAnalytics({ course }: OverviewAndAnalyticsProps) {
       </div>
 
       {/* Content */}
-      <AdminOverview course={course} />
+      <AdminOverview course={course} isAdmin={isAdmin} />
     </div>
   );
 }

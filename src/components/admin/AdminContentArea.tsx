@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Course } from '@/types/course';
 import { AdminOverview } from './AdminOverview';
@@ -11,6 +12,9 @@ import { AuditLogs } from './AuditLogs';
 import { CourseReportsSection } from './CourseReportsSection';
 import { ExportToolsSection } from './ExportToolsSection';
 import { IntegratedHelpSystem } from './IntegratedHelpSystem';
+import { ContentVersioning } from './ContentVersioning';
+import { BackupSystem } from './BackupSystem';
+import { CourseTemplateSystem } from './CourseTemplateSystem';
 
 interface AdminContentAreaProps {
   activeSection: string;
@@ -59,6 +63,18 @@ export function AdminContentArea({
         return <ProfessorPermissionsManager course={course} isAdmin={isAdmin} />;
       case 'audit':
         return <AuditLogs />;
+      case 'versioning':
+        return (
+          <ContentVersioning 
+            topicId={course.topics[0]?.id || ''} 
+            currentContent={course.topics[0]?.content || ''}
+            onRestoreVersion={(version) => console.log('Restoring version:', version)}
+          />
+        );
+      case 'backup':
+        return <BackupSystem />;
+      case 'templates':
+        return <CourseTemplateSystem />;
       default:
         return <AdminOverview course={course} isAdmin={isAdmin} />;
     }
