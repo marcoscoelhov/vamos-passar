@@ -16,7 +16,8 @@ import {
   Webhook,
   ShoppingCart,
   CreditCard,
-  RefreshCw
+  RefreshCw,
+  Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -33,12 +34,10 @@ export function NotificationCenter() {
   } = useNotifications();
 
   const getNotificationIcon = (type: string, eventType?: string) => {
-    if (eventType?.includes('webhook') || eventType?.includes('kwify') || eventType?.includes('sale')) {
-      if (eventType === 'sale.completed') return <ShoppingCart className="w-4 h-4 text-green-500" />;
-      if (eventType === 'payment.approved') return <CreditCard className="w-4 h-4 text-blue-500" />;
-      if (eventType === 'sale.refunded') return <RefreshCw className="w-4 h-4 text-yellow-500" />;
-      return <Webhook className="w-4 h-4 text-purple-500" />;
-    }
+    if (eventType?.includes('sale.completed')) return <ShoppingCart className="w-4 h-4 text-green-500" />;
+    if (eventType?.includes('payment.approved')) return <CreditCard className="w-4 h-4 text-blue-500" />;
+    if (eventType?.includes('refund')) return <RefreshCw className="w-4 h-4 text-yellow-500" />;
+    if (eventType?.includes('webhook') || eventType?.includes('kwify')) return <Webhook className="w-4 h-4 text-purple-500" />;
     
     switch (type) {
       case 'info': return <Users className="w-4 h-4 text-blue-500" />;
@@ -55,24 +54,26 @@ export function NotificationCenter() {
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     
-    if (minutes < 60) {
+    if (minutes < 1) {
+      return 'agora';
+    } else if (minutes < 60) {
       return `${minutes}m atrás`;
     } else if (hours < 24) {
       return `${hours}h atrás`;
     } else {
-      return timestamp.toLocaleDateString();
+      return timestamp.toLocaleDateString('pt-BR');
     }
   };
 
   const handleNotificationAction = (notification: any) => {
+    console.log('🔔 [UI] Notification action clicked:', notification);
+    
     if (notification.webhookLogId) {
-      // Navegar para logs de webhook ou mostrar detalhes
       toast({
         title: 'Detalhes do Webhook',
-        description: `Log ID: ${notification.webhookLogId}`,
+        description: `Log ID: ${notification.webhookLogId} - Evento: ${notification.eventType}`,
       });
     } else if (notification.eventType === 'enrollment') {
-      // Navegar para gestão de estudantes
       toast({
         title: 'Ver estudantes',
         description: 'Redirecionando para gestão de estudantes...',
@@ -81,12 +82,21 @@ export function NotificationCenter() {
     markAsRead(notification.id);
   };
 
+  // Debug: Log current notifications
+  React.useEffect(() => {
+    console.log('🔔 [UI] Current notifications:', notifications.length);
+    console.log('🔔 [UI] Unread count:', unreadCount);
+  }, [notifications, unreadCount]);
+
   return (
     <div className="relative">
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          console.log('🔔 [UI] Notification center toggled, isOpen:', !isOpen);
+          setIsOpen(!isOpen);
+        }}
         className="relative p-2"
       >
         <Bell className="w-5 h-5" />
@@ -101,13 +111,16 @@ export function NotificationCenter() {
         <Card className="absolute right-0 top-12 w-96 z-50 shadow-lg border">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Notificações</h3>
+              <h3 className="font-semibold">Notificações ({notifications.length})</h3>
               <div className="flex gap-2">
                 {unreadCount > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={markAllAsRead}
+                    onClick={() => {
+                      console.log('🔔 [UI] Mark all as read clicked');
+                      markAllAsRead();
+                    }}
                     className="text-xs"
                   >
                     Marcar todas como lidas
@@ -176,14 +189,18 @@ export function NotificationCenter() {
                                   onClick={() => handleNotificationAction(notification)}
                                   className="h-6 px-2 text-xs"
                                 >
-                                  Ver detalhes
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  Ver
                                 </Button>
                               )}
                               {!notification.read && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => markAsRead(notification.id)}
+                                  onClick={() => {
+                                    console.log('🔔 [UI] Mark as read clicked for:', notification.id);
+                                    markAsRead(notification.id);
+                                  }}
                                   className="h-6 px-2 text-xs"
                                 >
                                   <Check className="w-3 h-3" />
@@ -192,7 +209,10 @@ export function NotificationCenter() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => removeNotification(notification.id)}
+                                onClick={() => {
+                                  console.log('🔔 [UI] Remove notification clicked for:', notification.id);
+                                  removeNotification(notification.id);
+                                }}
                                 className="h-6 px-2 text-xs"
                               >
                                 <X className="w-3 h-3" />
