@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,10 +64,10 @@ export function WebhookTester() {
         headers = { 'Content-Type': 'application/json' };
       }
 
-      let payload = {};
+      let payload: any = {};
       try {
         payload = JSON.parse(testData.payload);
-        addLog(`Payload parseado com evento: ${payload.event_type}`);
+        addLog(`Payload parseado com evento: ${payload.event_type || 'sem event_type'}`);
       } catch (e) {
         addLog('Erro ao parsear payload');
         throw new Error('Payload JSON inválido');
@@ -125,7 +124,7 @@ export function WebhookTester() {
         });
       }
 
-    } catch (error) {
+    } catch (error: any) {
       addLog(`❌ Erro durante o teste: ${error.message}`);
       setTestResult({
         success: false,
@@ -164,7 +163,7 @@ export function WebhookTester() {
         addLog(`Log mais recente: ${latestLog.event_type} - Status: ${latestLog.status_code}`);
       }
       
-    } catch (error) {
+    } catch (error: any) {
       addLog(`Erro ao verificar logs: ${error.message}`);
     }
   };
