@@ -234,9 +234,11 @@ export type Database = {
           course_id: string | null
           created_at: string | null
           enrolled_at: string | null
+          enrollment_source: string | null
           enrollment_status:
             | Database["public"]["Enums"]["enrollment_status"]
             | null
+          external_reference: string | null
           id: string
           installments: number | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
@@ -250,9 +252,11 @@ export type Database = {
           course_id?: string | null
           created_at?: string | null
           enrolled_at?: string | null
+          enrollment_source?: string | null
           enrollment_status?:
             | Database["public"]["Enums"]["enrollment_status"]
             | null
+          external_reference?: string | null
           id?: string
           installments?: number | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
@@ -266,9 +270,11 @@ export type Database = {
           course_id?: string | null
           created_at?: string | null
           enrolled_at?: string | null
+          enrollment_source?: string | null
           enrollment_status?:
             | Database["public"]["Enums"]["enrollment_status"]
             | null
+          external_reference?: string | null
           id?: string
           installments?: number | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
@@ -408,6 +414,44 @@ export type Database = {
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kwify_product_mappings: {
+        Row: {
+          course_id: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          kwify_product_id: string
+          product_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          kwify_product_id: string
+          product_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          kwify_product_id?: string
+          product_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kwify_product_mappings_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
             referencedColumns: ["id"]
           },
         ]

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import type { WebhookConfig, NewWebhookData } from './types';
 
 export function useWebhooks() {
@@ -9,6 +9,8 @@ export function useWebhooks() {
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
+  const { toast } = useToast();
+
   const [newWebhookData, setNewWebhookData] = useState<NewWebhookData>({
     name: '',
     url: '',
@@ -17,9 +19,12 @@ export function useWebhooks() {
     retry_count: 3,
     timeout_seconds: 30,
     headers: '{}',
-    is_active: true
+    is_active: true,
   });
-  const { toast } = useToast();
+
+  useEffect(() => {
+    loadWebhooks();
+  }, []);
 
   const loadWebhooks = async () => {
     try {
@@ -29,19 +34,13 @@ export function useWebhooks() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      const transformedData: WebhookConfig[] = (data || []).map(item => ({
-        ...item,
-        headers: typeof item.headers === 'object' && item.headers !== null ? item.headers as Record<string, string> : {}
-      }));
-      
-      setWebhooks(transformedData);
+      setWebhooks(data || []);
     } catch (error) {
       console.error('Error loading webhooks:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar os webhooks",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Não foi possível carregar os webhooks.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -51,26 +50,31 @@ export function useWebhooks() {
   const createWebhook = async () => {
     try {
       let headers = {};
-      try {
+      if (newWebhookData.headers.trim()) {
         headers = JSON.parse(newWebhookData.headers);
-      } catch {
-        throw new Error('Headers inválidos. Use formato JSON válido.');
       }
 
       const { error } = await supabase
         .from('webhook_configs')
-        .insert({
-          name: newWebhookData.name,
-          url: newWebhookData.url,
-          events: newWebhookData.events,
-          secret_token: newWebhookData.secret_token || null,
-          retry_count: newWebhookData.retry_count,
-          timeout_seconds: newWebhookData.timeout_seconds,
-          headers: headers,
-          is_active: newWebhookData.is_active
-        });
+        .insert([
+          {
+            name: newWebhookData.name,
+            url: newWebhookData.url,
+            events: newWebhookData.events,
+            secret_token: newWebhookData.secret_token || null,
+            retry_count: newWebhookData.retry_count,
+            timeout_seconds: newWebhookData.timeout_seconds,
+            headers,
+            is_active: newWebhookData.is_active,
+          },
+        ]);
 
       if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Webhook criado com sucesso!',
+      });
 
       setNewWebhookData({
         name: '',
@@ -80,21 +84,52 @@ export function useWebhooks() {
         retry_count: 3,
         timeout_seconds: 30,
         headers: '{}',
-        is_active: true
+        is_active: true,
       });
+
       setShowCreateDialog(false);
       loadWebhooks();
-
-      toast({
-        title: "Sucesso",
-        description: "Webhook criado com sucesso!"
-      });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating webhook:', error);
       toast({
-        title: "Erro",
-        description: error.message || "Não foi possível criar o webhook",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Não foi possível criar o webhook.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const createKwifyWebhook = async () => {
+    try {
+      const kwifyWebhook = {
+        name: 'kwify',
+        url: 'https://hxrwlshmfgcnyfugbetw.supabase.co/functions/v1/webhook-receiver',
+        events: ['sale.completed', 'payment.approved', 'sale.refunded', 'payment.refunded'],
+        secret_token: '',
+        retry_count: 3,
+        timeout_seconds: 30,
+        headers: {},
+        is_active: true,
+      };
+
+      const { error } = await supabase
+        .from('webhook_configs')
+        .insert([kwifyWebhook]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Webhook do Kwify criado com sucesso!',
+      });
+
+      loadWebhooks();
+    } catch (error) {
+      console.error('Error creating Kwify webhook:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível criar o webhook do Kwify.',
+        variant: 'destructive',
       });
     }
   };
@@ -108,17 +143,18 @@ export function useWebhooks() {
 
       if (error) throw error;
 
-      loadWebhooks();
       toast({
-        title: "Sucesso",
-        description: "Webhook removido com sucesso"
+        title: 'Sucesso',
+        description: 'Webhook excluído com sucesso!',
       });
+
+      loadWebhooks();
     } catch (error) {
       console.error('Error deleting webhook:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível remover o webhook",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Não foi possível excluir o webhook.',
+        variant: 'destructive',
       });
     }
   };
@@ -132,17 +168,18 @@ export function useWebhooks() {
 
       if (error) throw error;
 
-      loadWebhooks();
       toast({
-        title: "Sucesso",
-        description: `Webhook ${!isActive ? 'ativado' : 'desativado'} com sucesso`
+        title: 'Sucesso',
+        description: `Webhook ${!isActive ? 'ativado' : 'desativado'} com sucesso!`,
       });
+
+      loadWebhooks();
     } catch (error) {
       console.error('Error toggling webhook:', error);
       toast({
-        title: "Erro",
-        description: "Não foi possível alterar o status do webhook",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Não foi possível atualizar o webhook.',
+        variant: 'destructive',
       });
     }
   };
@@ -153,34 +190,37 @@ export function useWebhooks() {
     try {
       const testPayload = {
         event_type: 'test.webhook',
-        timestamp: new Date().toISOString(),
         data: {
           message: 'Este é um teste do webhook',
-          webhook_name: webhook.name,
-          test_id: Math.random().toString(36).substr(2, 9)
+          timestamp: new Date().toISOString(),
+          webhook_id: webhook.id
         }
       };
 
-      const { data, error } = await supabase.functions.invoke('webhook-sender', {
-        body: {
-          event_type: 'test.webhook',
-          data: testPayload.data,
-          webhook_configs: [webhook]
-        }
+      const response = await fetch(webhook.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Source': webhook.name,
+          ...webhook.headers,
+        },
+        body: JSON.stringify(testPayload),
       });
 
-      if (error) throw error;
-      
-      toast({
-        title: "Teste enviado!",
-        description: "Verifique o endpoint para confirmar o recebimento"
-      });
-    } catch (error: any) {
+      if (response.ok) {
+        toast({
+          title: 'Sucesso',
+          description: 'Webhook testado com sucesso!',
+        });
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
       console.error('Error testing webhook:', error);
       toast({
-        title: "Erro no teste",
-        description: error.message || "Não foi possível enviar o teste",
-        variant: "destructive"
+        title: 'Erro no Teste',
+        description: `Falha ao testar webhook: ${error.message}`,
+        variant: 'destructive',
       });
     } finally {
       setTestingWebhook(null);
@@ -188,18 +228,8 @@ export function useWebhooks() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return new Date(dateString).toLocaleString('pt-BR');
   };
-
-  useEffect(() => {
-    loadWebhooks();
-  }, []);
 
   return {
     webhooks,
@@ -210,9 +240,10 @@ export function useWebhooks() {
     setNewWebhookData,
     testingWebhook,
     createWebhook,
+    createKwifyWebhook,
     deleteWebhook,
     toggleWebhook,
     testWebhook,
-    formatDate
+    formatDate,
   };
 }

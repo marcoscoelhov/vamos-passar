@@ -1,218 +1,196 @@
 
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { APIKeysManager } from './APIKeysManager';
-import { WebhooksManager } from './WebhooksManager';
-import { IntegrationLogs } from './IntegrationLogs';
-import { QuickConnectors } from './QuickConnectors';
+import { Badge } from '@/components/ui/badge';
 import { 
-  Link2, 
-  Key, 
   Webhook, 
+  Key, 
   Activity, 
   Zap, 
-  CheckCircle, 
-  AlertTriangle,
-  TrendingUp,
-  Clock
+  ShoppingCart,
+  Database,
+  BarChart3
 } from 'lucide-react';
+import { WebhooksManager } from './WebhooksManager';
+import { APIKeysManager } from './APIKeysManager';
+import { IntegrationLogs } from './IntegrationLogs';
+import { QuickConnectors } from './QuickConnectors';
+import { KwifyProductMapping } from './KwifyProductMapping';
 
 export function IntegrationsHub() {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Mock data - em produção viria do Supabase
-  const stats = {
-    apiKeys: 3,
-    activeWebhooks: 5,
-    totalCalls: 1247,
-    successRate: 98.2,
-    lastWeekCalls: 186
-  };
+  const integrationStats = [
+    {
+      title: 'Webhooks Ativos',
+      value: '3',
+      icon: Webhook,
+      color: 'text-blue-600 bg-blue-100'
+    },
+    {
+      title: 'API Keys',
+      value: '2',
+      icon: Key,
+      color: 'text-green-600 bg-green-100'
+    },
+    {
+      title: 'Eventos Hoje',
+      value: '47',
+      icon: Activity,
+      color: 'text-purple-600 bg-purple-100'
+    },
+    {
+      title: 'Integrações',
+      value: '5',
+      icon: Zap,
+      color: 'text-orange-600 bg-orange-100'
+    }
+  ];
+
+  const availableIntegrations = [
+    {
+      name: 'Kwify',
+      description: 'Integração com plataforma de vendas',
+      status: 'connected',
+      icon: ShoppingCart,
+      features: ['Matrículas automáticas', 'Sincronização de vendas', 'Webhooks']
+    },
+    {
+      name: 'Zapier',
+      description: 'Conecte com milhares de aplicativos',
+      status: 'available',
+      icon: Zap,
+      features: ['Automações', 'Workflows', 'Triggers']
+    },
+    {
+      name: 'Google Analytics',
+      description: 'Análise de tráfego e comportamento',
+      status: 'available',
+      icon: BarChart3,
+      features: ['Tracking', 'Relatórios', 'Métricas']
+    }
+  ];
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link2 className="w-6 h-6 text-blue-600" />
-          <div>
-            <h2 className="text-2xl font-bold">Integrações & APIs</h2>
-            <p className="text-gray-600">Gerencie APIs, webhooks e conectores externos</p>
-          </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Centro de Integrações</h2>
+          <p className="text-gray-600">
+            Gerencie conexões externas, webhooks e APIs do seu sistema
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Activity className="w-4 h-4" />
-            Status das APIs
-          </Button>
-          <Button className="gap-2">
-            <Zap className="w-4 h-4" />
-            Nova Integração
-          </Button>
-        </div>
+        <Badge className="bg-green-100 text-green-800">
+          Sistema Ativo
+        </Badge>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview" className="gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Visão Geral
-          </TabsTrigger>
-          <TabsTrigger value="api-keys" className="gap-2">
-            <Key className="w-4 h-4" />
-            API Keys
-          </TabsTrigger>
-          <TabsTrigger value="webhooks" className="gap-2">
-            <Webhook className="w-4 h-4" />
-            Webhooks
-          </TabsTrigger>
-          <TabsTrigger value="connectors" className="gap-2">
-            <Zap className="w-4 h-4" />
-            Conectores
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="gap-2">
-            <Activity className="w-4 h-4" />
-            Logs
-          </TabsTrigger>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {integrationStats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={index} className="p-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${stat.color}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Main Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="api-keys">API Keys</TabsTrigger>
+          <TabsTrigger value="kwify">Kwify</TabsTrigger>
+          <TabsTrigger value="connectors">Conectores</TabsTrigger>
+          <TabsTrigger value="logs">Logs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <Key className="w-5 h-5 text-blue-600" />
-                <span className="font-medium">API Keys Ativas</span>
-              </div>
-              <p className="text-3xl font-bold">{stats.apiKeys}</p>
-              <p className="text-sm text-gray-600">Chaves configuradas</p>
-            </Card>
-            
-            <Card className="p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <Webhook className="w-5 h-5 text-green-600" />
-                <span className="font-medium">Webhooks</span>
-              </div>
-              <p className="text-3xl font-bold">{stats.activeWebhooks}</p>
-              <p className="text-sm text-gray-600">Endpoints ativos</p>
-            </Card>
-            
-            <Card className="p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <Activity className="w-5 h-5 text-purple-600" />
-                <span className="font-medium">Chamadas (Total)</span>
-              </div>
-              <p className="text-3xl font-bold">{stats.totalCalls.toLocaleString()}</p>
-              <p className="text-sm text-gray-600">+{stats.lastWeekCalls} esta semana</p>
-            </Card>
-            
-            <Card className="p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="font-medium">Taxa de Sucesso</span>
-              </div>
-              <p className="text-3xl font-bold">{stats.successRate}%</p>
-              <p className="text-sm text-gray-600">Últimos 30 dias</p>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">APIs Disponíveis</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">Courses API</h4>
-                    <p className="text-sm text-gray-600">CRUD completo de cursos</p>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">Ativa</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">Students API</h4>
-                    <p className="text-sm text-gray-600">Gestão de estudantes</p>
-                  </div>
-                  <Badge className="bg-yellow-100 text-yellow-800">Em Breve</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">Analytics API</h4>
-                    <p className="text-sm text-gray-600">Métricas e relatórios</p>
-                  </div>
-                  <Badge className="bg-yellow-100 text-yellow-800">Em Breve</Badge>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Eventos de Webhook</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">student.enrolled</h4>
-                    <p className="text-sm text-gray-600">Nova matrícula realizada</p>
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-800">Disponível</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">course.completed</h4>
-                    <p className="text-sm text-gray-600">Curso concluído</p>
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-800">Disponível</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">payment.confirmed</h4>
-                    <p className="text-sm text-gray-600">Pagamento confirmado</p>
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-800">Disponível</Badge>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Recent Activity */}
+          {/* Available Integrations */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Atividade Recente</h3>
-            <div className="space-y-3">
-              {[
-                { time: '2 min atrás', action: 'API Call', details: 'GET /api/courses - 200 OK', status: 'success' },
-                { time: '5 min atrás', action: 'Webhook Sent', details: 'student.enrolled → Zapier', status: 'success' },
-                { time: '12 min atrás', action: 'API Call', details: 'POST /api/courses - 201 Created', status: 'success' },
-                { time: '1 hora atrás', action: 'Webhook Failed', details: 'course.completed → Custom URL', status: 'error' },
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {activity.status === 'success' ? (
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <AlertTriangle className="w-4 h-4 text-red-600" />
-                    )}
-                    <div>
-                      <p className="font-medium">{activity.action}</p>
-                      <p className="text-sm text-gray-600">{activity.details}</p>
+            <h3 className="text-lg font-semibold mb-4">Integrações Disponíveis</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {availableIntegrations.map((integration, index) => {
+                const Icon = integration.icon;
+                return (
+                  <Card key={index} className="p-4 border-2 hover:border-blue-200 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-gray-100 rounded-lg">
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-medium">{integration.name}</h4>
+                          <Badge 
+                            variant={integration.status === 'connected' ? 'default' : 'secondary'}
+                            className={integration.status === 'connected' ? 'bg-green-100 text-green-800' : ''}
+                          >
+                            {integration.status === 'connected' ? 'Conectado' : 'Disponível'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">{integration.description}</p>
+                        <div className="space-y-1">
+                          {integration.features.map((feature, idx) => (
+                            <p key={idx} className="text-xs text-gray-500">• {feature}</p>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Clock className="w-3 h-3" />
-                    {activity.time}
-                  </div>
-                </div>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </Card>
+
+          {/* Quick Setup */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4">Configuração Rápida</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-900">Para começar:</h4>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p>1. Configure um webhook para receber eventos</p>
+                  <p>2. Crie uma API key para autenticação</p>
+                  <p>3. Configure o mapeamento de produtos (Kwify)</p>
+                  <p>4. Teste a integração nos logs</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-900">URL do Webhook:</h4>
+                <div className="p-3 bg-gray-50 rounded border font-mono text-sm">
+                  https://hxrwlshmfgcnyfugbetw.supabase.co/functions/v1/webhook-receiver
+                </div>
+                <p className="text-xs text-gray-500">
+                  Use esta URL em suas integrações externas para enviar eventos
+                </p>
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="webhooks">
+          <WebhooksManager />
         </TabsContent>
 
         <TabsContent value="api-keys">
           <APIKeysManager />
         </TabsContent>
 
-        <TabsContent value="webhooks">
-          <WebhooksManager />
+        <TabsContent value="kwify">
+          <KwifyProductMapping />
         </TabsContent>
 
         <TabsContent value="connectors">
