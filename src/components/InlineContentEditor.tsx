@@ -3,9 +3,10 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Edit, Save, X, Eye } from 'lucide-react';
-import { RichTextEditor } from '@/components/admin/RichTextEditor';
+import { EnhancedRichTextEditor } from '@/components/admin/EnhancedRichTextEditor';
 import { useTopicOperations } from '@/hooks/useTopicOperations';
 import { useCourse } from '@/contexts/CourseContext';
+import { Question } from '@/types/course';
 
 interface InlineContentEditorProps {
   topicId: string;
@@ -38,6 +39,23 @@ export function InlineContentEditor({
     setEditedContent(newContent);
     setHasUnsavedChanges(newContent !== content);
   }, [content]);
+
+  const handleQuestionInsert = useCallback((question: Omit<Question, 'id'>, position: number) => {
+    // Create a question marker that can be processed later
+    const questionMarker = `\n\n<div class="embedded-question" data-question="${encodeURIComponent(JSON.stringify(question))}">
+      <p><strong>Questão:</strong> ${question.question}</p>
+      <ul>
+        ${question.options.map((option, index) => 
+          `<li ${index === question.correctAnswer ? 'class="correct-answer"' : ''}>${option}</li>`
+        ).join('')}
+      </ul>
+      ${question.explanation ? `<p><em>Explicação: ${question.explanation}</em></p>` : ''}
+    </div>\n\n`;
+    
+    const newContent = editedContent.slice(0, position) + questionMarker + editedContent.slice(position);
+    setEditedContent(newContent);
+    setHasUnsavedChanges(true);
+  }, [editedContent]);
 
   const handleSave = useCallback(async () => {
     if (!hasUnsavedChanges) {
@@ -137,9 +155,10 @@ export function InlineContentEditor({
       </div>
 
       <div className="min-h-[400px]">
-        <RichTextEditor
+        <EnhancedRichTextEditor
           value={editedContent}
           onChange={handleContentChange}
+          onQuestionInsert={handleQuestionInsert}
           placeholder="Digite o conteúdo do tópico..."
           showValidation={true}
         />

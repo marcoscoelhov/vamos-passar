@@ -50,7 +50,7 @@ export function AdminContentArea({
       case 'students':
         return <StudentsManagement course={course} isAdmin={isAdmin} />;
       case 'analytics':
-        return <AnalyticsDashboard course={course} isAdmin={isAdmin} />;
+        return <AnalyticsDashboard />;
       case 'reports':
         return <CourseReportsSection course={course} isAdmin={isAdmin} />;
       case 'export':
