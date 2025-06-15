@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Course } from '@/types/course';
 import { AdminOverview } from './AdminOverview';
@@ -53,11 +54,11 @@ export function AdminContentArea({
       case 'reports':
         return <CourseReportsSection course={course} isAdmin={isAdmin} />;
       case 'export':
-        return <ExportToolsSection />;
+        return <ExportToolsSection course={course} isAdmin={isAdmin} />;
       case 'permissions':
         return <ProfessorPermissionsManager course={course} isAdmin={isAdmin} />;
       case 'audit':
-        return <AuditLogs />;
+        return <AuditLogs course={course} isAdmin={isAdmin} />;
       default:
         return <AdminOverview course={course} isAdmin={isAdmin} />;
     }

@@ -78,8 +78,8 @@ export const CourseSidebar = React.memo(function CourseSidebar({ isMobile = fals
 
   return (
     <>
-      {/* Custom Sidebar */}
-      <div className="w-80 h-screen bg-white border-r border-gray-200 flex flex-col">
+      {/* Professional Sidebar */}
+      <div className="w-80 h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 flex flex-col shadow-lg">
         <SidebarHeader
           currentCourse={currentCourse}
           isMobile={isMobile}
@@ -87,30 +87,32 @@ export const CourseSidebar = React.memo(function CourseSidebar({ isMobile = fals
           onToggleSidebar={toggleSidebar}
         />
 
-        {/* Content */}
-        <div className="p-4 flex-1 overflow-auto">
-          <div className="space-y-2">
-            {currentCourse.topics.map((topic, index) => 
-              <TopicItem
-                key={topic.id}
-                topic={topic}
-                index={index}
-                isCurrentTopic={currentTopic?.id === topic.id}
-                expandedTopics={expandedTopics}
-                onTopicClick={handleTopicClick}
-                onToggleComplete={handleToggleComplete}
-                onToggleExpanded={toggleExpanded}
-              />
-            )}
-          </div>
+        {/* Content with custom scrollbar */}
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto custom-scrollbar px-2 py-4">
+            <div className="space-y-1">
+              {currentCourse.topics.map((topic, index) => 
+                <TopicItem
+                  key={topic.id}
+                  topic={topic}
+                  index={index}
+                  isCurrentTopic={currentTopic?.id === topic.id}
+                  expandedTopics={expandedTopics}
+                  onTopicClick={handleTopicClick}
+                  onToggleComplete={handleToggleComplete}
+                  onToggleExpanded={toggleExpanded}
+                />
+              )}
+            </div>
 
-          <SidebarNavigation
-            currentTopicIndex={currentTopicIndex}
-            flatTopicsLength={flatTopics.length}
-            currentTopic={currentTopic}
-            onGoToPrevious={goToPreviousTopic}
-            onGoToNext={goToNextTopic}
-          />
+            <SidebarNavigation
+              currentTopicIndex={currentTopicIndex}
+              flatTopicsLength={flatTopics.length}
+              currentTopic={currentTopic}
+              onGoToPrevious={goToPreviousTopic}
+              onGoToNext={goToNextTopic}
+            />
+          </div>
         </div>
       </div>
 
