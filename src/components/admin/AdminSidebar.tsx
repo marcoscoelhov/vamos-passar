@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Course } from '@/types/course';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import {
   History,
   Settings,
   HardDrive,
-  Template,
+  Layout,
   UserCheck,
   Bell,
   Link
@@ -40,7 +39,7 @@ export function AdminSidebar({ course, activeSection, onSectionChange }: AdminSi
   ];
 
   const toolsSections = [
-    { id: 'templates', label: 'Templates', icon: Template },
+    { id: 'templates', label: 'Templates', icon: Layout },
     { id: 'versioning', label: 'Versionamento', icon: History },
     { id: 'backup', label: 'Backup', icon: HardDrive },
     { id: 'export', label: 'Exportar', icon: FileDown },

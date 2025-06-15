@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Globe, Link, CheckCircle, AlertTriangle, Settings, Sync, Download, Upload } from 'lucide-react';
+import { Globe, Link, CheckCircle, AlertTriangle, Settings, RotateCcw, Download, Upload } from 'lucide-react';
 
 interface Integration {
   id: string;
@@ -167,7 +166,7 @@ export function LMSIntegration() {
             
             <Card className="p-4">
               <div className="flex items-center gap-3 mb-2">
-                <Sync className="w-5 h-5 text-blue-600" />
+                <RotateCcw className="w-5 h-5 text-blue-600" />
                 <span className="font-medium">Última Sincronização</span>
               </div>
               <p className="text-sm text-gray-600">
@@ -204,7 +203,7 @@ export function LMSIntegration() {
                         onClick={() => handleSync(integration.id)}
                         className="gap-2"
                       >
-                        <Sync className="w-3 h-3" />
+                        <RotateCcw className="w-3 h-3" />
                         Sincronizar
                       </Button>
                     )}
@@ -368,7 +367,7 @@ export function LMSIntegration() {
                     Exportar
                   </Button>
                   <Button className="gap-2">
-                    <Sync className="w-4 h-4" />
+                    <RotateCcw className="w-4 h-4" />
                     Sincronizar Agora
                   </Button>
                 </div>
