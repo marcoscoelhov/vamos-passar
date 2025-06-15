@@ -8,10 +8,14 @@ import { Plus } from 'lucide-react';
 import { CourseCategory, CourseListItem, CourseEnrollment } from '@/types/course';
 import { CourseFormDialog } from './CourseFormDialog';
 import { CourseStatsCards } from './CourseStatsCards';
-import { CourseFilters } from './CourseFilters';
+import { AdvancedCourseFilters } from './AdvancedCourseFilters';
 import { CourseGrid } from './CourseGrid';
 import { EmptyCourseState } from './EmptyCourseState';
 import { CourseCardSkeleton } from './CourseCardSkeleton';
+import { CoursePagination } from './CoursePagination';
+import { BulkCourseActions } from './BulkCourseActions';
+
+const COURSES_PER_PAGE = 9;
 
 export function CoursesManagement() {
   const [courses, setCourses] = useState<CourseListItem[]>([]);
@@ -21,6 +25,11 @@ export function CoursesManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -79,16 +88,64 @@ export function CoursesManagement() {
                          course.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || course.category_id === selectedCategory;
     const matchesStatus = selectedStatus === 'all' || course.status === selectedStatus;
+    const coursePrice = course.discount_price || course.price || 0;
+    const matchesPrice = coursePrice >= priceRange[0] && coursePrice <= priceRange[1];
     
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesCategory && matchesStatus && matchesPrice;
   });
+
+  // Sort courses
+  const sortedCourses = [...filteredCourses].sort((a, b) => {
+    let aValue, bValue;
+    
+    switch (sortBy) {
+      case 'title':
+        aValue = a.title.toLowerCase();
+        bValue = b.title.toLowerCase();
+        break;
+      case 'price':
+        aValue = a.discount_price || a.price || 0;
+        bValue = b.discount_price || b.price || 0;
+        break;
+      case 'duration_hours':
+        aValue = a.duration_hours || 0;
+        bValue = b.duration_hours || 0;
+        break;
+      case 'enrollments':
+        aValue = enrollments.filter(e => e.course_id === a.id && e.enrollment_status === 'ativo').length;
+        bValue = enrollments.filter(e => e.course_id === b.id && e.enrollment_status === 'ativo').length;
+        break;
+      default:
+        aValue = new Date(a.created_at).getTime();
+        bValue = new Date(b.created_at).getTime();
+    }
+
+    if (sortOrder === 'asc') {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(sortedCourses.length / COURSES_PER_PAGE);
+  const startIndex = (currentPage - 1) * COURSES_PER_PAGE;
+  const paginatedCourses = sortedCourses.slice(startIndex, startIndex + COURSES_PER_PAGE);
 
   const handleCourseCreated = () => {
     fetchData();
     setIsCreateDialogOpen(false);
   };
 
-  const hasFilters = Boolean(searchTerm) || selectedCategory !== 'all' || selectedStatus !== 'all';
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setSelectedStatus('all');
+    setPriceRange([0, 10000]);
+    setCurrentPage(1);
+  };
+
+  const hasFilters = Boolean(searchTerm) || selectedCategory !== 'all' || selectedStatus !== 'all' || priceRange[0] > 0 || priceRange[1] < 10000;
 
   // Converter CourseListItem para Course para as estatísticas
   const coursesForStats = courses.map(course => ({
@@ -144,15 +201,30 @@ export function CoursesManagement() {
         </Dialog>
       </div>
 
-      {/* Filtros */}
-      <CourseFilters
+      {/* Filtros Avançados */}
+      <AdvancedCourseFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         selectedCategory={selectedCategory}
         onCategoryChange={setSelectedCategory}
         selectedStatus={selectedStatus}
         onStatusChange={setSelectedStatus}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        sortOrder={sortOrder}
+        onSortOrderChange={setSortOrder}
+        priceRange={priceRange}
+        onPriceRangeChange={setPriceRange}
         categories={categories}
+        onClearFilters={handleClearFilters}
+      />
+
+      {/* Ações em Lote */}
+      <BulkCourseActions
+        courses={paginatedCourses}
+        selectedCourses={selectedCourses}
+        onSelectedCoursesChange={setSelectedCourses}
+        onCoursesUpdated={fetchData}
       />
 
       {/* Grid de Cursos ou Estado Vazio */}
@@ -168,12 +240,21 @@ export function CoursesManagement() {
           onCreateCourse={() => setIsCreateDialogOpen(true)}
         />
       ) : (
-        <CourseGrid 
-          courses={filteredCourses} 
-          enrollments={enrollments}
-          categories={categories}
-          onCourseUpdated={fetchData}
-        />
+        <>
+          <CourseGrid 
+            courses={paginatedCourses} 
+            enrollments={enrollments}
+            categories={categories}
+            onCourseUpdated={fetchData}
+          />
+          
+          {/* Paginação */}
+          <CoursePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </>
       )}
     </div>
   );

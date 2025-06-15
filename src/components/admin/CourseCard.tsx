@@ -217,7 +217,6 @@ export function CourseCard({ course, enrollmentCount, categories, onCourseUpdate
         title="Excluir Curso"
         description={`Tem certeza que deseja excluir o curso "${course.title}"? Esta ação não pode ser desfeita.`}
         onConfirm={handleDelete}
-        isLoading={isDeleting}
         variant="destructive"
       />
     </>
