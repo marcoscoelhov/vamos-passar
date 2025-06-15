@@ -13,6 +13,7 @@ interface HighlightableContentProps {
   userId?: string;
   isAdmin?: boolean;
   onContentUpdated?: (newContent: string) => void;
+  isInAdminPanel?: boolean;
 }
 
 export const HighlightableContent = React.memo(function HighlightableContent({ 
@@ -20,7 +21,8 @@ export const HighlightableContent = React.memo(function HighlightableContent({
   topicId, 
   userId,
   isAdmin = false,
-  onContentUpdated
+  onContentUpdated,
+  isInAdminPanel = false
 }: HighlightableContentProps) {
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
@@ -121,14 +123,15 @@ export const HighlightableContent = React.memo(function HighlightableContent({
 
   return (
     <div className="space-y-12">
-      {/* Inline Content Editor - only show for admins */}
-      {isAdmin && (
+      {/* Inline Content Editor - only show in admin panel */}
+      {isAdmin && isInAdminPanel && (
         <div className="mb-8">
           <InlineContentEditor
             topicId={topicId}
             content={currentContent}
             isAdmin={isAdmin}
             onContentUpdated={handleContentUpdated}
+            isInAdminPanel={isInAdminPanel}
           />
         </div>
       )}

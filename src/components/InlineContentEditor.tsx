@@ -12,13 +12,15 @@ interface InlineContentEditorProps {
   content: string;
   isAdmin: boolean;
   onContentUpdated: (newContent: string) => void;
+  isInAdminPanel?: boolean;
 }
 
 export function InlineContentEditor({ 
   topicId, 
   content, 
   isAdmin, 
-  onContentUpdated 
+  onContentUpdated,
+  isInAdminPanel = false
 }: InlineContentEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
@@ -67,7 +69,8 @@ export function InlineContentEditor({
     setHasUnsavedChanges(false);
   }, [content, hasUnsavedChanges]);
 
-  if (!isAdmin) {
+  // Only show in admin panel, not on regular reading page
+  if (!isAdmin || !isInAdminPanel) {
     return null;
   }
 

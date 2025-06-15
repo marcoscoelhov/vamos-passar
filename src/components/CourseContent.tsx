@@ -100,8 +100,9 @@ export function CourseContent({ onOpenSidebar, isSidebarOpen }: CourseContentPro
               content={currentTopic.content}
               topicId={currentTopic.id}
               userId={user?.id}
-              isAdmin={isAdmin}
+              isAdmin={false}
               onContentUpdated={handleContentUpdated}
+              isInAdminPanel={false}
             />
           </div>
         </article>
