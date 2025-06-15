@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
@@ -87,7 +86,7 @@ export function CoursesManagement() {
     setIsCreateDialogOpen(false);
   };
 
-  const hasFilters = searchTerm || selectedCategory !== 'all' || selectedStatus !== 'all';
+  const hasFilters = Boolean(searchTerm) || selectedCategory !== 'all' || selectedStatus !== 'all';
 
   // Converter CourseListItem para Course para as estatísticas
   const coursesForStats = courses.map(course => ({
