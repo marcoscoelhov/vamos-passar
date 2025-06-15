@@ -10,7 +10,8 @@ import {
   Target,
   Activity,
   Crown,
-  Zap
+  Zap,
+  GraduationCap
 } from 'lucide-react';
 
 interface AdminHeaderProps {
@@ -25,6 +26,13 @@ const sectionInfo = {
     icon: TrendingUp,
     color: 'blue',
     description: 'Monitore métricas principais e obtenha insights sobre o desempenho geral do curso'
+  },
+  courses: {
+    title: 'Gerenciamento de Cursos',
+    subtitle: 'Múltiplos cursos e precificação',
+    icon: GraduationCap,
+    color: 'emerald',
+    description: 'Gerencie todos os seus cursos, preços, categorias e vendas em uma interface profissional'
   },
   analytics: {
     title: 'Analytics',
@@ -70,6 +78,7 @@ export function AdminHeader({ activeSection, courseName }: AdminHeaderProps) {
   const getGradientClass = (color: string) => {
     const gradients = {
       blue: 'from-blue-500 to-blue-600',
+      emerald: 'from-emerald-500 to-emerald-600',
       purple: 'from-purple-500 to-purple-600',
       green: 'from-green-500 to-green-600',
       amber: 'from-amber-500 to-amber-600',
@@ -82,6 +91,7 @@ export function AdminHeader({ activeSection, courseName }: AdminHeaderProps) {
   const getBgPattern = (color: string) => {
     const patterns = {
       blue: 'from-blue-50 via-white to-indigo-50',
+      emerald: 'from-emerald-50 via-white to-green-50',
       purple: 'from-purple-50 via-white to-violet-50',
       green: 'from-green-50 via-white to-emerald-50',
       amber: 'from-amber-50 via-white to-yellow-50',
@@ -116,6 +126,11 @@ export function AdminHeader({ activeSection, courseName }: AdminHeaderProps) {
                   <Crown className="w-3 h-3 mr-1" />
                   Admin
                 </Badge>
+                {activeSection === 'courses' && (
+                  <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-sm">
+                    Novo
+                  </Badge>
+                )}
               </div>
               <p className="text-lg text-slate-600 font-medium mb-1">
                 {section.subtitle}
@@ -132,7 +147,7 @@ export function AdminHeader({ activeSection, courseName }: AdminHeaderProps) {
               <span className="text-sm font-medium text-slate-600">Sistema Ativo</span>
             </div>
             <div className="bg-white rounded-lg px-4 py-2 shadow-sm border border-slate-200">
-              <p className="text-xs text-slate-500 mb-1">Curso</p>
+              <p className="text-xs text-slate-500 mb-1">Plataforma</p>
               <p className="font-semibold text-slate-900 text-sm">
                 {courseName}
               </p>
@@ -154,6 +169,12 @@ export function AdminHeader({ activeSection, courseName }: AdminHeaderProps) {
             <Target className="w-4 h-4 text-slate-600" />
             <span className="text-sm font-medium text-slate-700">Produção</span>
           </div>
+          {activeSection === 'courses' && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-100 to-emerald-50 backdrop-blur-sm rounded-full shadow-sm border border-emerald-200">
+              <GraduationCap className="w-4 h-4 text-emerald-600" />
+              <span className="text-sm font-medium text-emerald-700">Mercado BR</span>
+            </div>
+          )}
         </div>
       </div>
     </Card>

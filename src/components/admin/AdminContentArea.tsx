@@ -8,6 +8,7 @@ import { StudentsManagement } from './StudentsManagement';
 import { QuestionForm } from './QuestionForm';
 import { AuditLogs } from './AuditLogs';
 import { ContentManagement } from './ContentManagement';
+import { CoursesManagement } from './CoursesManagement';
 
 interface AdminContentAreaProps {
   activeSection: string;
@@ -32,6 +33,9 @@ export function AdminContentArea({
       
       case 'students':
         return <StudentsManagement />;
+      
+      case 'courses':
+        return <CoursesManagement />;
       
       case 'content':
         return (
@@ -64,7 +68,7 @@ export function AdminContentArea({
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         <AdminHeader 
           activeSection={activeSection}
-          courseName={course.title}
+          courseName={course?.title || 'Sistema'}
         />
         
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">

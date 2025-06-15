@@ -1,18 +1,21 @@
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
-  TrendingUp, 
   BarChart3, 
   Users, 
   BookOpen, 
-  Target,
+  Target, 
   Activity,
+  TrendingUp,
+  Settings,
   GraduationCap,
-  Building2
+  Crown,
+  Zap
 } from 'lucide-react';
 import { Course } from '@/types/course';
-import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface AdminSidebarProps {
   course: Course;
@@ -20,197 +23,183 @@ interface AdminSidebarProps {
   onSectionChange: (section: string) => void;
 }
 
+const menuItems = [
+  {
+    id: 'overview',
+    label: 'Dashboard',
+    icon: TrendingUp,
+    description: 'Visão geral do sistema',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200'
+  },
+  {
+    id: 'courses',
+    label: 'Gerenciar Cursos',
+    icon: GraduationCap,
+    description: 'Múltiplos cursos e preços',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-50',
+    borderColor: 'border-emerald-200',
+    badge: 'Novo'
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    icon: BarChart3,
+    description: 'Métricas e relatórios',
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200'
+  },
+  {
+    id: 'students',
+    label: 'Estudantes',
+    icon: Users,
+    description: 'Gestão de usuários',
+    color: 'text-green-600',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200'
+  },
+  {
+    id: 'content',
+    label: 'Conteúdo',
+    icon: BookOpen,
+    description: 'Tópicos e materiais',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200'
+  },
+  {
+    id: 'questions',
+    label: 'Avaliações',
+    icon: Target,
+    description: 'Questões e testes',
+    color: 'text-red-600',
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-200'
+  },
+  {
+    id: 'logs',
+    label: 'Auditoria',
+    icon: Activity,
+    description: 'Logs do sistema',
+    color: 'text-gray-600',
+    bgColor: 'bg-gray-50',
+    borderColor: 'border-gray-200'
+  }
+];
+
 export function AdminSidebar({ course, activeSection, onSectionChange }: AdminSidebarProps) {
-  const { analytics } = useAnalytics();
-
-  const sidebarSections = [
-    {
-      id: 'overview',
-      title: 'Dashboard',
-      icon: TrendingUp,
-      badge: null,
-      description: 'Visão geral do sistema',
-      color: 'blue'
-    },
-    {
-      id: 'analytics',
-      title: 'Analytics',
-      icon: BarChart3,
-      badge: analytics?.activeStudents || 0,
-      description: 'Métricas e relatórios',
-      color: 'purple'
-    },
-    {
-      id: 'students',
-      title: 'Estudantes',
-      icon: Users,
-      badge: analytics?.totalStudents || 0,
-      description: 'Gestão de usuários',
-      color: 'green'
-    },
-    {
-      id: 'content',
-      title: 'Conteúdo',
-      icon: BookOpen,
-      badge: analytics?.totalTopics || 0,
-      description: 'Tópicos e materiais',
-      color: 'amber'
-    },
-    {
-      id: 'questions',
-      title: 'Avaliações',
-      icon: Target,
-      badge: analytics?.totalQuestions || 0,
-      description: 'Questões e testes',
-      color: 'red'
-    },
-    {
-      id: 'logs',
-      title: 'Auditoria',
-      icon: Activity,
-      badge: null,
-      description: 'Logs do sistema',
-      color: 'gray'
-    }
-  ];
-
-  const getColorClasses = (color: string, isActive: boolean) => {
-    const colors = {
-      blue: isActive 
-        ? 'bg-blue-50 text-blue-700 border-blue-200' 
-        : 'hover:bg-blue-50 hover:text-blue-700',
-      purple: isActive 
-        ? 'bg-purple-50 text-purple-700 border-purple-200' 
-        : 'hover:bg-purple-50 hover:text-purple-700',
-      green: isActive 
-        ? 'bg-green-50 text-green-700 border-green-200' 
-        : 'hover:bg-green-50 hover:text-green-700',
-      amber: isActive 
-        ? 'bg-amber-50 text-amber-700 border-amber-200' 
-        : 'hover:bg-amber-50 hover:text-amber-700',
-      red: isActive 
-        ? 'bg-red-50 text-red-700 border-red-200' 
-        : 'hover:bg-red-50 hover:text-red-700',
-      gray: isActive 
-        ? 'bg-gray-50 text-gray-700 border-gray-200' 
-        : 'hover:bg-gray-50 hover:text-gray-700'
-    };
-    return colors[color as keyof typeof colors] || colors.gray;
-  };
-
-  const getIconColorClass = (color: string, isActive: boolean) => {
-    const colors = {
-      blue: isActive ? 'text-blue-600' : 'text-blue-500',
-      purple: isActive ? 'text-purple-600' : 'text-purple-500',
-      green: isActive ? 'text-green-600' : 'text-green-500',
-      amber: isActive ? 'text-amber-600' : 'text-amber-500',
-      red: isActive ? 'text-red-600' : 'text-red-500',
-      gray: isActive ? 'text-gray-600' : 'text-gray-500'
-    };
-    return colors[color as keyof typeof colors] || colors.gray;
-  };
-
   return (
-    <div className="w-72 min-h-screen bg-white border-r border-gray-200 shadow-sm flex flex-col">
+    <div className="w-80 bg-white border-r border-slate-200 flex flex-col">
       {/* Header */}
-      <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-gray-50">
+      <div className="p-6 border-b border-slate-200">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-white rounded-xl shadow-sm border border-gray-200">
-            <Building2 className="w-6 h-6 text-slate-600" />
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+            <Settings className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-lg font-bold text-slate-900">
               Painel Admin
             </h1>
-            <p className="text-sm text-slate-600">Centro de Controle</p>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 mb-2">
-            <GraduationCap className="w-4 h-4 text-slate-500" />
-            <span className="text-sm font-medium text-slate-600">Curso Ativo</span>
-          </div>
-          <h3 className="font-semibold text-slate-900 text-sm leading-relaxed">
-            {course.title}
-          </h3>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs text-slate-500">Status</span>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-xs font-medium text-green-600">Ativo</span>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0 text-xs">
+                <Crown className="w-3 h-3 mr-1" />
+                Administrador
+              </Badge>
             </div>
           </div>
         </div>
+
+        {/* Course Info */}
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-4 border border-slate-200">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs font-medium text-slate-600">Sistema Ativo</span>
+          </div>
+          <h3 className="font-semibold text-slate-900 text-sm mb-1">
+            {course?.title || 'Plataforma EAD'}
+          </h3>
+          <p className="text-xs text-slate-600">
+            Ambiente de produção
+          </p>
+        </div>
       </div>
-      
-      {/* Navigation Menu */}
-      <div className="flex-1 py-6">
-        <div className="px-4 mb-4">
-          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Navegação
-          </h2>
+
+      {/* Navigation */}
+      <div className="flex-1 p-4 space-y-2">
+        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">
+          Gestão Principal
         </div>
         
-        <nav className="space-y-2 px-3">
-          {sidebarSections.map((section) => {
-            const Icon = section.icon;
-            const isActive = activeSection === section.id;
-            
-            return (
-              <button
-                key={section.id}
-                onClick={() => onSectionChange(section.id)}
-                className={`w-full group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                  isActive 
-                    ? `${getColorClasses(section.color, true)} border shadow-sm` 
-                    : `text-slate-700 ${getColorClasses(section.color, false)}`
-                }`}
-              >
-                <div className={`mr-3 p-2 rounded-lg transition-colors ${
-                  isActive 
-                    ? 'bg-white shadow-sm' 
-                    : 'bg-slate-100 group-hover:bg-white group-hover:shadow-sm'
-                }`}>
-                  <Icon className={`h-4 w-4 ${getIconColorClass(section.color, isActive)}`} />
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeSection === item.id;
+          
+          return (
+            <Button
+              key={item.id}
+              variant="ghost"
+              onClick={() => onSectionChange(item.id)}
+              className={`
+                w-full justify-start h-auto p-3 text-left transition-all duration-200
+                ${isActive 
+                  ? `${item.bgColor} ${item.color} ${item.borderColor} border shadow-sm` 
+                  : 'hover:bg-slate-50 text-slate-700 hover:text-slate-900'
+                }
+              `}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <div className={`
+                  p-2 rounded-lg transition-colors duration-200
+                  ${isActive 
+                    ? `${item.bgColor} ${item.color}` 
+                    : 'bg-slate-100 text-slate-600'
+                  }
+                `}>
+                  <Icon className="w-4 h-4" />
                 </div>
-                
-                <div className="flex-1 text-left">
+                <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="truncate font-medium">{section.title}</span>
-                    {section.badge !== null && (
-                      <Badge 
-                        variant="secondary" 
-                        className={`ml-2 text-xs px-2 py-1 ${
-                          isActive 
-                            ? 'bg-white shadow-sm border-gray-200 text-slate-600' 
-                            : 'bg-slate-100 text-slate-600 border-slate-200'
-                        }`}
-                      >
-                        {section.badge}
+                    <span className="font-medium text-sm">
+                      {item.label}
+                    </span>
+                    {item.badge && (
+                      <Badge variant="secondary" className="text-xs">
+                        {item.badge}
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 truncate">
-                    {section.description}
+                  <p className="text-xs opacity-75 mt-0.5">
+                    {item.description}
                   </p>
                 </div>
-              </button>
-            );
-          })}
-        </nav>
+              </div>
+            </Button>
+          );
+        })}
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-100 bg-slate-50">
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-xs font-medium text-slate-600">Sistema Online</span>
+      <div className="p-4 border-t border-slate-200">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200">
+          <div className="flex items-center gap-2 mb-2">
+            <Zap className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-900">
+              Status do Sistema
+            </span>
           </div>
-          <p className="text-xs text-slate-500">
-            Admin Panel v2.0
-          </p>
+          <div className="space-y-1 text-xs text-blue-700">
+            <div className="flex justify-between">
+              <span>Uptime:</span>
+              <span className="font-medium">99.9%</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Usuários Online:</span>
+              <span className="font-medium">42</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

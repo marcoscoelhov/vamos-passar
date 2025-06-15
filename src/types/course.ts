@@ -27,6 +27,70 @@ export interface Course {
   description: string;
   topics: Topic[];
   progress: number;
+  // Novos campos para o sistema de múltiplos cursos
+  category_id?: string;
+  course_type?: 'online' | 'presencial' | 'hibrido';
+  status?: 'rascunho' | 'ativo' | 'pausado' | 'encerrado';
+  duration_hours?: number;
+  target_audience?: string;
+  prerequisites?: string;
+  instructor_id?: string;
+  certificate_available?: boolean;
+  thumbnail_url?: string;
+  price?: number;
+  discount_price?: number;
+  max_installments?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CourseCategory {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseEnrollment {
+  id: string;
+  user_id: string;
+  course_id: string;
+  enrollment_status: 'pendente' | 'ativo' | 'concluido' | 'cancelado';
+  payment_method?: 'pix' | 'boleto' | 'cartao_credito' | 'cartao_debito';
+  amount_paid?: number;
+  installments?: number;
+  enrolled_at: string;
+  completed_at?: string;
+  certificate_issued_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseReview {
+  id: string;
+  user_id: string;
+  course_id: string;
+  rating: number;
+  comment?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseCoupon {
+  id: string;
+  code: string;
+  course_id?: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  max_uses?: number;
+  current_uses: number;
+  valid_from: string;
+  valid_until?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface User {
