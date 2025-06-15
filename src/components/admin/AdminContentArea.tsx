@@ -52,11 +52,11 @@ export function AdminContentArea({
       case 'analytics':
         return <AnalyticsDashboard course={course} isAdmin={isAdmin} />;
       case 'reports':
-        return <CourseReportsSection />;
+        return <CourseReportsSection course={course} isAdmin={isAdmin} />;
       case 'export':
         return <ExportToolsSection />;
       case 'permissions':
-        return <ProfessorPermissionsManager />;
+        return <ProfessorPermissionsManager course={course} isAdmin={isAdmin} />;
       case 'audit':
         return <AuditLogs />;
       default:
