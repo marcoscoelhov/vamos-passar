@@ -1,12 +1,12 @@
+
 import React from 'react';
 import { Course } from '@/types/course';
 import { AdminOverview } from './AdminOverview';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { StudentsManagement } from './StudentsManagement';
-import { TopicHierarchyManager } from './TopicHierarchyManager';
 import { QuestionForm } from './QuestionForm';
 import { AuditLogs } from './AuditLogs';
-import { TopicManagement } from './TopicManagement';
+import { ContentManagement } from './ContentManagement';
 
 interface AdminContentAreaProps {
   activeSection: string;
@@ -32,21 +32,12 @@ export function AdminContentArea({
       case 'students':
         return <StudentsManagement />;
       
-      case 'topics':
+      case 'content':
         return (
-          <TopicManagement 
+          <ContentManagement 
             course={course} 
             isAdmin={isAdmin}
             onContentAdded={onContentAdded}
-          />
-        );
-      
-      case 'hierarchy':
-        return (
-          <TopicHierarchyManager 
-            course={course} 
-            isAdmin={isAdmin}
-            onTopicUpdated={onContentAdded}
           />
         );
       
@@ -69,7 +60,6 @@ export function AdminContentArea({
 
   return (
     <div className="flex-1 bg-white">
-      {/* Content Header */}
       <div className="bg-white border-b border-gray-200 px-8 py-6">
         <div className="max-w-6xl">
           {renderContent()}
