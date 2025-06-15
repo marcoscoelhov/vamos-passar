@@ -1,23 +1,14 @@
 
 import React from 'react';
-import { Course } from '@/types/course';
+import { SimplifiedContentManagement } from './SimplifiedContentManagement';
 import { AdminOverview } from './AdminOverview';
-import { TopicManagement } from './TopicManagement';
-import { ContentManagement } from './ContentManagement';
-import { StudentsManagement } from './StudentsManagement';
 import { CoursesManagement } from './CoursesManagement';
-import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { ImprovedStudentsManagement } from './ImprovedStudentsManagement';
+import { EnhancedAnalyticsDashboard } from './EnhancedAnalyticsDashboard';
 import { ProfessorPermissionsManager } from './ProfessorPermissionsManager';
-import { AuditLogs } from './AuditLogs';
-import { CourseReportsSection } from './CourseReportsSection';
-import { ExportToolsSection } from './ExportToolsSection';
-import { IntegratedHelpSystem } from './IntegratedHelpSystem';
-import { ContentVersioning } from './ContentVersioning';
-import { BackupSystem } from './BackupSystem';
-import { CourseTemplateSystem } from './CourseTemplateSystem';
-import { CollaborationSystem } from './CollaborationSystem';
-import { AdvancedNotifications } from './AdvancedNotifications';
-import { LMSIntegration } from './LMSIntegration';
+import { UserFriendlyDashboard } from './UserFriendlyDashboard';
+import { IntegrationsHub } from '../integrations/IntegrationsHub';
+import type { Course } from '@/types/course';
 
 interface AdminContentAreaProps {
   activeSection: string;
@@ -35,68 +26,32 @@ export function AdminContentArea({
   const renderContent = () => {
     switch (activeSection) {
       case 'overview':
-        return <AdminOverview course={course} isAdmin={isAdmin} />;
-      case 'courses':
-        return <CoursesManagement />;
-      case 'topics':
-        return (
-          <TopicManagement 
-            course={course} 
-            isAdmin={isAdmin}
-            onContentAdded={onContentAdded}
-          />
-        );
+        return <AdminOverview course={course} />;
       case 'content':
         return (
-          <ContentManagement 
+          <SimplifiedContentManagement 
             course={course} 
-            isAdmin={isAdmin}
-            onContentAdded={onContentAdded}
+            onContentAdded={onContentAdded} 
           />
         );
+      case 'courses':
+        return <CoursesManagement />;
       case 'students':
-        return <StudentsManagement course={course} isAdmin={isAdmin} />;
+        return <ImprovedStudentsManagement />;
       case 'analytics':
-        return <AnalyticsDashboard />;
-      case 'reports':
-        return <CourseReportsSection course={course} isAdmin={isAdmin} />;
-      case 'export':
-        return <ExportToolsSection />;
+        return <EnhancedAnalyticsDashboard />;
       case 'permissions':
-        return <ProfessorPermissionsManager course={course} isAdmin={isAdmin} />;
-      case 'audit':
-        return <AuditLogs />;
-      case 'versioning':
-        return (
-          <ContentVersioning 
-            topicId={course.topics[0]?.id || ''} 
-            currentContent={course.topics[0]?.content || ''}
-            onRestoreVersion={(version) => console.log('Restoring version:', version)}
-          />
-        );
-      case 'backup':
-        return <BackupSystem />;
-      case 'templates':
-        return <CourseTemplateSystem />;
-      case 'collaboration':
-        return <CollaborationSystem />;
-      case 'notifications':
-        return <AdvancedNotifications />;
+        return isAdmin ? <ProfessorPermissionsManager /> : <UserFriendlyDashboard />;
       case 'integrations':
-        return <LMSIntegration />;
+        return <IntegrationsHub />;
       default:
-        return <AdminOverview course={course} isAdmin={isAdmin} />;
+        return <AdminOverview course={course} />;
     }
   };
 
   return (
-    <div className="flex-1 overflow-auto relative">
-      <div className="p-8">
-        {renderContent()}
-      </div>
-      
-      {/* Sistema de ajuda integrado */}
-      <IntegratedHelpSystem />
+    <div className="flex-1 p-8 bg-gray-50 overflow-auto">
+      {renderContent()}
     </div>
   );
 }
