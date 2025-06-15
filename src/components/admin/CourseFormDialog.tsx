@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -76,9 +75,20 @@ export function CourseFormDialog({ categories, onSuccess, onCancel, course }: Co
         return;
       }
 
+      // Preparar dados garantindo que campos obrigatórios estejam presentes
       const courseData = {
-        ...data,
+        title: data.title, // Campo obrigatório
+        description: data.description || null,
+        category_id: data.category_id,
+        course_type: data.course_type,
+        status: data.status,
+        duration_hours: data.duration_hours,
+        target_audience: data.target_audience || null,
+        prerequisites: data.prerequisites || null,
+        certificate_available: data.certificate_available,
+        price: data.price,
         discount_price: data.discount_price || null,
+        max_installments: data.max_installments,
         thumbnail_url: data.thumbnail_url || null,
       };
 
@@ -96,10 +106,10 @@ export function CourseFormDialog({ categories, onSuccess, onCancel, course }: Co
           description: 'As alterações foram salvas com sucesso.',
         });
       } else {
-        // Criar novo curso
+        // Criar novo curso - passa o objeto diretamente, não um array
         const { error } = await supabase
           .from('courses')
-          .insert([courseData]);
+          .insert(courseData);
 
         if (error) throw error;
 
