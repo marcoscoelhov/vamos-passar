@@ -30,7 +30,8 @@ async function verifyWebhookSignature(payload: string, signature: string, secret
 }
 
 async function processKwifyWebhook(eventType: string, payload: any, supabase: any) {
-  console.log(`Processing Kwify webhook event: ${eventType}`)
+  console.log(`💰 Processing Kwify webhook event: ${eventType}`)
+  console.log('💰 Payload:', JSON.stringify(payload, null, 2))
   
   try {
     const { data: productMapping } = await supabase
@@ -41,7 +42,7 @@ async function processKwifyWebhook(eventType: string, payload: any, supabase: an
       .single()
 
     if (!productMapping) {
-      console.log(`No course mapping found for Kwify product: ${payload.data?.product_id}`)
+      console.log(`❌ No course mapping found for Kwify product: ${payload.data?.product_id}`)
       return
     }
 
@@ -49,9 +50,13 @@ async function processKwifyWebhook(eventType: string, payload: any, supabase: an
     const customerData = payload.data?.customer || {}
     const saleData = payload.data || {}
 
+    console.log(`✅ Found course mapping: ${courseId} for product: ${payload.data?.product_id}`)
+
     switch (eventType) {
       case 'sale.completed':
       case 'payment.approved':
+        console.log('💰 Processing sale/payment event...')
+        
         // Criar ou buscar usuário
         let userId = null
         
@@ -64,7 +69,10 @@ async function processKwifyWebhook(eventType: string, payload: any, supabase: an
 
         if (existingUser) {
           userId = existingUser.id
+          console.log(`👤 Found existing user: ${userId}`)
         } else {
+          console.log(`👤 Creating new user for: ${customerData.email}`)
+          
           // Criar novo usuário através da função de criação
           const { data: newUser, error: userError } = await supabase.functions.invoke('create-user', {
             body: {
@@ -76,11 +84,12 @@ async function processKwifyWebhook(eventType: string, payload: any, supabase: an
           })
 
           if (userError || !newUser) {
-            console.error('Error creating user:', userError)
+            console.error('❌ Error creating user:', userError)
             throw new Error('Failed to create user')
           }
           
           userId = newUser.user.id
+          console.log(`✅ Created new user: ${userId}`)
         }
 
         // Verificar se já existe matrícula
@@ -92,6 +101,8 @@ async function processKwifyWebhook(eventType: string, payload: any, supabase: an
           .single()
 
         if (!existingEnrollment) {
+          console.log('📝 Creating new enrollment...')
+          
           // Criar nova matrícula
           const { error: enrollmentError } = await supabase
             .from('course_enrollments')
@@ -107,12 +118,14 @@ async function processKwifyWebhook(eventType: string, payload: any, supabase: an
             })
 
           if (enrollmentError) {
-            console.error('Error creating enrollment:', enrollmentError)
+            console.error('❌ Error creating enrollment:', enrollmentError)
             throw enrollmentError
           }
 
-          console.log(`Successfully enrolled user ${userId} in course ${courseId}`)
+          console.log(`✅ Successfully enrolled user ${userId} in course ${courseId}`)
         } else {
+          console.log('📝 Updating existing enrollment...')
+          
           // Atualizar matrícula existente se necessário
           await supabase
             .from('course_enrollments')
@@ -122,11 +135,15 @@ async function processKwifyWebhook(eventType: string, payload: any, supabase: an
               external_reference: saleData.sale_id || saleData.id
             })
             .eq('id', existingEnrollment.id)
+          
+          console.log(`✅ Updated existing enrollment for user ${userId}`)
         }
         break
         
       case 'sale.refunded':
       case 'payment.refunded':
+        console.log('🔄 Processing refund event...')
+        
         // Cancelar matrícula
         await supabase
           .from('course_enrollments')
@@ -135,20 +152,20 @@ async function processKwifyWebhook(eventType: string, payload: any, supabase: an
           })
           .eq('external_reference', saleData.sale_id || saleData.id)
         
-        console.log(`Canceled enrollment for sale: ${saleData.sale_id || saleData.id}`)
+        console.log(`✅ Canceled enrollment for sale: ${saleData.sale_id || saleData.id}`)
         break
         
       default:
-        console.log(`Unhandled Kwify event type: ${eventType}`)
+        console.log(`❓ Unhandled Kwify event type: ${eventType}`)
     }
   } catch (error) {
-    console.error('Error processing Kwify webhook:', error)
+    console.error('❌ Error processing Kwify webhook:', error)
     throw error
   }
 }
 
 async function processWebhookEvent(eventType: string, payload: any, supabase: any) {
-  console.log(`Processing webhook event: ${eventType}`)
+  console.log(`🔄 Processing webhook event: ${eventType}`)
   
   switch (eventType) {
     case 'student.enrolled':
@@ -208,16 +225,20 @@ async function processWebhookEvent(eventType: string, payload: any, supabase: an
       break
       
     default:
-      console.log(`Unhandled event type: ${eventType}`)
+      console.log(`❓ Unhandled event type: ${eventType}`)
   }
 }
 
 serve(async (req) => {
+  console.log(`🪝 Webhook received: ${req.method} ${req.url}`)
+  
   if (req.method === 'OPTIONS') {
+    console.log('✅ CORS preflight request')
     return new Response('ok', { headers: corsHeaders })
   }
 
   if (req.method !== 'POST') {
+    console.log('❌ Method not allowed:', req.method)
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -231,8 +252,12 @@ serve(async (req) => {
     const payloadText = await req.text()
     const payload = JSON.parse(payloadText)
     
-    console.log('Received webhook from source:', source)
-    console.log('Payload:', JSON.stringify(payload, null, 2))
+    console.log('🪝 Webhook details:', {
+      source,
+      headers: Object.fromEntries(req.headers.entries()),
+      payloadSize: payloadText.length
+    })
+    console.log('🪝 Payload:', JSON.stringify(payload, null, 2))
     
     // Detectar se é um webhook do Kwify
     const isKwifyWebhook = source === 'kwify' || 
@@ -241,9 +266,13 @@ serve(async (req) => {
                           payload.event_type?.startsWith('sale.') ||
                           payload.event_type?.startsWith('payment.')
     
+    console.log('💰 Is Kwify webhook?', isKwifyWebhook)
+    
     let webhookConfig = null
     
     if (isKwifyWebhook) {
+      console.log('🔍 Looking for Kwify webhook config...')
+      
       // Buscar configuração específica do Kwify
       const { data } = await supabase
         .from('webhook_configs')
@@ -253,7 +282,10 @@ serve(async (req) => {
         .single()
       
       webhookConfig = data
+      console.log('🔍 Kwify config found:', !!webhookConfig)
     } else {
+      console.log(`🔍 Looking for webhook config: ${source}`)
+      
       // Buscar configuração padrão
       const { data } = await supabase
         .from('webhook_configs')
@@ -263,15 +295,19 @@ serve(async (req) => {
         .single()
       
       webhookConfig = data
+      console.log('🔍 Config found:', !!webhookConfig)
     }
     
     // Verificar assinatura se configurada
     if (webhookConfig?.secret_token) {
+      console.log('🔐 Verifying webhook signature...')
+      
       const signature = req.headers.get('x-webhook-signature') || 
                        req.headers.get('x-hub-signature-256') ||
                        req.headers.get('x-kwify-signature')
       
       if (!signature) {
+        console.log('❌ Missing signature')
         return new Response(JSON.stringify({ error: 'Missing signature' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -281,29 +317,44 @@ serve(async (req) => {
       const isValid = await verifyWebhookSignature(payloadText, signature, webhookConfig.secret_token)
       
       if (!isValid) {
+        console.log('❌ Invalid signature')
         return new Response(JSON.stringify({ error: 'Invalid signature' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
+      
+      console.log('✅ Signature verified')
     }
     
     const eventType = payload.event_type || payload.type || 'unknown'
+    console.log('📝 Event type:', eventType)
     
     // Log do webhook
-    await supabase.from('webhook_logs').insert({
+    console.log('📝 Logging webhook to database...')
+    const { data: logData, error: logError } = await supabase.from('webhook_logs').insert({
       webhook_config_id: webhookConfig?.id,
       event_type: eventType,
       payload: payload,
       status_code: 200
-    })
+    }).select().single()
+    
+    if (logError) {
+      console.error('❌ Error logging webhook:', logError)
+    } else {
+      console.log('✅ Webhook logged with ID:', logData?.id)
+    }
     
     // Processar o evento
     if (isKwifyWebhook) {
+      console.log('💰 Processing as Kwify webhook...')
       await processKwifyWebhook(eventType, payload, supabase)
     } else {
+      console.log('🔄 Processing as generic webhook...')
       await processWebhookEvent(eventType, payload, supabase)
     }
+    
+    console.log('✅ Webhook processed successfully')
     
     return new Response(JSON.stringify({ 
       success: true, 
@@ -316,7 +367,7 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Webhook Error:', error)
+    console.error('❌ Webhook Error:', error)
     
     const supabase = createClient(supabaseUrl, supabaseKey)
     

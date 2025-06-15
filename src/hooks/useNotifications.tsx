@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +20,8 @@ export function useNotifications() {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('🔔 Initializing notifications system...');
+    
     // Simular algumas notificações iniciais
     const initialNotifications: Notification[] = [
       {
@@ -38,6 +39,8 @@ export function useNotifications() {
     setIsLoading(false);
 
     // Configurar listener para mudanças em tempo real
+    console.log('🔔 Setting up real-time listeners...');
+    
     const channel = supabase
       .channel('admin_notifications')
       .on(
@@ -48,6 +51,8 @@ export function useNotifications() {
           table: 'course_enrollments'
         },
         (payload) => {
+          console.log('📝 Course enrollment change detected:', payload);
+          
           const newNotification: Notification = {
             id: Math.random().toString(36).substr(2, 9),
             type: 'info',
@@ -74,6 +79,8 @@ export function useNotifications() {
           table: 'topics'
         },
         (payload) => {
+          console.log('📚 Topic change detected:', payload);
+          
           const newNotification: Notification = {
             id: Math.random().toString(36).substr(2, 9),
             type: 'success',
@@ -100,8 +107,16 @@ export function useNotifications() {
           table: 'webhook_logs'
         },
         (payload) => {
-          console.log('Webhook log received:', payload);
+          console.log('🪝 Webhook log received:', payload);
           const log = payload.new;
+          
+          console.log('🪝 Processing webhook log:', {
+            id: log.id,
+            event_type: log.event_type,
+            status_code: log.status_code,
+            error_message: log.error_message,
+            created_at: log.created_at
+          });
           
           let notificationType: 'success' | 'error' | 'warning' = 'success';
           let title = 'Webhook processado';
@@ -112,17 +127,25 @@ export function useNotifications() {
             notificationType = 'error';
             title = 'Erro no webhook';
             message = `Falha ao processar ${log.event_type}: ${log.error_message || 'Erro desconhecido'}`;
-          } else if (log.event_type?.includes('kwify')) {
+            console.log('❌ Webhook error detected:', message);
+          } else if (log.event_type?.includes('kwify') || log.event_type?.includes('sale') || log.event_type?.includes('payment')) {
+            console.log('💰 Kwify event detected:', log.event_type);
+            
             if (log.event_type === 'sale.completed') {
               title = 'Nova venda Kwify';
               message = 'Uma nova venda foi processada e a matrícula foi criada';
+              console.log('✅ Sale completed notification created');
             } else if (log.event_type === 'payment.approved') {
               title = 'Pagamento aprovado';
               message = 'Pagamento foi aprovado no Kwify';
+              console.log('✅ Payment approved notification created');
             } else if (log.event_type === 'sale.refunded') {
               title = 'Reembolso processado';
               message = 'Um reembolso foi processado no Kwify';
               notificationType = 'warning';
+              console.log('⚠️ Refund notification created');
+            } else {
+              console.log('ℹ️ Other Kwify event:', log.event_type);
             }
           }
 
@@ -138,10 +161,12 @@ export function useNotifications() {
             eventType: log.event_type
           };
           
+          console.log('🔔 Adding notification:', newNotification);
           setNotifications(prev => [newNotification, ...prev]);
           
           // Toast apenas para erros ou vendas importantes
           if (notificationType === 'error' || log.event_type === 'sale.completed') {
+            console.log('🎯 Showing toast for important event');
             toast({
               title,
               description: message,
@@ -150,9 +175,12 @@ export function useNotifications() {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('🔔 Channel subscription status:', status);
+      });
 
     return () => {
+      console.log('🔔 Cleaning up notifications channel...');
       supabase.removeChannel(channel);
     };
   }, [toast]);
