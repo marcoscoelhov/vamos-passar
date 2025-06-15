@@ -106,25 +106,25 @@ export function AdminSidebar({ course, activeSection, onSectionChange }: AdminSi
             <Button
               key={item.id}
               variant={isActive ? "default" : "ghost"}
-              className={`w-full justify-start h-auto p-4 ${
+              className={`w-full justify-start h-auto p-4 transition-all duration-200 ${
                 isActive 
-                  ? "bg-blue-600 text-white shadow-md" 
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "bg-blue-600 text-white shadow-md hover:bg-blue-700" 
+                  : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
               }`}
               onClick={() => onSectionChange(item.id)}
             >
-              <div className="flex items-center gap-3">
-                <Icon className="w-5 h-5" />
+              <div className="flex items-center gap-3 w-full">
+                <Icon className="w-5 h-5 flex-shrink-0" />
                 <div className="text-left flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{item.label}</span>
                     {item.badge && (
-                      <Badge className="bg-green-100 text-green-800 text-xs">
+                      <Badge className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                         {item.badge}
                       </Badge>
                     )}
                   </div>
-                  <p className={`text-xs ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>
+                  <p className={`text-xs mt-1 ${isActive ? 'text-blue-100' : 'text-gray-500'}`}>
                     {item.description}
                   </p>
                 </div>
@@ -136,11 +136,11 @@ export function AdminSidebar({ course, activeSection, onSectionChange }: AdminSi
 
       {/* Footer */}
       <div className="p-4 border-t border-gray-200 space-y-2">
-        <Button variant="ghost" className="w-full justify-start gap-3 text-gray-600">
+        <Button variant="ghost" className="w-full justify-start gap-3 text-gray-600 hover:bg-gray-50 hover:text-gray-700">
           <Settings className="w-4 h-4" />
           Configurações
         </Button>
-        <Button variant="ghost" className="w-full justify-start gap-3 text-gray-600">
+        <Button variant="ghost" className="w-full justify-start gap-3 text-gray-600 hover:bg-gray-50 hover:text-gray-700">
           <HelpCircle className="w-4 h-4" />
           Ajuda & Suporte
         </Button>
