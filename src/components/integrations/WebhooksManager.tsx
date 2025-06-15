@@ -1,10 +1,13 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreateWebhookDialog } from './webhooks/CreateWebhookDialog';
 import { WebhookCard } from './webhooks/WebhookCard';
 import { EmptyWebhooksState } from './webhooks/EmptyWebhooksState';
+import { WebhookDebugTab } from './webhooks/WebhookDebugTab';
 import { useWebhooks } from './webhooks/useWebhooks';
+import { Settings, Bug } from 'lucide-react';
 
 export function WebhooksManager() {
   const {
@@ -43,33 +46,54 @@ export function WebhooksManager() {
           <h3 className="text-lg font-semibold">Gerenciamento de Webhooks</h3>
           <p className="text-gray-600">Configure endpoints para receber eventos em tempo real</p>
         </div>
-        
-        <CreateWebhookDialog
-          isOpen={showCreateDialog}
-          onOpenChange={setShowCreateDialog}
-          newWebhookData={newWebhookData}
-          onNewWebhookDataChange={setNewWebhookData}
-          onCreateWebhook={createWebhook}
-        />
       </div>
 
-      <div className="space-y-4">
-        {webhooks.length === 0 ? (
-          <EmptyWebhooksState onCreateWebhook={() => setShowCreateDialog(true)} />
-        ) : (
-          webhooks.map((webhook) => (
-            <WebhookCard
-              key={webhook.id}
-              webhook={webhook}
-              testingWebhook={testingWebhook}
-              onToggle={toggleWebhook}
-              onDelete={deleteWebhook}
-              onTest={testWebhook}
-              formatDate={formatDate}
-            />
-          ))
-        )}
-      </div>
+      <Tabs defaultValue="manage" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="manage" className="gap-2">
+            <Settings className="w-4 h-4" />
+            Gerenciar
+          </TabsTrigger>
+          <TabsTrigger value="debug" className="gap-2">
+            <Bug className="w-4 h-4" />
+            Debug & Teste
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="manage">
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <CreateWebhookDialog
+                isOpen={showCreateDialog}
+                onOpenChange={setShowCreateDialog}
+                newWebhookData={newWebhookData}
+                onNewWebhookDataChange={setNewWebhookData}
+                onCreateWebhook={createWebhook}
+              />
+            </div>
+
+            {webhooks.length === 0 ? (
+              <EmptyWebhooksState onCreateWebhook={() => setShowCreateDialog(true)} />
+            ) : (
+              webhooks.map((webhook) => (
+                <WebhookCard
+                  key={webhook.id}
+                  webhook={webhook}
+                  testingWebhook={testingWebhook}
+                  onToggle={toggleWebhook}
+                  onDelete={deleteWebhook}
+                  onTest={testWebhook}
+                  formatDate={formatDate}
+                />
+              ))
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="debug">
+          <WebhookDebugTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
