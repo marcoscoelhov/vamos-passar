@@ -16,7 +16,8 @@ import {
   Eye,
   Copy,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  ListTree
 } from 'lucide-react';
 import {
   DndContext,
@@ -40,6 +41,8 @@ import { useTopicHierarchy } from '@/hooks/useTopicHierarchy';
 import { useDragAndDrop } from '@/hooks/useDragAndDrop';
 import { sanitizeHtmlContent, validateHtmlContent } from '@/utils/contentSanitizer';
 import { cn } from '@/lib/utils';
+import { AccessDeniedCard } from './AccessDeniedCard';
+import { TopicCreationDialog } from './TopicCreationDialog';
 
 interface TopicHierarchyManagerProps {
   course: Course;
@@ -279,18 +282,17 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
   const [editTitle, setEditTitle] = useState('');
   const [deleteTopicId, setDeleteTopicId] = useState<string | null>(null);
   const [previewTopic, setPreviewTopic] = useState<Topic | null>(null);
-  const [showNewTopicForm, setShowNewTopicForm] = useState(false);
-  const [newTopicTitle, setNewTopicTitle] = useState('');
-  const [newTopicParent, setNewTopicParent] = useState<string | null>(null);
   const [isFixingContent, setIsFixingContent] = useState(false);
+  const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
+  const [creationParentId, setCreationParentId] = useState<string | null>(null);
 
-  const { addTopic, isLoading: addingTopic } = useTopics();
   const { 
     updateTopicTitle, 
     deleteTopic, 
     duplicateTopic,
     reorderTopics,
     moveTopicToParent,
+    updateTopicContent,
     isLoading: hierarchyLoading 
   } = useTopicHierarchy();
 
@@ -359,28 +361,14 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
   }, [deleteTopicId, deleteTopic, onTopicUpdated]);
 
   const handleAddSubtopic = useCallback((parentId: string) => {
-    setNewTopicParent(parentId);
-    setShowNewTopicForm(true);
+    setCreationParentId(parentId);
+    setCreateDialogOpen(true);
   }, []);
-
-  const handleCreateNewTopic = useCallback(async () => {
-    if (newTopicTitle.trim()) {
-      try {
-        await addTopic(
-          course.id,
-          { title: newTopicTitle.trim(), content: '<p>Conteúdo do novo tópico...</p>' },
-          isAdmin,
-          newTopicParent || undefined
-        );
-        setNewTopicTitle('');
-        setNewTopicParent(null);
-        setShowNewTopicForm(false);
-        onTopicUpdated();
-      } catch (error) {
-        console.error('Erro ao criar tópico:', error);
-      }
-    }
-  }, [newTopicTitle, newTopicParent, addTopic, course.id, isAdmin, onTopicUpdated]);
+  
+  const handleOpenNewTopicDialog = () => {
+    setCreationParentId(null);
+    setCreateDialogOpen(true);
+  };
 
   const handleDuplicateTopic = useCallback(async (topic: Topic) => {
     const success = await duplicateTopic(topic, course.id, topic.parentTopicId);
@@ -393,20 +381,14 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
     setIsFixingContent(true);
     try {
       const sanitizedContent = sanitizeHtmlContent(topic.content);
-      
-      // Aqui você implementaria a atualização do conteúdo no banco
-      // Por exemplo: await updateTopicContent(topic.id, sanitizedContent);
-      
-      console.log('Conteúdo original:', topic.content);
-      console.log('Conteúdo corrigido:', sanitizedContent);
-      
+      await updateTopicContent(topic.id, sanitizedContent);
       onTopicUpdated();
     } catch (error) {
       console.error('Erro ao corrigir conteúdo:', error);
     } finally {
       setIsFixingContent(false);
     }
-  }, [onTopicUpdated]);
+  }, [onTopicUpdated, updateTopicContent]);
 
   const renderTopicTree = useCallback((topics: Topic[], level = 0) => {
     const topicIds = topics.map(topic => topic.id);
@@ -449,201 +431,159 @@ export function TopicHierarchyManager({ course, isAdmin, onTopicUpdated }: Topic
     cancelEdit, 
     handleDeleteTopic, 
     handleAddSubtopic, 
-    handleDuplicateTopic
+    handleDuplicateTopic,
+    handleFixContent
   ]);
 
   if (!isAdmin) {
-    return (
-      <>
-        <Card className="p-6 text-center">
-          <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Acesso Restrito</h3>
-          <p className="text-gray-600">
-            Apenas administradores podem gerenciar a hierarquia de tópicos.
-          </p>
-        </Card>
-        <ScrollToTop />
-      </>
-    );
+    return <AccessDeniedCard />;
   }
 
-  const isLoading = addingTopic || hierarchyLoading || isFixingContent;
+  const isLoading = hierarchyLoading || isFixingContent;
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Header */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              <h3 className="text-lg font-semibold">Gerenciamento Hierárquico de Tópicos</h3>
-              {isLoading && <Loader2 className="w-4 h-4 animate-spin text-blue-600" />}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setExpandedTopics(new Set(course.topics.map(t => t.id)))}
-                disabled={isLoading}
-              >
-                Expandir Todos
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setExpandedTopics(new Set())}
-                disabled={isLoading}
-              >
-                Recolher Todos
-              </Button>
-              <Button
-                onClick={() => setShowNewTopicForm(true)}
-                size="sm"
-                disabled={isLoading}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Tópico
-              </Button>
-            </div>
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <ListTree className="w-5 h-5" />
+            <h3 className="text-lg font-semibold">Estrutura do Curso</h3>
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin text-blue-600" />}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExpandedTopics(new Set(course.topics.map(t => t.id)))}
+              disabled={isLoading}
+            >
+              Expandir Todos
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExpandedTopics(new Set())}
+              disabled={isLoading}
+            >
+              Recolher Todos
+            </Button>
+            <Button
+              onClick={handleOpenNewTopicDialog}
+              size="sm"
+              disabled={isLoading}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Tópico
+            </Button>
+          </div>
+        </div>
+
+        <div className="text-sm text-gray-600 space-y-1">
+          <p>• Arraste os tópicos pelo ícone de grip para reordená-los.</p>
+          <p>• Clique no título de um tópico para editá-lo ou use os ícones de ação.</p>
+          <p>• Tópicos com formatação de conteúdo inválida serão destacados em amarelo.</p>
+        </div>
+      </Card>
+
+      {/* Topic Tree with Drag and Drop */}
+      <Card className="p-6">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="space-y-2">
+            {course.topics.length > 0 ? (
+              renderTopicTree(course.topics)
+            ) : (
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Nenhum tópico encontrado</h4>
+                <p className="text-gray-600 mb-4">Comece criando o primeiro tópico do curso.</p>
+                <Button 
+                  onClick={handleOpenNewTopicDialog}
+                  disabled={isLoading}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Criar Primeiro Tópico
+                </Button>
+              </div>
+            )}
           </div>
 
-          <div className="text-sm text-gray-600 space-y-1">
-            <p>• Arraste os tópicos pelo ícone de grip para reordená-los</p>
-            <p>• Clique no título de um tópico para editá-lo inline</p>
-            <p>• Use os botões de ação que aparecem ao passar o mouse sobre cada tópico</p>
-            <p>• Tópicos com formatação incorreta serão destacados em amarelo</p>
-          </div>
-        </Card>
-
-        {/* Topic Tree with Drag and Drop */}
-        <Card className="p-6">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="space-y-2">
-              {course.topics.length > 0 ? (
-                renderTopicTree(course.topics)
-              ) : (
-                <div className="text-center py-12">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">Nenhum tópico encontrado</h4>
-                  <p className="text-gray-600 mb-4">Comece criando o primeiro tópico do curso.</p>
-                  <Button 
-                    onClick={() => setShowNewTopicForm(true)}
-                    disabled={isLoading}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Criar Primeiro Tópico
-                  </Button>
+          <DragOverlay>
+            {activeId ? (
+              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg opacity-90">
+                <div className="flex items-center gap-2">
+                  <GripVertical className="w-4 h-4 text-gray-400" />
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium text-gray-900">
+                    Movendo tópico...
+                  </span>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </Card>
 
-            <DragOverlay>
-              {activeId ? (
-                <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg opacity-90">
-                  <div className="flex items-center gap-2">
-                    <GripVertical className="w-4 h-4 text-gray-400" />
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-gray-900">
-                      Movendo tópico...
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        </Card>
+      <TopicCreationDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        course={course}
+        isAdmin={isAdmin}
+        onTopicAdded={onTopicUpdated}
+        parentTopicId={creationParentId}
+      />
 
-        {/* New Topic Form */}
-        {showNewTopicForm && (
-          <Card className="p-6">
-            <h4 className="text-lg font-semibold mb-4">
-              {newTopicParent ? 'Criar Subtópico' : 'Criar Novo Tópico'}
-            </h4>
-            <div className="flex items-center gap-2">
-              <Input
-                value={newTopicTitle}
-                onChange={(e) => setNewTopicTitle(e.target.value)}
-                placeholder="Digite o título do tópico..."
-                onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleCreateNewTopic()}
-                className="flex-1"
-                disabled={isLoading}
-              />
-              <Button 
-                onClick={handleCreateNewTopic}
-                disabled={isLoading || !newTopicTitle.trim()}
-              >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Criar'}
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => {
-                  setShowNewTopicForm(false);
-                  setNewTopicTitle('');
-                  setNewTopicParent(null);
-                }}
-                disabled={isLoading}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </Card>
-        )}
-
-        {/* Preview Dialog */}
-        {previewTopic && (
-          <AlertDialog open={!!previewTopic} onOpenChange={() => setPreviewTopic(null)}>
-            <AlertDialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-              <AlertDialogHeader>
-                <AlertDialogTitle>{previewTopic.title}</AlertDialogTitle>
-              </AlertDialogHeader>
-              <div 
-                className="prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: previewTopic.content }}
-              />
-              <AlertDialogFooter>
-                <AlertDialogAction onClick={() => setPreviewTopic(null)}>
-                  Fechar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-
-        {/* Delete Confirmation */}
-        <AlertDialog open={!!deleteTopicId} onOpenChange={() => setDeleteTopicId(null)}>
-          <AlertDialogContent>
+      {/* Preview Dialog */}
+      {previewTopic && (
+        <AlertDialog open={!!previewTopic} onOpenChange={() => setPreviewTopic(null)}>
+          <AlertDialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <AlertDialogHeader>
-              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja excluir este tópico? Esta ação não pode ser desfeita.
-                Se o tópico tiver subtópicos, você precisará excluí-los primeiro.
-              </AlertDialogDescription>
+              <AlertDialogTitle>{previewTopic.title}</AlertDialogTitle>
             </AlertDialogHeader>
+            <div 
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: previewTopic.content }}
+            />
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setDeleteTopicId(null)}>
-                Cancelar
-              </AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={confirmDelete}
-                className="bg-red-600 hover:bg-red-700"
-                disabled={isLoading}
-              >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Excluir'}
+              <AlertDialogAction onClick={() => setPreviewTopic(null)}>
+                Fechar
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
+      )}
 
-      {/* Scroll to Top Button */}
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTopicId} onOpenChange={() => setDeleteTopicId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este tópico? Esta ação não pode ser desfeita.
+              Se o tópico tiver subtópicos, você precisará excluí-los primeiro.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteTopicId(null)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       <ScrollToTop />
     </>
   );

@@ -3,9 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Loader2, FileText } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { useTopics } from '@/hooks/useTopics';
 import { Course, Topic } from '@/types/course';
 import { RichTextEditor } from './RichTextEditor';
@@ -14,24 +12,21 @@ interface ManualTopicFormProps {
   course: Course;
   isAdmin: boolean;
   onTopicAdded: () => void;
+  initialParentTopicId?: string;
 }
 
-export function ManualTopicForm({ course, isAdmin, onTopicAdded }: ManualTopicFormProps) {
+export function ManualTopicForm({ course, isAdmin, onTopicAdded, initialParentTopicId }: ManualTopicFormProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [parentTopicId, setParentTopicId] = useState<string>('none');
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [parentTopicId, setParentTopicId] = useState<string>(initialParentTopicId || 'none');
   const { addTopic, isLoading } = useTopics();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAddTopic = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) {
+    if (!title.trim() || !content.trim() || isLoading) {
       return;
     }
-    setShowConfirmDialog(true);
-  };
 
-  const confirmAddTopic = async () => {
     try {
       await addTopic(
         course.id,
@@ -39,16 +34,9 @@ export function ManualTopicForm({ course, isAdmin, onTopicAdded }: ManualTopicFo
         isAdmin,
         parentTopicId === 'none' ? undefined : parentTopicId
       );
-      
-      // Reset form
-      setTitle('');
-      setContent('');
-      setParentTopicId('none');
-      setShowConfirmDialog(false);
       onTopicAdded();
     } catch (error) {
-      console.error('Error in confirmAddTopic:', error);
-      setShowConfirmDialog(false);
+      console.error('Error in handleAddTopic:', error);
     }
   };
 
@@ -56,7 +44,7 @@ export function ManualTopicForm({ course, isAdmin, onTopicAdded }: ManualTopicFo
     const options: JSX.Element[] = [];
     
     topics.forEach(topic => {
-      const indent = '  '.repeat(level);
+      const indent = '\u00A0\u00A0'.repeat(level * 2);
       options.push(
         <SelectItem key={topic.id} value={topic.id}>
           {indent}{topic.title}
@@ -72,113 +60,65 @@ export function ManualTopicForm({ course, isAdmin, onTopicAdded }: ManualTopicFo
   };
 
   return (
-    <>
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-5 h-5" />
-          <h3 className="text-lg font-semibold">Criar Tópico Manualmente</h3>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-              Título do Tópico
-            </label>
-            <Input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Digite o título do tópico..."
-              required
-            />
-          </div>
+    <form onSubmit={handleAddTopic} className="space-y-4">
+      <div>
+        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+          Título do Tópico
+        </label>
+        <Input
+          id="title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Digite o título do tópico..."
+          required
+        />
+      </div>
 
-          <div>
-            <label htmlFor="parent" className="block text-sm font-medium text-gray-700 mb-1">
-              Tópico Pai (opcional)
-            </label>
-            <Select value={parentTopicId} onValueChange={setParentTopicId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um tópico pai ou deixe em branco" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhum (tópico principal)</SelectItem>
-                {getTopicOptions(course.topics)}
-              </SelectContent>
-            </Select>
-          </div>
+      <div>
+        <label htmlFor="parent" className="block text-sm font-medium text-gray-700 mb-1">
+          Tópico Pai (opcional)
+        </label>
+        <Select value={parentTopicId} onValueChange={setParentTopicId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione um tópico pai ou deixe em branco" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Nenhum (tópico principal)</SelectItem>
+            {getTopicOptions(course.topics)}
+          </SelectContent>
+        </Select>
+      </div>
 
-          <div>
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-              Conteúdo
-            </label>
-            <RichTextEditor
-              value={content}
-              onChange={setContent}
-              placeholder="Digite o conteúdo do tópico... Você pode colar conteúdo do Word com formatação preservada!"
-              className="min-h-[400px]"
-            />
-          </div>
+      <div>
+        <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+          Conteúdo
+        </label>
+        <RichTextEditor
+          value={content}
+          onChange={setContent}
+          placeholder="Digite o conteúdo do tópico... Você pode colar conteúdo do Word com formatação preservada!"
+          className="min-h-[300px]"
+        />
+      </div>
 
-          <Button
-            type="submit"
-            disabled={isLoading || !title.trim() || !content.trim()}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Adicionando...
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4 mr-2" />
-                Adicionar Tópico
-              </>
-            )}
-          </Button>
-        </form>
-      </Card>
-
-      {/* Diálogo de confirmação */}
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar adição de tópico</AlertDialogTitle>
-            <AlertDialogDescription>
-              Você está prestes a adicionar um novo tópico "{title}" ao curso. 
-              {parentTopicId && parentTopicId !== 'none' ? ' Este será um subtópico.' : ' Este será um tópico principal.'}
-              
-              <div className="mt-4 p-3 bg-gray-50 rounded">
-                <p className="text-sm"><strong>Título:</strong> {title}</p>
-                <div className="text-sm">
-                  <strong>Conteúdo:</strong> 
-                  <div 
-                    className="mt-1 prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ 
-                      __html: content.length > 200 ? content.substring(0, 200) + '...' : content 
-                    }}
-                  />
-                </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAddTopic} disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Adicionando...
-                </>
-              ) : (
-                'Confirmar'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+      <Button
+        type="submit"
+        disabled={isLoading || !title.trim() || !content.trim()}
+        className="w-full"
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Adicionando...
+          </>
+        ) : (
+          <>
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar Tópico
+          </>
+        )}
+      </Button>
+    </form>
   );
 }

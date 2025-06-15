@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollToTop } from '@/components/ui/scroll-to-top';
-import { FileText, Target, BookOpen } from 'lucide-react';
+import { ListTree, Target, BookOpen } from 'lucide-react';
 import { Course } from '@/types/course';
 import { TopicManagement } from './TopicManagement';
 import { QuestionForm } from './QuestionForm';
@@ -40,7 +40,7 @@ export function ContentManagement({ course, isAdmin, onContentAdded }: ContentMa
         <Tabs defaultValue="topics" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="topics" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
+              <ListTree className="w-4 h-4" />
               Gerenciar Tópicos
             </TabsTrigger>
             <TabsTrigger value="questions" className="flex items-center gap-2">

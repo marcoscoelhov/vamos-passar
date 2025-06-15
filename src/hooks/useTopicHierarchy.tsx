@@ -7,6 +7,7 @@ export function useTopicHierarchy() {
     isLoading: operationsLoading,
     updateTopicTitle,
     deleteTopic,
+    updateTopicContent,
   } = useTopicOperations();
 
   const {
@@ -25,5 +26,6 @@ export function useTopicHierarchy() {
     moveTopicToParent,
     reorderTopics,
     duplicateTopic,
+    updateTopicContent,
   };
 }
