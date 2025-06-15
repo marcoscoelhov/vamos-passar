@@ -1,15 +1,14 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Menu, X } from 'lucide-react';
+import { X, ChevronLeft, Menu } from 'lucide-react';
 import { Course } from '@/types/course';
 
 interface SidebarHeaderProps {
   currentCourse: Course;
   isMobile: boolean;
   onCloseMobile?: () => void;
-  onToggleSidebar: () => void;
+  onToggleSidebar?: () => void;
 }
 
 export function SidebarHeader({ 
@@ -19,38 +18,38 @@ export function SidebarHeader({
   onToggleSidebar 
 }: SidebarHeaderProps) {
   return (
-    <div className="p-4 border-b border-gray-200 flex-shrink-0">
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-gray-900 truncate">
+    <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+      <div className="flex-1 min-w-0">
+        <h1 className="text-xl font-bold text-gray-900 truncate">
           {currentCourse.title}
-        </h2>
-        {isMobile ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onCloseMobile}
-            className="h-8 w-8 p-0 hover:bg-gray-100 flex-shrink-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        ) : (
+        </h1>
+        <p className="text-sm text-gray-600 truncate">
+          {currentCourse.topics.length} tópicos disponíveis
+        </p>
+      </div>
+      
+      <div className="flex items-center gap-2 ml-4">
+        {!isMobile && onToggleSidebar && (
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggleSidebar}
-            className="h-8 w-8 p-0 hover:bg-gray-100 flex-shrink-0"
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
           >
-            <Menu className="h-4 w-4" />
+            <ChevronLeft className="w-4 h-4" />
           </Button>
         )}
-      </div>
-      
-      <div className="mt-4">
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Progresso</span>
-          <span>{Math.round(currentCourse.progress)}%</span>
-        </div>
-        <Progress value={currentCourse.progress} className="h-2" />
+        
+        {isMobile && onCloseMobile && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCloseMobile}
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 interface CollapsedSidebarButtonProps {
   isCollapsed: boolean;
@@ -14,17 +14,21 @@ export function CollapsedSidebarButton({
   isMobile, 
   onToggleSidebar 
 }: CollapsedSidebarButtonProps) {
-  if (!isCollapsed || isMobile) {
+  if (isMobile) {
     return null;
   }
 
   return (
     <Button
       onClick={onToggleSidebar}
-      className="fixed top-20 left-4 z-50 bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+      className={`
+        fixed top-4 z-50 bg-blue-600 hover:bg-blue-700 text-white shadow-lg
+        transition-all duration-300 ease-in-out
+        ${isCollapsed ? 'left-4' : 'left-[320px]'}
+      `}
       size="sm"
     >
-      <Menu className="w-4 h-4" />
+      {isCollapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
     </Button>
   );
 }

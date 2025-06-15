@@ -79,7 +79,12 @@ export const CourseSidebar = React.memo(function CourseSidebar({ isMobile = fals
   return (
     <>
       {/* Professional Sidebar */}
-      <div className="w-80 h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 flex flex-col shadow-lg">
+      <div className={`
+        ${isCollapsed ? 'w-0 overflow-hidden' : 'w-80'} 
+        h-screen bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 
+        flex flex-col shadow-lg transition-all duration-300 ease-in-out
+        ${isMobile ? 'absolute z-50' : 'relative'}
+      `}>
         <SidebarHeader
           currentCourse={currentCourse}
           isMobile={isMobile}
