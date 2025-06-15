@@ -207,12 +207,17 @@ export function ExportToolsSection() {
     setIsExporting(true);
     try {
       // Fazer backup completo de todas as tabelas principais
-      const tables = ['courses', 'course_categories', 'course_enrollments', 'profiles', 'topics', 'questions'];
+      const tableNames = ['courses', 'course_categories', 'course_enrollments', 'profiles', 'topics', 'questions'];
       const backupData: any = {};
 
-      for (const table of tables) {
-        const { data } = await supabase.from(table).select('*');
-        backupData[table] = data;
+      for (const tableName of tableNames) {
+        try {
+          const { data } = await supabase.from(tableName as any).select('*');
+          backupData[tableName] = data;
+        } catch (error) {
+          console.error(`Error backing up table ${tableName}:`, error);
+          backupData[tableName] = [];
+        }
       }
 
       const backupContent = JSON.stringify(backupData, null, 2);

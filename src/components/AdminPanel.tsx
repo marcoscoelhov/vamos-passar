@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useCourse } from '@/contexts/CourseContext';
 import { AdminSidebar } from './admin/AdminSidebar';
 import { AdminContentArea } from './admin/AdminContentArea';
+import { NotificationCenter } from './admin/NotificationCenter';
 
 export function AdminPanel() {
   const { currentCourse, profile } = useCourse();
@@ -45,13 +46,31 @@ export function AdminPanel() {
       />
       
       {/* Main Content Area - Right */}
-      <AdminContentArea 
-        key={refreshKey}
-        activeSection={activeSection}
-        course={currentCourse}
-        isAdmin={isAdmin}
-        onContentAdded={handleContentAdded}
-      />
+      <div className="flex-1 flex flex-col">
+        {/* Header com Notificações */}
+        <div className="bg-white border-b border-gray-200 px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Painel Administrativo
+              </h1>
+              <p className="text-gray-600">
+                Gerencie cursos, conteúdo e estudantes
+              </p>
+            </div>
+            <NotificationCenter />
+          </div>
+        </div>
+        
+        {/* Área de Conteúdo */}
+        <AdminContentArea 
+          key={refreshKey}
+          activeSection={activeSection}
+          course={currentCourse}
+          isAdmin={isAdmin}
+          onContentAdded={handleContentAdded}
+        />
+      </div>
     </div>
   );
 }

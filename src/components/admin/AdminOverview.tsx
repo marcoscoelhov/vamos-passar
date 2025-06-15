@@ -17,12 +17,14 @@ import {
 } from 'lucide-react';
 import { Course } from '@/types/course';
 import { StatCard } from './StatCard';
+import { ActivityMonitor } from './ActivityMonitor';
 
 interface AdminOverviewProps {
   course: Course;
+  isAdmin?: boolean;
 }
 
-export function AdminOverview({ course }: AdminOverviewProps) {
+export function AdminOverview({ course, isAdmin }: AdminOverviewProps) {
   const totalQuestions = course.topics.reduce((acc, topic) => acc + (topic.questions?.length || 0), 0);
   const completedTopics = course.topics.filter(topic => topic.completed).length;
   const pendingTopics = course.topics.length - completedTopics;
@@ -70,8 +72,9 @@ export function AdminOverview({ course }: AdminOverviewProps) {
         />
       </div>
 
-      {/* Resumo do Curso */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Layout com Resumo do Curso e Monitor de Atividade */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Resumo do Curso */}
         <Card className="lg:col-span-2 border-0 shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="text-xl font-semibold flex items-center gap-3">
@@ -172,6 +175,11 @@ export function AdminOverview({ course }: AdminOverviewProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* Monitor de Atividade */}
+        <div className="lg:col-span-1">
+          <ActivityMonitor />
+        </div>
       </div>
 
       {/* Lista Detalhada de Tópicos */}

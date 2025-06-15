@@ -7,9 +7,9 @@ import { ContentManagement } from './ContentManagement';
 import { StudentsManagement } from './StudentsManagement';
 import { CoursesManagement } from './CoursesManagement';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
-import { ProfessorPermissionsManager } from './ProfessorPermissionsManager';
+import { ProfessorPermissionsManagerEmpty } from './ProfessorPermissionsManagerEmpty';
 import { AuditLogs } from './AuditLogs';
-import { CourseReportsSection } from './CourseReportsSection';
+import { CourseReportsSectionEmpty } from './CourseReportsSectionEmpty';
 import { ExportToolsSection } from './ExportToolsSection';
 
 interface AdminContentAreaProps {
@@ -52,11 +52,11 @@ export function AdminContentArea({
       case 'analytics':
         return <AnalyticsDashboard course={course} isAdmin={isAdmin} />;
       case 'reports':
-        return <CourseReportsSection />;
+        return <CourseReportsSectionEmpty />;
       case 'export':
         return <ExportToolsSection />;
       case 'permissions':
-        return <ProfessorPermissionsManager />;
+        return <ProfessorPermissionsManagerEmpty />;
       case 'audit':
         return <AuditLogs />;
       default:
