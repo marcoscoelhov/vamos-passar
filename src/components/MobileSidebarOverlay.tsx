@@ -14,7 +14,7 @@ export function MobileSidebarOverlay({ isOpen, onClose }: MobileSidebarOverlayPr
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
     `}>
       <div className="h-full bg-white shadow-xl border-r border-gray-100">
-        <CourseSidebar onClose={onClose} />
+        <CourseSidebar isMobile={true} onCloseMobile={onClose} />
       </div>
     </div>
   );
