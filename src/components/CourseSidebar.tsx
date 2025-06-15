@@ -7,9 +7,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Menu, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Menu, ChevronDown, ChevronRight as ChevronRightIcon, X } from 'lucide-react';
 import { useCourse } from '@/contexts/CourseContext';
-import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { Topic } from '@/types/course';
 import { flattenTopicHierarchy } from '@/utils/dataMappers';
@@ -117,10 +116,15 @@ const TopicItem = React.memo(function TopicItem({
   );
 });
 
-export const CourseSidebar = React.memo(function CourseSidebar() {
+interface CourseSidebarProps {
+  isMobile?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export const CourseSidebar = React.memo(function CourseSidebar({ isMobile = false, onCloseMobile }: CourseSidebarProps) {
   const { currentCourse, currentTopic, setCurrentTopic, updateTopicProgress } = useCourse();
-  const { state, toggleSidebar } = useSidebar();
   const [expandedTopics, setExpandedTopics] = React.useState<Set<string>>(new Set());
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
 
   const flatTopics = useMemo(() => 
     currentCourse ? flattenTopicHierarchy(currentCourse.topics) : [], 
@@ -134,7 +138,10 @@ export const CourseSidebar = React.memo(function CourseSidebar() {
 
   const handleTopicClick = useCallback(async (topic: Topic) => {
     setCurrentTopic(topic);
-  }, [setCurrentTopic]);
+    if (isMobile && onCloseMobile) {
+      onCloseMobile();
+    }
+  }, [setCurrentTopic, isMobile, onCloseMobile]);
 
   const handleToggleComplete = useCallback((topicId: string, completed: boolean) => {
     updateTopicProgress(topicId, !completed);
@@ -171,6 +178,10 @@ export const CourseSidebar = React.memo(function CourseSidebar() {
     }
   }, [currentTopicIndex, flatTopics, currentTopic, updateTopicProgress, setCurrentTopic]);
 
+  const toggleSidebar = useCallback(() => {
+    setIsCollapsed(!isCollapsed);
+  }, [isCollapsed]);
+
   if (!currentCourse) return null;
 
   return (
@@ -181,14 +192,25 @@ export const CourseSidebar = React.memo(function CourseSidebar() {
             <h2 className="font-semibold text-gray-900 truncate">
               {currentCourse.title}
             </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleSidebar}
-              className="h-8 w-8 p-0 hover:bg-gray-100 flex-shrink-0"
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
+            {isMobile ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onCloseMobile}
+                className="h-8 w-8 p-0 hover:bg-gray-100 flex-shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSidebar}
+                className="h-8 w-8 p-0 hover:bg-gray-100 flex-shrink-0"
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           
           <div className="mt-4">
@@ -250,7 +272,7 @@ export const CourseSidebar = React.memo(function CourseSidebar() {
       </Sidebar>
 
       {/* Botão flutuante para mostrar sidebar quando ela está oculta */}
-      {state === 'collapsed' && (
+      {isCollapsed && !isMobile && (
         <Button
           onClick={toggleSidebar}
           className="fixed top-20 left-4 z-50 bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
