@@ -7,8 +7,10 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { HighlightableContent } from './HighlightableContent';
 import { Breadcrumbs } from './Breadcrumbs';
 import { TopBar } from './TopBar';
-import { ArticleHeader } from './ArticleHeader';
 import { QuestionsSection } from './QuestionsSection';
+import { ModernHeroSection } from './ModernHeroSection';
+import { VisualContent } from './VisualContent';
+import { ResourcesSection } from './ResourcesSection';
 
 interface CourseContentProps {
   onOpenSidebar: () => void;
@@ -83,18 +85,22 @@ export function CourseContent({ onOpenSidebar, isSidebarOpen }: CourseContentPro
         isSidebarOpen={isSidebarOpen}
       />
 
-      {/* Main content area - improved for better readability */}
-      <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8 lg:py-12">
+      {/* Main content area - enhanced with modern design */}
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 lg:py-12">
         {/* Breadcrumbs */}
-        <div className="mb-8 lg:mb-12">
+        <div className="mb-8">
           <Breadcrumbs />
         </div>
 
-        {/* Article */}
-        <article className="mb-16 lg:mb-24">
-          <ArticleHeader topic={currentTopic} />
+        {/* Modern Hero Section */}
+        <ModernHeroSection 
+          topic={currentTopic} 
+          onScrollToQuestions={scrollToQuestions}
+        />
 
-          {/* Content with improved typography and spacing */}
+        {/* Main Content */}
+        <article className="space-y-12">
+          {/* Content with visual elements */}
           <div className="content-prose max-w-none">
             <HighlightableContent 
               content={currentTopic.content}
@@ -104,14 +110,32 @@ export function CourseContent({ onOpenSidebar, isSidebarOpen }: CourseContentPro
               onContentUpdated={handleContentUpdated}
               isInAdminPanel={false}
             />
+            
+            {/* Visual content examples - these would be dynamically inserted based on content */}
+            <VisualContent 
+              type="diagram" 
+              title="Diagrama Conceitual"
+              description="Visualização dos principais conceitos abordados"
+              className="my-12"
+            />
+            
+            <VisualContent 
+              type="chart" 
+              title="Análise de Dados"
+              description="Gráficos e estatísticas relevantes ao tópico"
+              className="my-12"
+            />
           </div>
-        </article>
 
-        {/* Questions section */}
-        <QuestionsSection 
-          topic={currentTopic} 
-          isLoadingQuestions={isLoadingQuestions} 
-        />
+          {/* Resources Section */}
+          <ResourcesSection />
+
+          {/* Questions section */}
+          <QuestionsSection 
+            topic={currentTopic} 
+            isLoadingQuestions={isLoadingQuestions} 
+          />
+        </article>
       </div>
     </div>
   );

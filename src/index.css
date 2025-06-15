@@ -60,7 +60,7 @@
 }
 
 @layer components {
-  /* Medium-inspired typography - improved for better readability */
+  /* Enhanced Medium-inspired typography - improved for better readability */
   .medium-title {
     @apply text-4xl md:text-5xl lg:text-6xl font-bold font-display text-gray-900 leading-tight;
     letter-spacing: -0.025em;
@@ -90,7 +90,7 @@
     @apply text-sm md:text-base font-reading text-gray-600 leading-relaxed;
   }
   
-  /* Content prose styling - enhanced for better readability */
+  /* Enhanced content prose styling - improved for modern design */
   .content-prose {
     @apply font-reading text-lg md:text-xl lg:text-xl text-gray-800;
     line-height: 1.75;
@@ -124,7 +124,7 @@
   }
   
   .content-prose blockquote {
-    @apply border-l-4 border-gray-200 pl-6 lg:pl-8 my-8 lg:my-12 italic text-gray-700 text-xl lg:text-2xl;
+    @apply border-l-4 border-green-200 bg-green-50/50 pl-6 lg:pl-8 py-4 my-8 lg:my-12 italic text-gray-700 text-xl lg:text-2xl rounded-r-lg;
     line-height: 1.6;
   }
   
@@ -161,39 +161,43 @@
     @apply bg-transparent p-0;
   }
 
-  /* Medium-style buttons */
+  /* Enhanced Medium-style buttons with modern design */
   .btn-medium {
     @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium;
     @apply transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply shadow-sm hover:shadow-md;
   }
   
   .btn-medium-primary {
-    @apply btn-medium bg-green-700 text-white hover:bg-green-800 focus:ring-green-500;
+    @apply btn-medium bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+    @apply shadow-lg hover:shadow-xl transform hover:-translate-y-0.5;
   }
   
   .btn-medium-secondary {
     @apply btn-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500;
+    @apply backdrop-blur-sm;
   }
   
   .btn-medium-ghost {
     @apply btn-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:ring-gray-500;
   }
   
-  /* Card styling */
+  /* Enhanced card styling with modern shadows */
   .card-medium {
-    @apply bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+    @apply bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300;
+    @apply backdrop-blur-sm;
   }
   
-  /* Input styling */
+  /* Enhanced input styling */
   .input-medium {
     @apply w-full px-4 py-3 text-lg border border-gray-200 rounded-lg;
     @apply focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent;
-    @apply transition-all duration-200;
+    @apply transition-all duration-200 backdrop-blur-sm;
   }
   
-  /* Navigation styling */
+  /* Modern navigation styling */
   .nav-link {
-    @apply text-gray-600 hover:text-gray-900 transition-colors duration-200;
+    @apply text-gray-600 hover:text-gray-900 transition-all duration-200;
     @apply font-medium text-sm tracking-wide;
   }
   
@@ -201,17 +205,18 @@
     @apply nav-link text-gray-900;
   }
   
-  /* Progress bar */
+  /* Enhanced progress bar */
   .progress-bar {
-    @apply fixed top-0 left-0 z-50 h-1 bg-green-600 transition-all duration-300;
+    @apply fixed top-0 left-0 z-50 h-1 bg-gradient-to-r from-green-500 to-green-600 transition-all duration-300;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
   }
   
-  /* Sidebar overlay */
+  /* Enhanced sidebar overlay */
   .sidebar-overlay {
-    @apply fixed inset-0 bg-black bg-opacity-25 z-40 transition-opacity duration-300;
+    @apply fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-all duration-300;
   }
   
-  /* Admin panel styling */
+  /* Enhanced admin panel styling */
   .admin-card {
     @apply card-medium p-6;
   }
@@ -223,6 +228,20 @@
   
   .admin-sidebar-item-active {
     @apply admin-sidebar-item bg-green-50 text-green-800 border-l-4 border-green-600;
+  }
+
+  /* New modern components styling */
+  .modern-hero {
+    @apply relative bg-gradient-to-br from-green-50 via-white to-blue-50 rounded-2xl overflow-hidden;
+  }
+  
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+  
+  .floating-card {
+    @apply bg-white rounded-xl shadow-lg border border-gray-100 backdrop-blur-sm;
+    @apply hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
   }
 }
 
@@ -243,7 +262,7 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  /* Custom utilities for better readability */
+  /* Enhanced custom utilities for better readability */
   .reading-width {
     max-width: 65ch;
   }
@@ -255,9 +274,22 @@
   .text-justify {
     text-align: justify;
   }
+
+  /* New modern utilities */
+  .gradient-text {
+    @apply bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent;
+  }
+  
+  .shadow-soft {
+    box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  }
+  
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+  }
 }
 
-/* Responsive improvements */
+/* Enhanced responsive improvements */
 @media (min-width: 1024px) {
   .content-prose {
     font-size: 21px;
@@ -269,4 +301,35 @@
   .content-prose {
     font-size: 22px;
   }
+}
+
+/* Modern animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.6s ease-out;
 }
