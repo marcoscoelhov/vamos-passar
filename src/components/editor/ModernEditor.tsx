@@ -128,10 +128,10 @@ export function ModernEditor({
         editor.chain().focus().deleteRange({ from: from - 1, to: from }).setBlockquote().run();
         break;
       case 'bullet':
-        editor.chain().focus().deleteRange({ from: from - 1, to: from }).setBulletList().run();
+        editor.chain().focus().deleteRange({ from: from - 1, to: from }).toggleBulletList().run();
         break;
       case 'numbered':
-        editor.chain().focus().deleteRange({ from: from - 1, to: from }).setOrderedList().run();
+        editor.chain().focus().deleteRange({ from: from - 1, to: from }).toggleOrderedList().run();
         break;
       case 'code':
         editor.chain().focus().deleteRange({ from: from - 1, to: from }).setCodeBlock().run();
